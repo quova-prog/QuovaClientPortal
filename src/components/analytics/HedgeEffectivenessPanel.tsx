@@ -87,13 +87,15 @@ async function exportAuditReport(
   results: HedgeEffectivenessResult[],
   standard: AccountingStandard,
 ): Promise<void> {
-  const XLSX = await import('xlsx')
-  const wb = XLSX.utils.book_new()
+  const ExcelJS = await import('exceljs')
+  const { saveAs } = await import('file-saver')
+  const wb = new ExcelJS.Workbook()
   const today = new Date().toISOString().split('T')[0]
 
   // Sheet 1: Summary
   const summ = getEffectivenessSummary(results)
-  const summaryData = [
+  const ws1 = wb.addWorksheet('Effectiveness Summary')
+  const summaryRows: (string | number)[][] = [
     ['Quova – Hedge Effectiveness Audit Report'],
     [`Generated: ${new Date().toLocaleString()}`, `Standard: ${standard}`],
     [],
@@ -108,11 +110,11 @@ async function exportAuditReport(
     ['Total Ineffectiveness to P&L (USD)', summ.totalIneffectivePortionUsd.toFixed(2)],
     ['Total |ΔFV| Change (USD)', summ.totalAbsFvChangeUsd.toFixed(2)],
   ]
-  const ws1 = XLSX.utils.aoa_to_sheet(summaryData)
-  XLSX.utils.book_append_sheet(wb, ws1, 'Effectiveness Summary')
+  summaryRows.forEach(row => ws1.addRow(row))
 
   // Sheet 2: Test Results
-  const headers = [
+  const ws2 = wb.addWorksheet('Test Results')
+  const testHeaders = [
     'Reference #', 'Currency Pair', 'Direction', 'Instrument', 'Hedge Type',
     'Notional (base)', 'Maturity Date', 'Spot at Trade', 'Contracted Rate (Fwd)',
     'Forward Points', 'Current Rate',
@@ -120,49 +122,53 @@ async function exportAuditReport(
     'Retro Result', 'R²', 'Slope', 'F-Stat', 'Prosp. Result',
     'Effective Portion USD', 'Ineffective to P&L USD', 'Overall Status',
   ]
-  const rows = results.map(r => [
-    r.referenceNumber, r.currencyPair, r.direction, r.instrumentType, r.hedgeType,
-    r.notionalBase, r.maturityDate,
-    r.spotRateAtTrade.toFixed(6), r.contractedRate.toFixed(6),
-    r.forwardPoints.toFixed(6), r.currentSpotRate.toFixed(6),
-    r.deltaFvInstrument.toFixed(2), r.deltaFvHedgedItem.toFixed(2),
-    r.dollarOffsetRatioPct.toFixed(2),
-    r.retrospectiveResult.toUpperCase(),
-    r.rSquared !== null ? r.rSquared.toFixed(4) : 'N/A',
-    r.slope !== null ? r.slope.toFixed(4) : 'N/A',
-    r.fStatistic !== null ? r.fStatistic.toFixed(2) : 'N/A',
-    r.prospectiveResult.toUpperCase(),
-    r.effectivePortionUsd.toFixed(2),
-    r.ineffectivePortionUsd.toFixed(2),
-    r.overallStatus.toUpperCase(),
-  ])
-  const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows])
-  XLSX.utils.book_append_sheet(wb, ws2, 'Test Results')
+  ws2.addRow(testHeaders)
+  results.forEach(r => {
+    ws2.addRow([
+      r.referenceNumber, r.currencyPair, r.direction, r.instrumentType, r.hedgeType,
+      r.notionalBase, r.maturityDate,
+      r.spotRateAtTrade.toFixed(6), r.contractedRate.toFixed(6),
+      r.forwardPoints.toFixed(6), r.currentSpotRate.toFixed(6),
+      r.deltaFvInstrument.toFixed(2), r.deltaFvHedgedItem.toFixed(2),
+      r.dollarOffsetRatioPct.toFixed(2),
+      r.retrospectiveResult.toUpperCase(),
+      r.rSquared !== null ? r.rSquared.toFixed(4) : 'N/A',
+      r.slope !== null ? r.slope.toFixed(4) : 'N/A',
+      r.fStatistic !== null ? r.fStatistic.toFixed(2) : 'N/A',
+      r.prospectiveResult.toUpperCase(),
+      r.effectivePortionUsd.toFixed(2),
+      r.ineffectivePortionUsd.toFixed(2),
+      r.overallStatus.toUpperCase(),
+    ])
+  })
 
   // Sheet 3: Designation Memos
+  const ws3 = wb.addWorksheet('Designation Memos')
   const memoHeaders = [
     'Reference #', 'Currency Pair', 'Hedging Relationship', 'Risk Being Hedged',
     'Hedging Instrument', 'Hedged Item', 'Assessment Method', 'Accounting Standard',
     'Designation Date', 'Maturity Date',
   ]
-  const memoRows = results.map(r => [
-    r.referenceNumber, r.currencyPair,
-    r.designationMemo.hedgingRelationship,
-    r.designationMemo.riskBeingHedged,
-    r.designationMemo.hedgingInstrument,
-    r.designationMemo.hedgedItem,
-    r.designationMemo.assessmentMethod,
-    standard,
-    r.designationDate, r.maturityDate,
-  ])
-  const ws3 = XLSX.utils.aoa_to_sheet([memoHeaders, ...memoRows])
-  XLSX.utils.book_append_sheet(wb, ws3, 'Designation Memos')
+  ws3.addRow(memoHeaders)
+  results.forEach(r => {
+    ws3.addRow([
+      r.referenceNumber, r.currencyPair,
+      r.designationMemo.hedgingRelationship,
+      r.designationMemo.riskBeingHedged,
+      r.designationMemo.hedgingInstrument,
+      r.designationMemo.hedgedItem,
+      r.designationMemo.assessmentMethod,
+      standard,
+      r.designationDate, r.maturityDate,
+    ])
+  })
 
   // Sheet 4: Methodology Notes
   const stdRef = standard === 'ASC 815'
     ? 'ASC 815-20-35-2'
     : 'IFRS 9 B6.4.1–B6.4.17'
-  const methodNotes = [
+  const ws4 = wb.addWorksheet('Methodology Notes')
+  const methodNotes: (string | number)[][] = [
     ['Quova – Hedge Effectiveness Methodology Notes'],
     [],
     ['Section', 'Description'],
@@ -191,10 +197,10 @@ async function exportAuditReport(
       'This analysis is for informational purposes only. All effectiveness tests must be reviewed ' +
       'by a qualified accountant before inclusion in financial statements.'],
   ]
-  const ws4 = XLSX.utils.aoa_to_sheet(methodNotes)
-  XLSX.utils.book_append_sheet(wb, ws4, 'Methodology Notes')
+  methodNotes.forEach(row => ws4.addRow(row))
 
-  XLSX.writeFile(wb, `hedge_effectiveness_audit_${today}.xlsx`)
+  const buffer = await wb.xlsx.writeBuffer()
+  saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `hedge_effectiveness_audit_${today}.xlsx`)
 }
 
 // ── Expanded row detail ───────────────────────────────────────────────────────

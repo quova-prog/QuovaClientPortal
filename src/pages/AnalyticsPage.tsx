@@ -241,12 +241,17 @@ const PERIOD_LABELS: Record<Period, string> = {
 // ── Excel download ────────────────────────────────────────────────────────────
 
 async function triggerXlsx(filename: string, rows: Record<string, unknown>[]) {
-  const XLSX = await import('xlsx')
+  const ExcelJS = await import('exceljs')
+  const { saveAs } = await import('file-saver')
   const data = rows.length > 0 ? rows : [{ Note: 'No data found for this report.' }]
-  const ws = XLSX.utils.json_to_sheet(data)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Report')
-  XLSX.writeFile(wb, filename)
+  const wb = new ExcelJS.Workbook()
+  const ws = wb.addWorksheet('Report')
+  if (data.length > 0) {
+    ws.columns = Object.keys(data[0]).map(key => ({ header: key, key }))
+    ws.addRows(data)
+  }
+  const buffer = await wb.xlsx.writeBuffer()
+  saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename)
 }
 
 // ── Custom Report definitions ─────────────────────────────────────────────────

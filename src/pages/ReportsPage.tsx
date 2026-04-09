@@ -47,54 +47,87 @@ export function ReportsPage() {
   const [done, setDone] = useState<string | null>(null)
 
   async function generateExcel(type: ReportType) {
-    const XLSX = await import('xlsx')
-    let wb = XLSX.utils.book_new()
+    const ExcelJS = await import('exceljs')
+    const { saveAs } = await import('file-saver')
+    const wb = new ExcelJS.Workbook()
 
     if (type === 'exposure_summary' || type === 'board_pack') {
-      const rows = exposures.map(e => ({
-        Entity: e.entity,
+      const ws = wb.addWorksheet('Exposures')
+      ws.columns = [
+        { header: 'Entity', key: 'Entity' },
+        { header: 'Currency Pair', key: 'Currency Pair' },
+        { header: 'Direction', key: 'Direction' },
+        { header: 'Notional (Base)', key: 'Notional (Base)' },
+        { header: 'Base Currency', key: 'Base Currency' },
+        { header: 'Settlement Date', key: 'Settlement Date' },
+        { header: 'Description', key: 'Description' },
+        { header: 'Status', key: 'Status' },
+      ]
+      ws.addRows(exposures.map(e => ({
+        'Entity': e.entity,
         'Currency Pair': e.currency_pair,
-        Direction: e.direction,
+        'Direction': e.direction,
         'Notional (Base)': e.notional_base,
         'Base Currency': e.base_currency,
         'Settlement Date': formatDate(e.settlement_date),
-        Description: e.description ?? '',
-        Status: e.status,
-      }))
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Exposures')
+        'Description': e.description ?? '',
+        'Status': e.status,
+      })))
     }
 
     if (type === 'hedge_positions' || type === 'board_pack') {
-      const rows = positions.map(p => ({
-        Instrument: p.instrument_type,
+      const ws = wb.addWorksheet('Hedge Positions')
+      ws.columns = [
+        { header: 'Instrument', key: 'Instrument' },
+        { header: 'Currency Pair', key: 'Currency Pair' },
+        { header: 'Direction', key: 'Direction' },
+        { header: 'Notional (Base)', key: 'Notional (Base)' },
+        { header: 'Contracted Rate', key: 'Contracted Rate' },
+        { header: 'Trade Date', key: 'Trade Date' },
+        { header: 'Settlement Date', key: 'Settlement Date' },
+        { header: 'Counterparty', key: 'Counterparty' },
+        { header: 'Reference', key: 'Reference' },
+      ]
+      ws.addRows(positions.map(p => ({
+        'Instrument': p.instrument_type,
         'Currency Pair': p.currency_pair,
-        Direction: p.direction,
+        'Direction': p.direction,
         'Notional (Base)': p.notional_base,
         'Contracted Rate': p.contracted_rate,
         'Trade Date': formatDate(p.trade_date),
         'Settlement Date': formatDate(p.value_date),
-        Counterparty: p.counterparty_bank ?? '',
-        Reference: p.reference_number ?? '',
-      }))
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Hedge Positions')
+        'Counterparty': p.counterparty_bank ?? '',
+        'Reference': p.reference_number ?? '',
+      })))
     }
 
     if (type === 'coverage_report' || type === 'board_pack') {
-      const rows = coverage.map(c => ({
+      const ws = wb.addWorksheet('Coverage Analysis')
+      ws.columns = [
+        { header: 'Currency Pair', key: 'Currency Pair' },
+        { header: 'Net Exposure', key: 'Net Exposure' },
+        { header: 'Total Hedged', key: 'Total Hedged' },
+        { header: 'Unhedged Amount', key: 'Unhedged Amount' },
+        { header: 'Coverage %', key: 'Coverage %' },
+        { header: 'Status', key: 'Status' },
+        { header: 'Policy Min %', key: 'Policy Min %' },
+        { header: 'Policy Max %', key: 'Policy Max %' },
+      ]
+      ws.addRows(coverage.map(c => ({
         'Currency Pair': c.currency_pair,
         'Net Exposure': c.net_exposure,
         'Total Hedged': c.total_hedged,
         'Unhedged Amount': c.unhedged_amount,
         'Coverage %': `${c.coverage_pct.toFixed(1)}%`,
-        Status: COVERAGE_LABELS[getCoverageStatus(c.coverage_pct, policy)],
+        'Status': COVERAGE_LABELS[getCoverageStatus(c.coverage_pct, policy)],
         'Policy Min %': policy?.min_coverage_pct ?? '',
         'Policy Max %': policy?.max_coverage_pct ?? '',
-      }))
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Coverage Analysis')
+      })))
     }
 
     const filename = `Quova_${type}_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(wb, filename)
+    const buffer = await wb.xlsx.writeBuffer()
+    saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename)
   }
 
   async function generatePdf(type: ReportType) {
