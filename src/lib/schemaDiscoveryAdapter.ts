@@ -5,18 +5,115 @@
 //   1. BrowserLlmClient — LlmClient for browser-side Anthropic API calls
 //   2. discoveryReportToAIResult — converts DiscoveryReport → AIDiscoveryResult
 //   3. erpTypeToProfile — maps ERPType → ErpProfile
+//
+// All imports from schema-discovery are dynamic with try/catch so the build
+// succeeds on Vercel where the package isn't available.
 // =============================================================================
 
-import type { LlmClient, DiscoveryReport } from 'schema-discovery/src/discovery/orchestrator'
-import type { ErpProfile } from 'schema-discovery/src/knowledge/erp-profiles/types'
-import { SAP_S4HANA_PROFILE } from 'schema-discovery/src/knowledge/erp-profiles/sap-s4hana'
-import type { ColumnReconciliation } from 'schema-discovery/src/types/reconciliation'
 import type {
   ERPType,
   AIDiscoveryResult,
   ReconciliationSignalSummary,
   OnboardingHumanReviewItem,
 } from '@/types'
+
+// ── Inline type definitions (mirrored from schema-discovery) ─────────────────
+// Duplicated here so orbit-mvp can build standalone.
+
+export interface LlmClient {
+  complete(params: {
+    systemPrompt: string
+    userPrompt: string
+    modelId: string
+    temperature?: number
+  }): Promise<{ text: string; modelId: string }>
+}
+
+export interface ErpProfile {
+  erpType: string
+  displayName: string
+  fieldNamingConventions: Record<string, string>
+  commonTableNames: string[]
+  dataTypeMap: Record<string, string>
+}
+
+/** Minimal shape of DiscoveryReport we consume */
+export interface DiscoveryReport {
+  reportId: string
+  timestamp: string
+  timing: { proposalAMs: number; proposalBMs: number; totalMs: number }
+  proposalA: { tableMappings: unknown[] }
+  proposalB: { tableMappings: unknown[] }
+  reconciled: {
+    summary: {
+      totalTablesAnalyzed: number
+      overallAgreementRate: number
+      overallConfidence: number
+      columnsWithConsensus: number
+      columnsWithConflict: number
+      columnsRequiringHumanReview: number
+    }
+    tables: Array<{
+      sourceTable: string
+      columns: Array<{
+        sourceColumn: string
+        acceptedMapping: { orbitField: string; evidenceSamples?: string[]; confidence?: number } | null
+        finalConfidence: number
+        reconciliationReasoning: string
+        verdict: string
+        requiresHumanReview: boolean
+        signals: Array<{ type: string; weight: number; description: string }>
+        humanReviewPrompt?: string
+        proposalA?: { orbitField: string; confidence: number } | null
+        proposalB?: { orbitField: string; confidence: number } | null
+      }>
+    }>
+    humanReviewQueue: Array<{
+      priority: 'critical' | 'high' | 'medium' | 'low'
+      sourceTable: string
+      sourceColumn: string
+      question: string
+      options: Array<{ label: string; description: string; proposedBy: 'A' | 'B' | 'both' | 'system' }>
+      context: string
+    }>
+  }
+}
+
+interface ColumnReconciliation {
+  verdict: string
+  finalConfidence: number
+}
+
+// ── SAP S/4HANA Profile (inline) ─────────────────────────────────────────────
+
+const SAP_S4HANA_PROFILE: ErpProfile = {
+  erpType: 'sap_s4hana',
+  displayName: 'SAP S/4HANA',
+  fieldNamingConventions: {
+    WRBTR: 'Document currency amount',
+    DMBTR: 'Local currency amount',
+    WAERS: 'Document currency',
+    HWAER: 'Local currency',
+    BUKRS: 'Company code',
+    BELNR: 'Document number',
+    GJAHR: 'Fiscal year',
+    BUDAT: 'Posting date',
+    BLDAT: 'Document date',
+    LIFNR: 'Vendor number',
+    KUNNR: 'Customer number',
+    NETWR: 'Net value',
+    EBELN: 'Purchase order number',
+    VBELN: 'Sales document number',
+  },
+  commonTableNames: ['BSEG', 'BKPF', 'EKKO', 'EKPO', 'VBRK', 'VBRP', 'T001', 'TCURR', 'LFA1', 'KNA1'],
+  dataTypeMap: {
+    CURR: 'DECIMAL',
+    CUKY: 'VARCHAR(3)',
+    DATS: 'DATE',
+    NUMC: 'INTEGER',
+    CHAR: 'VARCHAR',
+  },
+}
 
 // ── BrowserLlmClient ─────────────────────────────────────────────────────────
 
@@ -160,19 +257,12 @@ export function discoveryReportToAIResult(report: DiscoveryReport): AIDiscoveryR
  * simplified type used by the onboarding UI.
  */
 export function extractHumanReviewQueue(report: DiscoveryReport): OnboardingHumanReviewItem[] {
-  return report.reconciled.humanReviewQueue.map((item: {
-    priority: 'critical' | 'high' | 'medium' | 'low'
-    sourceTable: string
-    sourceColumn: string
-    question: string
-    options: Array<{ label: string; description: string; proposedBy: 'A' | 'B' | 'both' | 'system' }>
-    context: string
-  }) => ({
+  return report.reconciled.humanReviewQueue.map((item) => ({
     priority: item.priority,
     sourceTable: item.sourceTable,
     sourceColumn: item.sourceColumn,
     question: item.question,
-    options: item.options.map((o: { label: string; description: string; proposedBy: 'A' | 'B' | 'both' | 'system' }) => ({
+    options: item.options.map((o) => ({
       label: o.label,
       description: o.description,
       proposedBy: o.proposedBy,
@@ -196,6 +286,19 @@ export function erpTypeToProfile(erpType: ERPType): ErpProfile | undefined {
     // Future: add Oracle, NetSuite, etc. profiles as they're built
     default:
       return undefined
+  }
+}
+
+/**
+ * Dynamically loads the DiscoveryOrchestrator from the schema-discovery package.
+ * Returns null if the package isn't available (Vercel build without the monorepo).
+ */
+export async function loadDiscoveryOrchestrator(): Promise<{ DiscoveryOrchestrator: unknown } | null> {
+  try {
+    return await import(/* @vite-ignore */ 'schema-discovery/src/discovery/orchestrator')
+  } catch {
+    console.warn('[schemaDiscoveryAdapter] schema-discovery package not available — ERP discovery will use fallback')
+    return null
   }
 }
 

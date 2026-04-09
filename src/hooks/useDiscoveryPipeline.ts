@@ -272,9 +272,14 @@ async function runErpDiscovery(
   }
 
   // Lazy-import the heavy modules
-  const { BrowserLlmClient, discoveryReportToAIResult, erpTypeToProfile, extractHumanReviewQueue } =
+  const { BrowserLlmClient, discoveryReportToAIResult, erpTypeToProfile, extractHumanReviewQueue, loadDiscoveryOrchestrator } =
     await import('@/lib/schemaDiscoveryAdapter')
-  const { DiscoveryOrchestrator } = await import('schema-discovery/src/discovery/orchestrator')
+
+  const orchestratorModule = await loadDiscoveryOrchestrator()
+  if (!orchestratorModule) {
+    throw new Error('Schema discovery package is not available. ERP discovery requires the schema-discovery package.')
+  }
+  const { DiscoveryOrchestrator } = orchestratorModule as { DiscoveryOrchestrator: new (...args: unknown[]) => { run: (schema: unknown) => Promise<unknown> } }
 
   const llmClient = new BrowserLlmClient()
   const erpProfile = erpTypeToProfile(erpType)
@@ -299,7 +304,8 @@ async function runErpDiscovery(
   addEvent(mkEvent('analysis_a', 'running', 'Model A analysing column mappings…'))
   addEvent(mkEvent('analysis_b', 'running', 'Model B analysing column mappings (independent pass)…'))
 
-  const report = await orchestrator.run(schemaMetadata)
+  type DiscoveryReport = import('@/lib/schemaDiscoveryAdapter').DiscoveryReport
+  const report = await orchestrator.run(schemaMetadata) as DiscoveryReport
 
   // Update events based on actual results
   addEvent(mkEvent('analysis_a', 'completed',
