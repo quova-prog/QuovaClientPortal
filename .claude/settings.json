@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "lsof -i :5173 -sTCP:LISTEN -t >/dev/null 2>&1 && exit 0; printf '{\"continue\":false,\"stopReason\":\"[Preview Required] Code was edited but no dev server is running. Install dependencies if needed, call preview_start, then follow <verification_workflow>.\"}'; exit 1",
+            "statusMessage": "Checking dev server..."
+          }
+        ]
+      }
+    ]
+  }
+}

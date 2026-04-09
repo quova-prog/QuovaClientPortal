@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Orbit MVP – Dev",
+      "runtimeExecutable": "/Users/stevenlabella/.nvm/versions/node/v20.18.3/bin/node",
+      "runtimeArgs": [
+        "/Users/stevenlabella/Git/orbit-mvp/node_modules/vite/bin/vite.js",
+        "--root", "/Users/stevenlabella/Git/orbit-mvp",
+        "--port", "5175"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "Orbit FX Diagnostic",
+      "runtimeExecutable": "/Users/stevenlabella/.nvm/versions/node/v20.18.3/bin/node",
+      "runtimeArgs": [
+        "/Users/stevenlabella/Git/orbit-fx-diagnostic/node_modules/vite/bin/vite.js",
+        "--root", "/Users/stevenlabella/Git/orbit-fx-diagnostic",
+        "--port", "5176"
+      ],
+      "port": 5176
+    },
+    {
+      "name": "Orbit MVP – Preview",
+      "runtimeExecutable": "/Users/stevenlabella/.nvm/versions/node/v20.18.3/bin/node",
+      "runtimeArgs": [
+        "/Users/stevenlabella/Git/orbit-mvp/node_modules/vite/bin/vite.js",
+        "preview",
+        "--root", "/Users/stevenlabella/Git/orbit-mvp"
+      ],
+      "port": 4173
+    }
+  ]
+}

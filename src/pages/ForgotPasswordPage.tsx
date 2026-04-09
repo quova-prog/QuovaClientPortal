@@ -82,11 +82,7 @@ export function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div style={{
-                background: '#ef444415', border: '1px solid #ef444430',
-                borderRadius: 'var(--r-sm)', padding: '0.625rem 0.875rem',
-                fontSize: '0.875rem', color: 'var(--red)',
-              }}>
+              <div className="error-banner">
                 {error}
               </div>
             )}

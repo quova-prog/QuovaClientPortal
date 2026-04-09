@@ -1,0 +1,25 @@
+flow_date,currency,amount,flow_type,category,entity,account,counterparty,description,confidence
+2026-04-01,EUR,4200000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,EU enterprise clients,Q1 2026 enterprise licence receipts,confirmed
+2026-04-03,USD,-312000,outflow,FX Settlement,Orbit Technologies Inc,USD-HQ-001,JP Morgan,Forward contract settlement Apr 2026,confirmed
+2026-04-05,GBP,1820000,inflow,Operations,Orbit UK Ltd,GBP-LON-001,HSBC UK,UK SaaS subscription renewal batch Q2,confirmed
+2026-04-07,EUR,-78500,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Solvay SA,Polymer compounds payment PO-2026-0003,confirmed
+2026-04-10,JPY,-58000000,outflow,Operations,Orbit Japan KK,JPY-TYO-001,Nippon Steel,Steel coils payment Q2 PO-2026-0002,confirmed
+2026-04-15,CHF,910000,inflow,Operations,Orbit Switzerland AG,CHF-ZRH-001,Swiss enterprise clients,Switzerland Q1 enterprise receipts,forecast
+2026-04-20,EUR,-312000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Bosch GmbH,Equipment payment PO-2026-0001,confirmed
+2026-04-22,AUD,2550000,inflow,Operations,Orbit Australia Pty,AUD-SYD-001,ANZ Bank clients,Australia Q1 direct sales receipts,forecast
+2026-04-25,USD,-195000,outflow,Financing,Orbit Technologies Inc,USD-HQ-001,Goldman Sachs,Loan interest payment Apr 2026,confirmed
+2026-04-28,CAD,1480000,inflow,Operations,Orbit Canada Inc,CAD-TOR-001,RBC clients,Canada Q1 enterprise direct sales,forecast
+2026-04-30,GBP,-490000,outflow,Operations,Orbit UK Ltd,GBP-LON-001,BAE Systems,Defence components PO-2026-0004,confirmed
+2026-05-01,EUR,4600000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,EU customers,Q2 2026 enterprise licence receipts,forecast
+2026-05-05,USD,10800000,inflow,Operations,Orbit Technologies Inc,USD-HQ-001,US enterprise clients,US Q1 2026 bookings settlement,forecast
+2026-05-15,AUD,-920000,outflow,Operations,Orbit Australia Pty,AUD-SYD-001,BHP Group,Mining supplies PO-2026-0011,forecast
+2026-05-20,EUR,-680000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,ThyssenKrupp,Structural steel PO-2026-0007,forecast
+2026-05-28,CNY,-4100000,outflow,Operations,Orbit Hong Kong Ltd,CNY-HKG-001,Pegatron Corp,Assembly batch 4 PO-2026-0009,forecast
+2026-05-31,USD,-2700000,outflow,Financing,Orbit Technologies Inc,USD-HQ-001,Goldman Sachs,Quarterly loan principal repayment,confirmed
+2026-06-01,EUR,-52000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Vodafone GmbH,Managed connectivity Q2 invoice,indicative
+2026-06-10,GBP,1950000,inflow,Operations,Orbit UK Ltd,GBP-LON-001,UK clients,UK Q2 2026 SaaS renewals,forecast
+2026-06-30,EUR,670000,inflow,Services,Orbit Technologies GmbH,EUR-OPS-001,Various,Professional services billings Q2 2026,indicative
+2026-07-01,JPY,220000000,inflow,Operations,Orbit Japan KK,JPY-TYO-001,Japan enterprise clients,Japan Q2 2026 contract receipts,indicative
+2026-07-15,EUR,-267000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Schneider Electric,Energy hardware PO-2026-0013,indicative
+2026-07-31,CAD,-415000,outflow,Operations,Orbit Canada Inc,CAD-TOR-001,CAE Inc,Simulation systems PO-2026-0015,indicative
+2026-09-30,EUR,5300000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,EU customers,Q4 2026 enterprise licence forecast,indicative

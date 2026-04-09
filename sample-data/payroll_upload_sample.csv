@@ -1,0 +1,13 @@
+pay_date,currency,gross_amount,net_amount,employee_count,entity,department,pay_period,description
+2026-01-30,USD,2145000,1608750,48,Orbit Technologies Inc,All Departments,January 2026,US monthly payroll
+2026-01-30,EUR,1040000,780000,29,Orbit Technologies GmbH,All Departments,January 2026,Germany monthly payroll
+2026-01-30,GBP,745000,558750,20,Orbit UK Ltd,All Departments,January 2026,UK monthly payroll
+2026-01-30,CAD,455000,341250,11,Orbit Canada Inc,Engineering,January 2026,Canada engineering payroll
+2026-02-27,USD,2160000,1620000,49,Orbit Technologies Inc,All Departments,February 2026,US monthly payroll
+2026-02-27,EUR,1055000,791250,29,Orbit Technologies GmbH,All Departments,February 2026,Germany monthly payroll
+2026-02-27,GBP,752000,564000,20,Orbit UK Ltd,All Departments,February 2026,UK monthly payroll
+2026-02-27,AUD,398000,298500,9,Orbit Australia Pty,Sales & Marketing,February 2026,Australia sales payroll
+2026-03-31,USD,2190000,1642500,50,Orbit Technologies Inc,All Departments,March 2026,US monthly payroll with one new hire
+2026-03-31,EUR,1062500,796875,30,Orbit Technologies GmbH,All Departments,March 2026,Germany monthly payroll
+2026-03-31,JPY,41200000,30900000,13,Orbit Japan KK,All Departments,March 2026,Japan monthly payroll
+2026-03-31,CHF,338000,253500,7,Orbit Switzerland AG,Finance & Operations,March 2026,Switzerland office payroll

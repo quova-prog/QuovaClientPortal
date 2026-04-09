@@ -1,0 +1,16 @@
+supplier_name,currency,contract_value,start_date,end_date,payment_frequency,next_payment_date,payment_amount,category,status,description
+Siemens AG,EUR,1140000,2024-01-01,2026-12-31,quarterly,2025-04-01,285000,Equipment,active,Industrial automation supply agreement — 3 year
+BASF SE,EUR,376000,2024-07-01,2026-06-30,quarterly,2025-07-01,94000,Raw Materials,active,Specialty chemicals supply contract
+Rolls-Royce plc,GBP,1640000,2024-04-01,2027-03-31,quarterly,2025-04-25,410000,Equipment,active,Precision engineering components — 3 year
+Deutsche Telekom,EUR,456000,2025-01-01,2027-12-31,monthly,2025-04-10,38000,Services,active,Network & connectivity services contract
+Toyota Tsusho,JPY,168000000,2025-01-01,2025-12-31,quarterly,2025-04-30,42000000,Raw Materials,active,Annual steel & aluminium procurement
+Foxconn,CNY,19200000,2024-10-01,2026-09-30,quarterly,2025-07-01,3200000,Manufacturing,active,Contract manufacturing agreement
+Rio Tinto,AUD,3120000,2024-06-01,2027-05-31,quarterly,2025-05-15,780000,Raw Materials,active,Mining supplies and consumables — 3 year
+ABB Ltd,CHF,840000,2025-01-01,2026-12-31,quarterly,2025-06-20,210000,Equipment,active,Power distribution hardware supply
+Michelin,EUR,500000,2024-04-01,2025-12-31,quarterly,2025-05-30,125000,Components,active,Industrial rubber and sealing components
+Tata Consultancy,INR,74000000,2025-01-01,2025-12-31,quarterly,2025-04-01,18500000,Services,active,IT support and managed services
+Bombardier Inc,CAD,1360000,2024-10-01,2026-09-30,quarterly,2025-07-15,340000,Equipment,active,Transportation system components
+SAP SE,EUR,280000,2025-01-01,2027-12-31,annual,2026-01-15,280000,Technology,active,Enterprise software licensing — annual renewal
+AWS,USD,960000,2025-01-01,2025-12-31,monthly,2025-04-30,80000,Technology,active,Cloud infrastructure services
+Cushman & Wakefield,GBP,480000,2025-01-01,2025-12-31,quarterly,2025-06-30,120000,Facilities,active,UK facilities management services
+DHL Supply Chain,EUR,360000,2024-06-01,2025-05-31,monthly,2025-04-15,30000,Logistics,expiring,European logistics and warehousing — up for renewal

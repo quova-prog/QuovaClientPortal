@@ -17,9 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "schema-discovery/*": ["../packages/schema-discovery/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "../packages/schema-discovery/src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

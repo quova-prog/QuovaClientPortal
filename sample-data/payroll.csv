@@ -1,0 +1,20 @@
+pay_date,currency,gross_amount,net_amount,employee_count,entity,department,pay_period,description
+2025-04-25,USD,1850000,1387500,42,Orbit Technologies Inc,All Departments,April 2025,US monthly payroll — all staff
+2025-04-25,GBP,680000,510000,18,Orbit UK Ltd,All Departments,April 2025,UK monthly payroll — all staff
+2025-04-25,EUR,920000,690000,27,Orbit Technologies GmbH,All Departments,April 2025,Germany monthly payroll — all staff
+2025-04-25,JPY,38000000,28500000,12,Orbit Japan KK,All Departments,April 2025,Japan monthly payroll — all staff
+2025-04-25,CAD,420000,315000,10,Orbit Canada Inc,Engineering,April 2025,Canada engineering team payroll
+2025-04-25,AUD,360000,270000,8,Orbit Australia Pty,Sales & Marketing,April 2025,Australia sales team payroll
+2025-04-25,CHF,310000,232500,6,Orbit Switzerland AG,Finance & Operations,April 2025,Switzerland office payroll
+2025-05-25,USD,1850000,1387500,42,Orbit Technologies Inc,All Departments,May 2025,US monthly payroll — all staff
+2025-05-25,GBP,680000,510000,18,Orbit UK Ltd,All Departments,May 2025,UK monthly payroll — all staff
+2025-05-25,EUR,935000,701250,27,Orbit Technologies GmbH,All Departments,May 2025,Germany monthly payroll — 1.6% merit increases effective May
+2025-05-25,JPY,38000000,28500000,12,Orbit Japan KK,All Departments,May 2025,Japan monthly payroll — all staff
+2025-05-25,CAD,420000,315000,10,Orbit Canada Inc,Engineering,May 2025,Canada engineering team payroll
+2025-06-25,USD,1920000,1440000,44,Orbit Technologies Inc,All Departments,June 2025,US payroll — 2 new hires in engineering
+2025-06-25,GBP,680000,510000,18,Orbit UK Ltd,All Departments,June 2025,UK monthly payroll — all staff
+2025-06-25,EUR,935000,701250,27,Orbit Technologies GmbH,All Departments,June 2025,Germany monthly payroll — all staff
+2025-06-25,AUD,375000,281250,9,Orbit Australia Pty,Sales & Marketing,June 2025,Australia sales team — 1 new hire
+2025-07-25,USD,1920000,1440000,44,Orbit Technologies Inc,All Departments,July 2025,US monthly payroll forecast
+2025-07-25,GBP,695000,521250,19,Orbit UK Ltd,All Departments,July 2025,UK payroll — 1 planned hire in product
+2025-07-25,EUR,935000,701250,27,Orbit Technologies GmbH,All Departments,July 2025,Germany monthly payroll forecast

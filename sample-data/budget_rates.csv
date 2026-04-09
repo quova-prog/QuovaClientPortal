@@ -1,0 +1,21 @@
+currency_pair,budget_rate,fiscal_year,period,notional_budget,description
+EUR/USD,1.0850,2025,Q1,4500000,European sales receipts Q1
+EUR/USD,1.0900,2025,Q2,4200000,European sales receipts Q2
+EUR/USD,1.0750,2025,Q3,3800000,European sales receipts Q3
+EUR/USD,1.0800,2025,Q4,4100000,European sales receipts Q4
+GBP/USD,1.2600,2025,Q1,2100000,UK operations budget Q1
+GBP/USD,1.2700,2025,Q2,1950000,UK operations budget Q2
+GBP/USD,1.2550,2025,Q3,2300000,UK operations budget Q3
+GBP/USD,1.2650,2025,Q4,2000000,UK operations budget Q4
+USD/CAD,1.3550,2025,Q1,1800000,Canada procurement Q1
+USD/CAD,1.3600,2025,Q2,1700000,Canada procurement Q2
+USD/CAD,1.3500,2025,Q3,1900000,Canada procurement Q3
+USD/CAD,1.3650,2025,Q4,1750000,Canada procurement Q4
+EUR/GBP,0.8600,2025,Q1,900000,EU-UK interco transfers Q1
+EUR/GBP,0.8550,2025,Q2,850000,EU-UK interco transfers Q2
+JPY/USD,0.0068,2025,Q1,5200000,Japan supplier payments Q1
+JPY/USD,0.0067,2025,Q2,4900000,Japan supplier payments Q2
+AUD/USD,0.6500,2025,Q1,1100000,Australia revenue Q1
+AUD/USD,0.6550,2025,Q2,1050000,Australia revenue Q2
+CHF/EUR,0.9200,2025,Q1,750000,Switzerland office costs Q1
+CNY/USD,0.1400,2025,Q1,3200000,China manufacturing payments Q1

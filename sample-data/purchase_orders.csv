@@ -1,0 +1,16 @@
+po_number,supplier,currency,amount,due_date,issue_date,category,status,description
+PO-2025-0001,Siemens AG,EUR,285000,2025-04-15,2025-01-20,Equipment,open,Industrial automation components
+PO-2025-0002,Toyota Tsusho,JPY,42000000,2025-04-30,2025-01-25,Raw Materials,open,Steel and aluminium stock Q2
+PO-2025-0003,BASF SE,EUR,94000,2025-05-10,2025-02-01,Chemicals,open,Specialty chemical compounds
+PO-2025-0004,Rolls-Royce plc,GBP,410000,2025-05-20,2025-02-05,Equipment,approved,Precision engineering parts
+PO-2025-0005,Samsung Electronics,KRW,95000000,2025-03-31,2025-01-10,Technology,received,Display panels and semiconductors
+PO-2025-0006,Nestlé SA,CHF,67000,2025-06-01,2025-02-10,Consumables,open,Packaging materials Switzerland
+PO-2025-0007,ArcelorMittal,EUR,520000,2025-06-15,2025-02-15,Raw Materials,open,Structural steel Q2-Q3
+PO-2025-0008,Tata Consultancy,INR,18500000,2025-04-01,2025-01-15,Services,approved,IT support services contract
+PO-2025-0009,Foxconn,CNY,3200000,2025-07-01,2025-02-20,Manufacturing,open,Contract manufacturing batch 7
+PO-2025-0010,Deutsche Telekom,EUR,38000,2025-04-10,2025-02-01,Services,open,Network infrastructure services
+PO-2025-0011,Rio Tinto,AUD,780000,2025-05-15,2025-02-08,Raw Materials,open,Mining supplies and consumables
+PO-2025-0012,Michelin,EUR,125000,2025-05-30,2025-02-12,Components,open,Industrial rubber components
+PO-2025-0013,ABB Ltd,CHF,210000,2025-06-20,2025-02-18,Equipment,approved,Power distribution hardware
+PO-2025-0014,Inditex SA,EUR,67500,2025-04-25,2025-01-30,Logistics,open,Distribution logistics Europe
+PO-2025-0015,Bombardier Inc,CAD,340000,2025-07-15,2025-02-22,Equipment,open,Transportation components

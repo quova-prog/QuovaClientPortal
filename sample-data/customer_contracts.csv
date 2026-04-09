@@ -1,0 +1,17 @@
+customer_name,currency,contract_value,start_date,end_date,payment_frequency,next_payment_date,payment_amount,segment,region,status,description
+Volkswagen Group,EUR,1540000,2024-04-01,2027-03-31,quarterly,2025-04-01,385000,Enterprise,EMEA,active,Enterprise platform licence — 3 year
+Deutsche Bank AG,EUR,980000,2025-01-01,2026-12-31,quarterly,2025-04-01,245000,Enterprise,EMEA,active,Financial services analytics suite
+Unilever plc,GBP,720000,2024-07-01,2026-06-30,quarterly,2025-07-01,180000,Enterprise,UK,active,Supply chain visibility platform
+BP plc,GBP,540000,2025-01-01,2025-12-31,quarterly,2025-04-15,135000,Enterprise,UK,active,Energy trading analytics — annual
+Sony Corporation,JPY,320000000,2024-10-01,2026-09-30,quarterly,2025-04-25,80000000,Enterprise,APAC,active,Japan enterprise SaaS platform
+Toyota Motor Corp,JPY,480000000,2025-01-01,2027-12-31,annual,2026-01-01,480000000,Enterprise,APAC,active,Manufacturing intelligence suite — 3 year
+Commonwealth Bank,AUD,1680000,2024-06-01,2027-05-31,quarterly,2025-06-01,420000,Enterprise,APAC,active,Financial analytics platform
+Telstra Corp,AUD,440000,2025-01-01,2025-12-31,quarterly,2025-04-30,110000,SMB,APAC,active,Telco operations platform — annual
+Royal Bank of Canada,CAD,960000,2024-10-01,2026-09-30,quarterly,2025-04-30,240000,Enterprise,North America,active,Banking analytics suite
+Suncor Energy,CAD,380000,2025-01-01,2025-12-31,quarterly,2025-06-30,95000,SMB,North America,active,Energy sector platform annual licence
+Nestlé SA,CHF,620000,2024-04-01,2026-03-31,semi-annual,2025-10-01,310000,Enterprise,EMEA,active,Global supply chain platform
+Credit Suisse Group,CHF,840000,2025-01-01,2027-12-31,annual,2026-01-15,840000,Enterprise,EMEA,active,Trading and risk management suite
+Airbus SE,EUR,1200000,2025-01-01,2027-12-31,quarterly,2025-04-01,300000,Enterprise,EMEA,active,Aerospace manufacturing analytics
+Heineken NV,EUR,480000,2024-07-01,2026-06-30,quarterly,2025-07-01,120000,SMB,EMEA,active,Supply chain and distribution platform
+Marks & Spencer,GBP,260000,2025-01-01,2025-12-31,quarterly,2025-04-30,65000,SMB,UK,active,Retail analytics — annual renewal
+Reckitt Benckiser,GBP,320000,2024-10-01,2026-09-30,quarterly,2025-04-30,80000,SMB,UK,active,Consumer goods operations platform

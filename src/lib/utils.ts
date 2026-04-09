@@ -1,4 +1,4 @@
-import type { CoverageStatus, CoverageWithStatus, HedgePolicy } from '@/types'
+import type { CoverageStatus, HedgePolicy } from '@/types'
 
 // ── Currency formatting ───────────────────────────────────
 
@@ -59,9 +59,14 @@ export function formatDateShort(dateStr: string): string {
 }
 
 export function daysUntil(dateStr: string): number {
-  const target = new Date(dateStr)
+  // Parse date-only strings as UTC to avoid browser-dependent timezone behavior
+  const parts = dateStr.split('-')
+  const target = parts.length === 3
+    ? new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])))
+    : new Date(dateStr)
   const now = new Date()
-  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  const nowUtcMidnight = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+  return Math.ceil((target.getTime() - nowUtcMidnight.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 // ── Coverage logic ────────────────────────────────────────
@@ -70,10 +75,7 @@ export function getCoverageStatus(
   coveragePct: number,
   policy: HedgePolicy | null
 ): CoverageStatus {
-  if (!policy) {
-    if (coveragePct === 0) return 'unhedged'
-    return 'compliant'
-  }
+  if (!policy) return 'unhedged'
   if (coveragePct === 0) return 'unhedged'
   if (coveragePct < policy.min_coverage_pct) return 'under_hedged'
   if (coveragePct > policy.max_coverage_pct) return 'over_hedged'

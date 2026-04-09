@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Shield, Trash2, Search, X } from 'lucide-react'
 import { useHedgePositions, useExposureSummary } from '@/hooks/useData'
 import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag } from '@/lib/utils'
@@ -8,10 +8,12 @@ const CURRENCY_PAIRS = ['EUR/USD','GBP/USD','USD/CAD','USD/JPY','AUD/USD','USD/C
 const INSTRUMENT_TYPES = [{ value: 'forward', label: 'Forward' },{ value: 'swap', label: 'FX Swap' },{ value: 'option', label: 'Option' },{ value: 'spot', label: 'Spot' }]
 const BANKS = ['JPMorgan Chase','Goldman Sachs','Citibank','BMO Capital Markets','TD Securities','RBC Capital Markets','HSBC','Barclays','Deutsche Bank','BNP Paribas','Other']
 
-const EMPTY: HedgePositionForm = {
-  instrument_type: 'forward', currency_pair: 'EUR/USD', direction: 'sell',
-  notional_base: 0, contracted_rate: 0, trade_date: new Date().toISOString().split('T')[0],
-  value_date: '', counterparty_bank: '', reference_number: '', notes: '',
+function freshForm(): HedgePositionForm {
+  return {
+    instrument_type: 'forward', currency_pair: 'EUR/USD', direction: 'sell',
+    notional_base: 0, contracted_rate: 0, trade_date: new Date().toISOString().split('T')[0],
+    value_date: '', counterparty_bank: '', reference_number: '', notes: '',
+  }
 }
 
 export function HedgesPage() {
@@ -19,7 +21,7 @@ export function HedgesPage() {
   const { summary } = useExposureSummary()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
-  const [form, setForm] = useState<HedgePositionForm>(EMPTY)
+  const [form, setForm] = useState<HedgePositionForm>(freshForm)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -32,14 +34,17 @@ export function HedgesPage() {
     setForm(f => ({ ...f, [k]: v }))
   }
 
-  const filtered = positions.filter(p =>
+  const filtered = useMemo(() => positions.filter(p =>
     !search || [p.currency_pair, p.counterparty_bank ?? '', p.reference_number ?? '']
       .some(s => s.toLowerCase().includes(search.toLowerCase()))
-  )
+  ), [positions, search])
 
-  const totalHedged = positions.reduce((s, p) => s + p.notional_base, 0)
-  const byPair: Record<string, number> = {}
-  positions.forEach(p => { byPair[p.currency_pair] = (byPair[p.currency_pair] ?? 0) + p.notional_base })
+  const totalHedged = useMemo(() => positions.reduce((s, p) => s + p.notional_base, 0), [positions])
+  const byPair = useMemo(() => {
+    const map: Record<string, number> = {}
+    positions.forEach(p => { map[p.currency_pair] = (map[p.currency_pair] ?? 0) + p.notional_base })
+    return map
+  }, [positions])
 
   async function handleSubmit() {
     setFormError('')
@@ -53,10 +58,10 @@ export function HedgesPage() {
     const { error } = await addPosition({ ...form, base_currency: base, quote_currency: quote, notional_usd: null, status: 'active' } as any)
     setSubmitting(false)
     if (error) { setFormError(error); return }
-    setShowForm(false); setForm(EMPTY); setStep('entry')
+    setShowForm(false); setForm(freshForm()); setStep('entry')
   }
 
-  function openForm() { setShowForm(true); setStep('entry'); setForm(EMPTY); setFormError('') }
+  function openForm() { setShowForm(true); setStep('entry'); setForm(freshForm()); setFormError('') }
   function closeForm() { setShowForm(false); setStep('entry'); setFormError('') }
 
   return (
@@ -170,7 +175,7 @@ export function HedgesPage() {
                       <td>
                         {confirmDeleteId === p.id ? (
                           <div style={{ display: 'flex', gap: '0.25rem' }}>
-                            <button className="btn btn-danger btn-sm" onClick={() => { deletePosition(p.id); setConfirmDeleteId(null) }}>Cancel</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => { deletePosition(p.id); setConfirmDeleteId(null) }}>Delete</button>
                             <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDeleteId(null)}>Keep</button>
                           </div>
                         ) : (
@@ -342,7 +347,7 @@ export function HedgesPage() {
             )}
 
             {formError && (
-              <div style={{ marginTop: '0.75rem', background: '#ef444415', border: '1px solid #ef444430', borderRadius: 'var(--r-sm)', padding: '0.625rem 0.875rem', fontSize: '0.875rem', color: 'var(--red)' }}>{formError}</div>
+              <div className="error-banner" style={{ marginTop: '0.75rem' }}>{formError}</div>
             )}
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>

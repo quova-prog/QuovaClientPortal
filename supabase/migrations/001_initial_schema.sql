@@ -11,10 +11,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Multi-tenant: all data is scoped to org_id.
 
 CREATE TABLE organisations (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT NOT NULL,
   domain      TEXT,                          -- e.g. celonis.com
-  plan        TEXT NOT NULL DEFAULT 'trial', -- trial | starter | growth
+  plan        TEXT NOT NULL DEFAULT 'exposure' CHECK (plan IN ('exposure', 'pro', 'enterprise')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -35,7 +35,7 @@ CREATE TABLE profiles (
 -- One policy per org. Defines hedging rules.
 
 CREATE TABLE hedge_policies (
-  id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id                UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   name                  TEXT NOT NULL DEFAULT 'Default Policy',
   min_coverage_pct      NUMERIC(5,2) NOT NULL DEFAULT 60.0,  -- e.g. 60%
@@ -53,7 +53,7 @@ CREATE TABLE hedge_policies (
 -- Each row = one open FX exposure (AR or AP item).
 
 CREATE TABLE fx_exposures (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id            UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   upload_batch_id   UUID,                          -- links rows from same CSV upload
   entity            TEXT NOT NULL,                 -- e.g. "Celonis SE", "Celonis Inc"
@@ -75,7 +75,7 @@ CREATE TABLE fx_exposures (
 -- Tracks each CSV file upload for audit purposes.
 
 CREATE TABLE upload_batches (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id        UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   uploaded_by   UUID REFERENCES profiles(id),
   filename      TEXT NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE upload_batches (
 -- Manually entered FX forward/swap positions.
 
 CREATE TABLE hedge_positions (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id            UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   created_by        UUID REFERENCES profiles(id),
   instrument_type   TEXT NOT NULL CHECK (instrument_type IN ('forward', 'swap', 'option', 'spot')),
@@ -115,7 +115,7 @@ CREATE TABLE hedge_positions (
 -- Spot rates for USD conversion. Updated manually or via API later.
 
 CREATE TABLE fx_rates (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   currency_pair TEXT NOT NULL,           -- e.g. "EUR/USD"
   rate          NUMERIC(20,8) NOT NULL,
   rate_date     DATE NOT NULL,
@@ -146,23 +146,29 @@ WHERE e.status = 'open'
 GROUP BY e.org_id, e.currency_pair, e.base_currency, e.quote_currency;
 
 -- Hedge coverage by currency pair (for coverage analysis)
+-- Net hedged = sell notional − buy notional (sell hedges offset receivable exposure,
+-- buy hedges offset payable exposure). We take the absolute net to compare against
+-- absolute net exposure for coverage percentage.
 CREATE VIEW v_hedge_coverage AS
 SELECT
   es.org_id,
   es.currency_pair,
   es.net_exposure,
-  COALESCE(hp.total_hedged, 0) AS total_hedged,
+  COALESCE(hp.net_hedged, 0) AS total_hedged,
   CASE
     WHEN ABS(es.net_exposure) = 0 THEN 100.0
-    ELSE ROUND((COALESCE(hp.total_hedged, 0) / NULLIF(ABS(es.net_exposure), 0)) * 100, 2)
+    ELSE ROUND((COALESCE(hp.net_hedged, 0) / NULLIF(ABS(es.net_exposure), 0)) * 100, 2)
   END AS coverage_pct,
-  ABS(es.net_exposure) - COALESCE(hp.total_hedged, 0) AS unhedged_amount
+  ABS(es.net_exposure) - COALESCE(hp.net_hedged, 0) AS unhedged_amount
 FROM v_exposure_summary es
 LEFT JOIN (
   SELECT
     org_id,
     currency_pair,
-    SUM(notional_base) AS total_hedged
+    ABS(
+      SUM(CASE WHEN direction = 'sell' THEN notional_base ELSE 0 END) -
+      SUM(CASE WHEN direction = 'buy'  THEN notional_base ELSE 0 END)
+    ) AS net_hedged
   FROM hedge_positions
   WHERE status = 'active'
   GROUP BY org_id, currency_pair
@@ -204,8 +210,35 @@ CREATE POLICY "org_isolation" ON upload_batches
 CREATE POLICY "org_isolation" ON hedge_positions
   FOR ALL USING (org_id = current_user_org_id());
 
-CREATE POLICY "org_isolation" ON fx_rates
-  FOR ALL USING (TRUE); -- rates are global/public
+CREATE POLICY "rates_read" ON fx_rates
+  FOR SELECT USING (TRUE); -- rates are global/public for reads
+
+CREATE POLICY "rates_write" ON fx_rates
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+CREATE POLICY "rates_update" ON fx_rates
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+CREATE POLICY "rates_delete" ON fx_rates
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- ── UPDATED_AT TRIGGER ────────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_organisations_updated_at BEFORE UPDATE ON organisations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_hedge_policies_updated_at BEFORE UPDATE ON hedge_policies FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_fx_exposures_updated_at BEFORE UPDATE ON fx_exposures FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_hedge_positions_updated_at BEFORE UPDATE ON hedge_positions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ── INDEXES ────────────────────────────────────────────────
 CREATE INDEX idx_fx_exposures_org_currency  ON fx_exposures(org_id, currency_pair);
@@ -213,6 +246,10 @@ CREATE INDEX idx_fx_exposures_settlement    ON fx_exposures(settlement_date);
 CREATE INDEX idx_fx_exposures_status        ON fx_exposures(org_id, status);
 CREATE INDEX idx_hedge_positions_org        ON hedge_positions(org_id, status);
 CREATE INDEX idx_fx_rates_pair_date         ON fx_rates(currency_pair, rate_date DESC);
+CREATE INDEX idx_profiles_org              ON profiles(org_id);
+CREATE INDEX idx_upload_batches_org        ON upload_batches(org_id);
+CREATE INDEX idx_hedge_policies_org        ON hedge_policies(org_id);
+CREATE INDEX idx_hedge_positions_org_pair  ON hedge_positions(org_id, currency_pair) WHERE status = 'active';
 
 -- ── SEED: Common FX rates ───────────────────────────────────
 INSERT INTO fx_rates (currency_pair, rate, rate_date, source) VALUES

@@ -1,0 +1,13 @@
+project_name,currency,budget_amount,committed_amount,payment_date,category,entity,status,description
+Frankfurt Data Centre Upgrade,EUR,2400000,2400000,2025-05-30,Infrastructure,Orbit Technologies GmbH,committed,Primary DC hardware refresh and cooling upgrade
+London Office Fit-Out,GBP,1800000,1620000,2025-06-15,Facilities,Orbit UK Ltd,committed,Canary Wharf office expansion — 2 new floors
+US HQ Manufacturing Line,USD,5500000,3850000,2025-07-31,Equipment,Orbit Technologies Inc,in_progress,New automated assembly line installation
+Tokyo Office Expansion,JPY,380000000,380000000,2025-04-30,Facilities,Orbit Japan KK,committed,Shinjuku office additional floor lease & buildout
+Sydney Engineering Hub,AUD,1200000,840000,2025-08-15,Facilities,Orbit Australia Pty,approved,Sydney tech hub construction and setup
+Toronto R&D Lab,CAD,950000,0,2025-09-30,R&D,Orbit Canada Inc,approved,Advanced materials research laboratory
+Zurich Compliance Platform,CHF,680000,612000,2025-05-15,Technology,Orbit Switzerland AG,committed,Regulatory reporting platform implementation
+Berlin ERP Migration,EUR,1100000,880000,2025-10-31,Technology,Orbit Technologies GmbH,in_progress,SAP S/4HANA migration project
+Singapore APAC Hub,USD,3200000,0,2025-12-31,Facilities,Orbit Technologies Inc,planned,APAC regional hub — pending board approval
+Paris Sales Office,EUR,420000,0,2025-11-30,Facilities,Orbit Technologies GmbH,planned,Paris commercial team expansion space
+Manufacturing Robot Fleet,EUR,870000,870000,2025-04-20,Equipment,Orbit Technologies GmbH,committed,6 collaborative robot arms for production line
+Cloud Infrastructure Upgrade,USD,1500000,1350000,2025-06-30,Technology,Orbit Technologies Inc,in_progress,AWS multi-region DR and performance upgrade

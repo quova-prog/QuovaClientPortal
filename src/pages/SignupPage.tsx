@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
   const { signUp } = useAuth()
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   function set(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -17,9 +19,47 @@ export function SignupPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signUp(form.email, form.password, form.orgName, form.fullName)
-    if (error) setError(error)
-    setLoading(false)
+    try {
+      const { error, confirmationRequired } = await signUp(form.email, form.password, form.orgName, form.fullName)
+      if (error) setError(error)
+      else if (confirmationRequired) setConfirmationSent(true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (confirmationSent) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: 'var(--bg-app)', padding: '1rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%', background: 'var(--teal-dim)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1.25rem',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </div>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+            Check your inbox
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+            We sent a confirmation link to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>.
+            Click it to activate your account — your organisation will be set up automatically.
+          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
+            Already confirmed? <Link to="/login">Sign in</Link>
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -29,12 +69,7 @@ export function SignupPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ margin: '0 auto', display: 'block' }}>
-            <circle cx="22" cy="22" r="7" fill="#00c8a0" />
-            <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" />
-            <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" transform="rotate(60 22 22)" />
-            <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" transform="rotate(120 22 22)" />
-          </svg>
+          <OrbitMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Create your account
           </h1>
@@ -63,7 +98,7 @@ export function SignupPage() {
             <input className="input" type="password" value={form.password} onChange={set('password')} placeholder="8+ characters" required minLength={8} />
           </div>
           {error && (
-            <div style={{ background: '#ef444415', border: '1px solid #ef444430', borderRadius: 'var(--r-sm)', padding: '0.625rem 0.875rem', fontSize: '0.875rem', color: 'var(--red)' }}>
+            <div className="error-banner">
               {error}
             </div>
           )}

@@ -16,3 +16,8 @@ dist/
 # Logs
 *.log
 npm-debug.log*
+
+# Temp / generated output
+tmp/
+output/
+supabase/.temp/

@@ -1,0 +1,11 @@
+loan_id,lender,currency,principal,outstanding_balance,interest_rate,payment_date,maturity_date,payment_type,payment_amount,loan_type,description
+LOAN-001,Goldman Sachs,USD,15000000,12600000,4.75,2025-04-30,2027-06-30,principal_and_interest,680000,term_loan,Senior secured term loan — HQ expansion
+LOAN-002,Barclays Corporate,GBP,5000000,4250000,5.10,2025-04-30,2026-12-31,principal_and_interest,215000,revolving_credit,UK working capital revolving credit facility
+LOAN-003,Deutsche Bank,EUR,8000000,8000000,3.90,2025-05-15,2030-05-15,interest_only,26000,term_loan,EUR long-term facility — European operations
+LOAN-004,BNP Paribas,EUR,3500000,2800000,4.20,2025-04-15,2026-04-15,principal_and_interest,160000,term_loan,French subsidiary acquisition financing
+LOAN-005,MUFG Bank,JPY,2000000000,1750000000,1.20,2025-04-25,2028-03-31,principal_and_interest,6250000,term_loan,Japan operations expansion loan
+LOAN-006,RBC Capital Markets,CAD,4000000,3600000,5.45,2025-05-01,2027-05-01,principal_and_interest,195000,term_loan,Canada office construction financing
+LOAN-007,UBS AG,CHF,2000000,2000000,2.80,2025-06-30,2029-06-30,interest_only,4667,term_loan,Switzerland subsidiary setup — interest only period
+LOAN-008,Citibank,USD,6000000,6000000,5.00,2025-07-31,2025-07-31,principal_and_interest,6300000,bridge_loan,Bridge facility — refinancing pending
+LOAN-009,HSBC,USD,10000000,9200000,4.50,2025-05-31,2030-05-31,principal_and_interest,520000,term_loan,Global treasury master facility
+LOAN-010,Santander,EUR,1800000,1200000,4.60,2025-04-20,2026-01-20,principal_and_interest,105000,term_loan,Iberia office buildout loan

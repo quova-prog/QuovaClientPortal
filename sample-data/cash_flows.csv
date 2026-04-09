@@ -1,0 +1,25 @@
+flow_date,currency,amount,flow_type,category,entity,account,counterparty,description,confidence
+2025-04-01,EUR,3850000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Siemens AG,Q1 enterprise licence receipts,confirmed
+2025-04-03,USD,-285000,outflow,FX Settlement,Orbit Technologies Inc,USD-HQ-001,JP Morgan,Forward contract settlement Apr,confirmed
+2025-04-05,GBP,1650000,inflow,Operations,Orbit UK Ltd,GBP-LON-001,HSBC UK,UK SaaS subscription renewal batch,confirmed
+2025-04-07,EUR,-94000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,BASF SE,Chemical supply payment PO-2025-0003,confirmed
+2025-04-10,JPY,-42000000,outflow,Operations,Orbit Japan KK,JPY-TYO-001,Toyota Tsusho,Raw materials payment Q2,confirmed
+2025-04-12,CHF,820000,inflow,Operations,Orbit Switzerland AG,CHF-ZRH-001,Credit Suisse clients,Switzerland enterprise receipts,forecast
+2025-04-15,EUR,-285000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Siemens AG,Equipment PO-2025-0001 settlement,confirmed
+2025-04-17,AUD,2200000,inflow,Operations,Orbit Australia Pty,AUD-SYD-001,ANZ Bank clients,ANZ reseller revenue April,forecast
+2025-04-20,USD,-180000,outflow,Financing,Orbit Technologies Inc,USD-HQ-001,Goldman Sachs,Loan interest payment Apr,confirmed
+2025-04-22,CAD,1350000,inflow,Operations,Orbit Canada Inc,CAD-TOR-001,RBC clients,Canada Q1 direct sales,forecast
+2025-04-25,GBP,-410000,outflow,Operations,Orbit UK Ltd,GBP-LON-001,Rolls-Royce plc,Engineering parts PO-2025-0004,confirmed
+2025-04-28,CNY,-3200000,outflow,Operations,Orbit Hong Kong Ltd,CNY-HKG-001,Foxconn,Contract manufacturing batch 7,forecast
+2025-05-01,EUR,4100000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,EU customers,Q2 enterprise licence receipts,forecast
+2025-05-05,USD,9500000,inflow,Operations,Orbit Technologies Inc,USD-HQ-001,US enterprise clients,US Q1 bookings settlement,forecast
+2025-05-10,EUR,-520000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,ArcelorMittal,Structural steel PO-2025-0007,forecast
+2025-05-15,AUD,-780000,outflow,Operations,Orbit Australia Pty,AUD-SYD-001,Rio Tinto,Mining supplies PO-2025-0011,forecast
+2025-05-20,GBP,1720000,inflow,Operations,Orbit UK Ltd,GBP-LON-001,UK clients,UK Q2 SaaS renewals,forecast
+2025-05-31,USD,-2400000,outflow,Financing,Orbit Technologies Inc,USD-HQ-001,Goldman Sachs,Quarterly loan principal repayment,confirmed
+2025-06-01,EUR,-38000,outflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,Deutsche Telekom,Network services Q2 invoice,indicative
+2025-06-15,CAD,-340000,outflow,Operations,Orbit Canada Inc,CAD-TOR-001,Bombardier Inc,Transportation components PO-2025-0015,indicative
+2025-06-30,EUR,580000,inflow,Services,Orbit Technologies GmbH,EUR-OPS-001,Various,Professional services billings Q2,indicative
+2025-07-01,JPY,195000000,inflow,Operations,Orbit Japan KK,JPY-TYO-001,Japan enterprise clients,Japan Q2 contract receipts,indicative
+2025-07-15,GBP,-180000,outflow,Operations,Orbit UK Ltd,GBP-LON-001,UK suppliers,Quarterly UK supplier settlements,indicative
+2025-09-30,EUR,4750000,inflow,Operations,Orbit Technologies GmbH,EUR-OPS-001,EU customers,Q4 enterprise licence forecast,indicative

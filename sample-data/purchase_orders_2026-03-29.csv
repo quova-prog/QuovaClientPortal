@@ -1,0 +1,16 @@
+po_number,supplier,currency,amount,due_date,issue_date,category,status,description
+PO-2026-0001,Bosch GmbH,EUR,312000,2026-04-20,2026-03-01,Equipment,open,Industrial sensor modules Q2
+PO-2026-0002,Nippon Steel,JPY,58000000,2026-05-01,2026-03-05,Raw Materials,open,High-grade steel coils Q2
+PO-2026-0003,Solvay SA,EUR,78500,2026-05-15,2026-03-08,Chemicals,approved,Advanced polymer compounds
+PO-2026-0004,BAE Systems,GBP,490000,2026-05-28,2026-03-10,Equipment,open,Precision defence components
+PO-2026-0005,LG Electronics,KRW,112000000,2026-04-15,2026-03-02,Technology,approved,OLED display panels batch 3
+PO-2026-0006,SGS SA,CHF,45000,2026-06-10,2026-03-12,Services,open,Quality assurance and testing Q2
+PO-2026-0007,ThyssenKrupp,EUR,680000,2026-06-30,2026-03-15,Raw Materials,open,Structural steel and alloys Q3
+PO-2026-0008,Wipro Ltd,INR,22000000,2026-04-30,2026-03-03,Services,approved,Cloud infrastructure services
+PO-2026-0009,Pegatron Corp,CNY,4100000,2026-07-15,2026-03-18,Manufacturing,open,Contract assembly batch 4
+PO-2026-0010,Vodafone GmbH,EUR,52000,2026-04-05,2026-03-01,Services,open,Managed connectivity services Q2
+PO-2026-0011,BHP Group,AUD,920000,2026-05-20,2026-03-07,Raw Materials,open,Copper ore and mining supplies
+PO-2026-0012,Continental AG,EUR,143000,2026-06-05,2026-03-14,Components,open,Automotive rubber seals
+PO-2026-0013,Schneider Electric,CHF,267000,2026-07-01,2026-03-20,Equipment,approved,Energy management hardware
+PO-2026-0014,DHL Freight,EUR,89000,2026-04-30,2026-03-09,Logistics,open,Pan-European freight Q2-Q3
+PO-2026-0015,CAE Inc,CAD,415000,2026-07-31,2026-03-22,Equipment,open,Simulation and training systems

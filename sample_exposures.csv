@@ -1,0 +1,11 @@
+entity,currency_pair,direction,notional,settlement_date,description
+Orbit Technologies SE,EUR/USD,receivable,3200000,2026-06-30,Q2 SaaS revenue EUR
+Orbit Technologies SE,EUR/USD,receivable,1850000,2026-09-30,Q3 SaaS revenue EUR
+Orbit Technologies Inc,GBP/USD,payable,920000,2026-05-15,London office lease Q2
+Orbit Technologies Inc,GBP/USD,payable,450000,2026-07-31,UK vendor payments
+Orbit Technologies SE,USD/JPY,payable,125000000,2026-06-15,Tokyo data center costs
+Orbit Technologies SE,USD/CAD,receivable,2100000,2026-08-31,Canadian enterprise contract
+Orbit Technologies Inc,AUD/USD,receivable,680000,2026-05-31,APAC distributor payment
+Orbit Technologies SE,EUR/GBP,payable,540000,2026-07-15,Berlin HQ intercompany
+Orbit Technologies Inc,USD/CHF,payable,310000,2026-09-15,Swiss banking fees
+Orbit Technologies SE,GBP/USD,receivable,1200000,2026-10-31,UK government contract

@@ -1,0 +1,21 @@
+currency,amount,period,fiscal_year,segment,region,description
+EUR,3850000,Q1,2025,Enterprise,EMEA,Enterprise software licences Q1
+EUR,4100000,Q2,2025,Enterprise,EMEA,Enterprise software licences Q2
+EUR,4400000,Q3,2025,Enterprise,EMEA,Enterprise software licences Q3
+EUR,4750000,Q4,2025,Enterprise,EMEA,Enterprise software licences Q4
+GBP,1650000,Q1,2025,SMB,UK,UK mid-market SaaS subscriptions Q1
+GBP,1720000,Q2,2025,SMB,UK,UK mid-market SaaS subscriptions Q2
+GBP,1800000,Q3,2025,SMB,UK,UK mid-market SaaS subscriptions Q3
+GBP,1950000,Q4,2025,SMB,UK,UK mid-market SaaS subscriptions Q4
+JPY,180000000,Q1,2025,Enterprise,APAC,Japan enterprise contracts Q1
+JPY,195000000,Q2,2025,Enterprise,APAC,Japan enterprise contracts Q2
+AUD,2200000,Q1,2025,SMB,APAC,Australia & NZ reseller revenue Q1
+AUD,2350000,Q2,2025,SMB,APAC,Australia & NZ reseller revenue Q2
+AUD,2500000,Q3,2025,SMB,APAC,Australia & NZ reseller revenue Q3
+CAD,1350000,Q1,2025,SMB,North America,Canada direct sales Q1
+CAD,1420000,Q2,2025,SMB,North America,Canada direct sales Q2
+CHF,820000,Q1,2025,Enterprise,EMEA,Switzerland financial services Q1
+CHF,870000,Q2,2025,Enterprise,EMEA,Switzerland financial services Q2
+EUR,580000,Q1,2025,Services,EMEA,Professional services EMEA Q1
+GBP,310000,Q1,2025,Services,UK,UK consulting engagements Q1
+USD,9500000,Q1,2025,Enterprise,North America,US enterprise bookings Q1

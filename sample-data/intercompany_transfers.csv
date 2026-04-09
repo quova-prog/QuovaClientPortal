@@ -1,0 +1,16 @@
+transfer_date,from_entity,to_entity,currency,amount,transfer_type,status,reference,description
+2025-04-01,Orbit Technologies Inc,Orbit Technologies GmbH,USD,1200000,funding,completed,ICT-2025-001,Q1 operational funding transfer to Germany entity
+2025-04-01,Orbit Technologies Inc,Orbit UK Ltd,USD,850000,funding,completed,ICT-2025-002,Q1 operational funding transfer to UK entity
+2025-04-05,Orbit Technologies GmbH,Orbit Switzerland AG,EUR,320000,cost_recharge,completed,ICT-2025-003,Q1 shared services recharge — IT infrastructure
+2025-04-10,Orbit UK Ltd,Orbit Technologies Inc,GBP,410000,dividend,completed,ICT-2025-004,UK Q4 2024 dividend repatriation
+2025-04-15,Orbit Japan KK,Orbit Technologies Inc,JPY,95000000,royalty,pending,ICT-2025-005,Q1 IP royalty payment to HQ
+2025-04-20,Orbit Technologies Inc,Orbit Canada Inc,USD,280000,funding,pending,ICT-2025-006,Canada Q2 operating budget transfer
+2025-04-25,Orbit Technologies GmbH,Orbit Technologies Inc,EUR,680000,dividend,pending,ICT-2025-007,Germany Q4 2024 profit repatriation
+2025-05-01,Orbit Technologies Inc,Orbit Australia Pty,USD,350000,funding,scheduled,ICT-2025-008,Australia Q2 operating budget
+2025-05-01,Orbit Technologies Inc,Orbit Japan KK,USD,420000,funding,scheduled,ICT-2025-009,Japan Q2 operating budget transfer
+2025-05-10,Orbit Switzerland AG,Orbit Technologies GmbH,CHF,150000,cost_recharge,scheduled,ICT-2025-010,Switzerland-Germany shared compliance costs Q2
+2025-05-15,Orbit UK Ltd,Orbit Technologies GmbH,GBP,95000,cost_recharge,scheduled,ICT-2025-011,UK-Germany HR shared services Q2 recharge
+2025-06-01,Orbit Technologies Inc,Orbit Technologies GmbH,USD,1200000,funding,scheduled,ICT-2025-012,Q2 operational funding transfer to Germany entity
+2025-06-01,Orbit Technologies Inc,Orbit UK Ltd,USD,850000,funding,scheduled,ICT-2025-013,Q2 operational funding transfer to UK entity
+2025-06-30,Orbit Australia Pty,Orbit Technologies Inc,AUD,480000,dividend,indicative,ICT-2025-014,Australia H1 2025 dividend repatriation
+2025-07-10,Orbit Japan KK,Orbit Technologies Inc,JPY,110000000,royalty,indicative,ICT-2025-015,Q2 IP royalty payment to HQ

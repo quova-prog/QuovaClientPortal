@@ -1,0 +1,47 @@
+transaction_id,transaction_type,transaction_currency,notional_amount,settlement_date,counterparty,entity,posting_date,functional_amount,cost_center,description,status
+AP-2025-0001,ap_invoice,EUR,2450000.00,2026-07-15,Siemens AG,Global Europe,2026-04-01,2450000.00,Engineering,SAP S/4HANA annual license renewal,open
+AP-2025-0002,ap_invoice,GBP,875000.00,2026-06-30,Rolls-Royce Holdings plc,Global UK,2026-03-28,875000.00,Manufacturing,Turbine component supply Q2,open
+AP-2025-0003,ap_invoice,CAD,1230000.00,2026-08-20,Shopify Inc,Global Canada,2026-04-02,1230000.00,Technology,Platform integration services,open
+AP-2025-0004,ap_invoice,AUD,640000.00,2026-09-10,BHP Group Limited,Global Australia,2026-04-01,640000.00,Operations,Mining equipment lease Q3,open
+AP-2025-0005,ap_invoice,EUR,1875000.00,2026-05-31,ASML Holding NV,Global Europe,2026-03-15,1875000.00,R&D,Lithography equipment maintenance contract,open
+AP-2025-0006,ap_invoice,GBP,420000.00,2026-07-01,Deloitte LLP UK,Global UK,2026-03-30,420000.00,Finance,Annual audit and advisory fees,open
+AP-2025-0007,ap_invoice,EUR,3100000.00,2026-10-15,SAP SE,Global Europe,2026-04-03,3100000.00,IT,Cloud platform migration — Phase 2,open
+AP-2025-0008,ap_invoice,CAD,560000.00,2026-06-15,Manulife Financial,Global Canada,2026-03-22,560000.00,HR,Group benefits administration H2 2025,open
+AP-2025-0009,ap_invoice,AUD,1150000.00,2026-08-01,Telstra Corporation,Global Australia,2026-04-01,1150000.00,IT,Enterprise network infrastructure upgrade,open
+AP-2025-0010,ap_invoice,GBP,2200000.00,2026-11-30,BAE Systems plc,Global UK,2026-04-02,2200000.00,Engineering,Defense subsystem R&D contract,open
+AR-2025-0001,ar_invoice,EUR,4200000.00,2026-06-30,Volkswagen AG,Global Europe,2026-03-15,4200000.00,Sales,Sensor module supply — Q2 delivery,open
+AR-2025-0002,ar_invoice,GBP,1950000.00,2026-07-31,Tesco plc,Global UK,2026-03-28,1950000.00,Sales,Retail analytics platform license,open
+AR-2025-0003,ar_invoice,CAD,780000.00,2026-05-15,Royal Bank of Canada,Global Canada,2026-03-10,780000.00,Sales,Risk management software subscription,open
+AR-2025-0004,ar_invoice,AUD,920000.00,2026-08-15,Commonwealth Bank,Global Australia,2026-04-01,920000.00,Sales,Compliance reporting module,open
+AR-2025-0005,ar_invoice,EUR,1650000.00,2026-09-30,Nestlé SA,Global Europe,2026-04-02,1650000.00,Sales,Supply chain optimization platform,open
+AR-2025-0006,ar_invoice,GBP,530000.00,2026-06-15,Barclays plc,Global UK,2026-03-20,530000.00,Sales,Treasury dashboard customization,open
+AR-2025-0007,ar_invoice,CAD,1450000.00,2026-10-31,Toronto-Dominion Bank,Global Canada,2026-04-03,1450000.00,Sales,Enterprise FX analytics suite,open
+AR-2025-0008,ar_invoice,AUD,380000.00,2026-07-01,Woolworths Group,Global Australia,2026-03-25,380000.00,Sales,Inventory optimization module,open
+PO-2025-0001,purchase_order,EUR,890000.00,2026-09-01,Bosch GmbH,Global Europe,2026-04-01,890000.00,Procurement,Industrial sensor components — Q3 batch,open
+PO-2025-0002,purchase_order,GBP,1340000.00,2026-08-15,ARM Holdings,Global UK,2026-04-02,1340000.00,Engineering,Chip design licensing agreement,open
+PO-2025-0003,purchase_order,CAD,475000.00,2026-07-20,Bombardier Inc,Global Canada,2026-03-30,475000.00,Operations,Specialized transport equipment,open
+PO-2025-0004,purchase_order,AUD,720000.00,2026-10-01,CSL Limited,Global Australia,2026-04-01,720000.00,R&D,Biotech research materials,open
+PO-2025-0005,purchase_order,EUR,2100000.00,2026-12-15,Schneider Electric SE,Global Europe,2026-04-03,2100000.00,Facilities,Power management systems — new facility,open
+PO-2025-0006,purchase_order,GBP,680000.00,2026-09-30,Sage Group plc,Global UK,2026-04-01,680000.00,Finance,ERP module expansion,open
+IC-2025-0001,intercompany_payable,EUR,5500000.00,2026-06-30,Global Inc,Global Europe,2026-03-31,5500000.00,Treasury,Intercompany funding — Europe operations Q2,open
+IC-2025-0002,intercompany_payable,GBP,3200000.00,2026-06-30,Global Inc,Global UK,2026-03-31,3200000.00,Treasury,Intercompany funding — UK operations Q2,open
+IC-2025-0003,intercompany_payable,CAD,2800000.00,2026-06-30,Global Inc,Global Canada,2026-03-31,2800000.00,Treasury,Intercompany funding — Canada operations Q2,open
+IC-2025-0004,intercompany_receivable,AUD,1600000.00,2026-07-31,Global Australia,Global Inc,2026-04-01,1720000.00,Treasury,Intercompany receivable — Australia dividend,open
+SO-2025-0001,sales_order,EUR,3750000.00,2026-11-15,Deutsche Telekom AG,Global Europe,2026-04-02,3750000.00,Sales,Network monitoring platform — 3yr contract,open
+SO-2025-0002,sales_order,GBP,1100000.00,2026-10-01,HSBC Holdings plc,Global UK,2026-04-01,1100000.00,Sales,Regulatory reporting suite,open
+SO-2025-0003,sales_order,CAD,950000.00,2026-12-01,Brookfield Asset Mgmt,Global Canada,2026-04-03,950000.00,Sales,Real estate analytics platform,open
+SO-2025-0004,sales_order,AUD,620000.00,2026-09-15,Macquarie Group,Global Australia,2026-04-02,620000.00,Sales,Commodities risk dashboard,open
+AP-2025-0011,ap_invoice,EUR,780000.00,2026-05-20,Zalando SE,Global Europe,2026-03-18,780000.00,Marketing,Digital marketing platform fees,open
+AP-2025-0012,ap_invoice,GBP,295000.00,2026-06-01,PwC LLP,Global UK,2026-03-25,295000.00,Legal,Tax advisory and compliance services,open
+AP-2025-0013,ap_invoice,CAD,410000.00,2026-07-10,KPMG Canada,Global Canada,2026-04-01,410000.00,Finance,Transfer pricing study,open
+AP-2025-0014,ap_invoice,AUD,185000.00,2026-05-30,Ernst & Young Australia,Global Australia,2026-03-28,185000.00,Finance,Statutory audit — FY2024,open
+AP-2025-0015,ap_invoice,EUR,1420000.00,2026-08-31,Infineon Technologies AG,Global Europe,2026-04-02,1420000.00,Procurement,Semiconductor components — Q3 order,open
+AR-2025-0009,ar_invoice,GBP,840000.00,2026-09-15,Unilever plc,Global UK,2026-04-01,840000.00,Sales,Sustainability reporting module,open
+AR-2025-0010,ar_invoice,EUR,2900000.00,2026-10-15,Airbus SE,Global Europe,2026-04-03,2900000.00,Sales,Aerospace supply chain visibility platform,open
+AR-2025-0011,ar_invoice,CAD,520000.00,2026-08-01,Enbridge Inc,Global Canada,2026-04-02,520000.00,Sales,Pipeline monitoring analytics,open
+AR-2025-0012,ar_invoice,AUD,430000.00,2026-07-15,Woodside Energy,Global Australia,2026-04-01,430000.00,Sales,Energy trading risk module,open
+PO-2025-0007,purchase_order,EUR,560000.00,2026-11-01,Ericsson AB,Global Europe,2026-04-03,560000.00,IT,5G infrastructure components,open
+PO-2025-0008,purchase_order,GBP,390000.00,2026-10-15,Dyson Ltd,Global UK,2026-04-02,390000.00,R&D,Air purification systems — lab facilities,open
+AP-2025-0016,ap_invoice,CAD,680000.00,2026-09-01,CGI Group Inc,Global Canada,2026-04-01,680000.00,IT,Managed services contract extension,open
+AP-2025-0017,ap_invoice,AUD,290000.00,2026-08-20,Atlassian Pty Ltd,Global Australia,2026-03-30,290000.00,Engineering,Jira & Confluence enterprise license,open
+AP-2025-0018,ap_invoice,EUR,950000.00,2026-07-31,Dassault Systèmes SE,Global Europe,2026-04-01,950000.00,Engineering,3DEXPERIENCE platform subscription,open

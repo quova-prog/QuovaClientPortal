@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FileText, Download, Table, CheckCircle } from 'lucide-react'
+import { useAuditLog } from '@/hooks/useAuditLog'
 import { useExposures, useHedgePositions, useHedgeCoverage, useHedgePolicy } from '@/hooks/useData'
 import { formatCurrency, formatDate, formatPct, COVERAGE_LABELS, getCoverageStatus } from '@/lib/utils'
 
@@ -37,6 +38,7 @@ const REPORTS = [
 ]
 
 export function ReportsPage() {
+  const { log } = useAuditLog()
   const { exposures } = useExposures()
   const { positions } = useHedgePositions()
   const { coverage } = useHedgeCoverage()
@@ -241,10 +243,22 @@ export function ReportsPage() {
     try {
       if (format === 'Excel') await generateExcel(reportId)
       else await generatePdf(reportId)
+      await log({
+        action: 'export',
+        resource: 'report',
+        resource_id: reportId,
+        summary: `Exported ${reportId} report as ${format.toLowerCase()}`,
+        metadata: {
+          format: format.toLowerCase(),
+          exposure_count: exposures.length,
+          position_count: positions.length,
+          coverage_count: coverage.length,
+        },
+      })
       setDone(key)
       setTimeout(() => setDone(null), 3000)
     } catch (e) {
-      console.error('Report generation failed:', e)
+      if (import.meta.env.DEV) console.error('Report generation failed:', e)
     }
     setGenerating(null)
   }

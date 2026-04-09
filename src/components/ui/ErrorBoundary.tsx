@@ -1,5 +1,6 @@
 import React from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { reportException } from '@/lib/monitoring'
 
 interface Props {
   children: React.ReactNode
@@ -17,10 +18,21 @@ export class ErrorBoundary extends React.Component<Props, State> {
     this.state = { error: null, errorInfo: null }
   }
 
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { error }
+  }
+
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({ error, errorInfo })
-    // In production, send to error tracking (Sentry etc.)
-    console.error('Orbit error boundary caught:', error, errorInfo)
+    this.setState({ errorInfo })
+    void reportException(error, {
+      category: 'application',
+      severity: 'critical',
+      message: 'React error boundary caught an exception',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+      },
+    })
+    if (import.meta.env.DEV) console.error('Orbit error boundary caught:', error, errorInfo)
   }
 
   handleReset = () => {
