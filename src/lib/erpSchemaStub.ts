@@ -55,9 +55,8 @@ export async function buildErpSchema(erpType: ERPType): Promise<SchemaMetadata> 
       // Falls back to a built-in stub if the package isn't available (e.g. Vercel build).
       try {
         // @ts-ignore — schema-discovery is a local sibling package, not available in Vercel builds
-        const { generateMockSapSchema, FX_RELEVANT_TABLES } = await import(
-          /* @vite-ignore */ 'schema-discovery/src/test/fixtures/mock-sap-schema'
-        )
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        const { generateMockSapSchema, FX_RELEVANT_TABLES } = await import(/* @vite-ignore */ 'schema-discovery/src/test/fixtures/mock-sap-schema')
         const fullSchema = generateMockSapSchema() as unknown as SchemaMetadata
         const fxTableNames = new Set(FX_RELEVANT_TABLES as string[])
         return {
