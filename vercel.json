@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/ClientPortal/(.*)",
-      "destination": "/ClientPortal/index.html"
+      "source": "/ClientPortal/:path*",
+      "destination": "/index.html"
     }
   ],
   "headers": [
