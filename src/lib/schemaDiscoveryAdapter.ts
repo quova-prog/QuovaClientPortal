@@ -290,17 +290,16 @@ export function erpTypeToProfile(erpType: ERPType): ErpProfile | undefined {
 }
 
 /**
- * Dynamically loads the DiscoveryOrchestrator from the schema-discovery package.
- * Returns null if the package isn't available (Vercel build without the monorepo).
+ * Placeholder for loading the DiscoveryOrchestrator from the schema-discovery package.
+ * Currently returns null — ERP discovery via dual-LLM reconciliation requires the
+ * schema-discovery package which runs server-side (Edge Function / BFF), not in the
+ * browser bundle. The flat file path uses discoveryService.ts instead.
  */
 export async function loadDiscoveryOrchestrator(): Promise<{ DiscoveryOrchestrator: unknown } | null> {
-  try {
-    // @ts-ignore — schema-discovery is a local sibling package, not available in Vercel builds
-    return await import(/* @vite-ignore */ 'schema-discovery/src/discovery/orchestrator')
-  } catch {
-    console.warn('[schemaDiscoveryAdapter] schema-discovery package not available — ERP discovery will use fallback')
-    return null
-  }
+  // schema-discovery is a server-side package — not bundled for browser builds.
+  // When the BFF/Edge Function is built, this will call the API endpoint instead.
+  console.warn('[schemaDiscoveryAdapter] ERP discovery requires server-side schema-discovery package (not available in browser)')
+  return null
 }
 
 /**

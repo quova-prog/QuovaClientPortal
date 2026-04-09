@@ -50,35 +50,20 @@ export async function buildErpSchema(erpType: ERPType): Promise<SchemaMetadata> 
   switch (erpType) {
     case 'sap_s4hana_cloud':
     case 'sap_s4hana_onprem':
-    case 'sap_ecc': {
-      // Try to lazy-import the mock SAP schema from schema-discovery package.
-      // Falls back to a built-in stub if the package isn't available (e.g. Vercel build).
-      try {
-        // @ts-ignore — schema-discovery is a local sibling package, not available in Vercel builds
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        const { generateMockSapSchema, FX_RELEVANT_TABLES } = await import(/* @vite-ignore */ 'schema-discovery/src/test/fixtures/mock-sap-schema')
-        const fullSchema = generateMockSapSchema() as unknown as SchemaMetadata
-        const fxTableNames = new Set(FX_RELEVANT_TABLES as string[])
-        return {
-          ...fullSchema,
-          tables: fullSchema.tables.filter((t) => fxTableNames.has(t.name)),
-        }
-      } catch {
-        // schema-discovery not available — use built-in SAP stub
-        return buildMinimalSchema('sap_s4hana', 'SAP S/4HANA', [
-          buildStubTable('BSEG', ['BUKRS', 'BELNR', 'GJAHR', 'BUZEI', 'KOART', 'WRBTR', 'DMBTR', 'WAERS', 'HWAER', 'PSWSL', 'SHKZG', 'LIFNR', 'KUNNR', 'GSBER', 'KOSTL', 'ZFBDT', 'BUDAT', 'BLDAT']),
-          buildStubTable('BKPF', ['BUKRS', 'BELNR', 'GJAHR', 'BLART', 'BUDAT', 'BLDAT', 'WAERS', 'BSTAT', 'XBLNR', 'AWTYP', 'AWKEY']),
-          buildStubTable('T001', ['BUKRS', 'BUTXT', 'ORT01', 'LAND1', 'WAERS', 'KTOPL']),
-          buildStubTable('TCURR', ['KURST', 'FCURR', 'TCURR', 'GDATU', 'UKURS', 'FFACT', 'TFACT']),
-          buildStubTable('EKKO', ['EBELN', 'BUKRS', 'BSTYP', 'LIFNR', 'WAERS', 'BEDAT', 'KDATB', 'KDATE']),
-          buildStubTable('EKPO', ['EBELN', 'EBELP', 'MATNR', 'MENGE', 'NETPR', 'NETWR', 'WAERS', 'EINDT']),
-          buildStubTable('VBRK', ['VBELN', 'FKDAT', 'KUNAG', 'WAERK', 'NETWR', 'BUKRS', 'FKART']),
-          buildStubTable('VBRP', ['VBELN', 'POSNR', 'MATNR', 'FKIMG', 'NETWR', 'WAERK']),
-          buildStubTable('LFA1', ['LIFNR', 'NAME1', 'LAND1', 'ORT01', 'STRAS']),
-          buildStubTable('KNA1', ['KUNNR', 'NAME1', 'LAND1', 'ORT01', 'STRAS']),
-        ])
-      }
-    }
+    case 'sap_ecc':
+      // Built-in SAP stub (full 60-table schema available via schema-discovery package server-side)
+      return buildMinimalSchema('sap_s4hana', 'SAP S/4HANA', [
+        buildStubTable('BSEG', ['BUKRS', 'BELNR', 'GJAHR', 'BUZEI', 'KOART', 'WRBTR', 'DMBTR', 'WAERS', 'HWAER', 'PSWSL', 'SHKZG', 'LIFNR', 'KUNNR', 'GSBER', 'KOSTL', 'ZFBDT', 'BUDAT', 'BLDAT']),
+        buildStubTable('BKPF', ['BUKRS', 'BELNR', 'GJAHR', 'BLART', 'BUDAT', 'BLDAT', 'WAERS', 'BSTAT', 'XBLNR', 'AWTYP', 'AWKEY']),
+        buildStubTable('T001', ['BUKRS', 'BUTXT', 'ORT01', 'LAND1', 'WAERS', 'KTOPL']),
+        buildStubTable('TCURR', ['KURST', 'FCURR', 'TCURR', 'GDATU', 'UKURS', 'FFACT', 'TFACT']),
+        buildStubTable('EKKO', ['EBELN', 'BUKRS', 'BSTYP', 'LIFNR', 'WAERS', 'BEDAT', 'KDATB', 'KDATE']),
+        buildStubTable('EKPO', ['EBELN', 'EBELP', 'MATNR', 'MENGE', 'NETPR', 'NETWR', 'WAERS', 'EINDT']),
+        buildStubTable('VBRK', ['VBELN', 'FKDAT', 'KUNAG', 'WAERK', 'NETWR', 'BUKRS', 'FKART']),
+        buildStubTable('VBRP', ['VBELN', 'POSNR', 'MATNR', 'FKIMG', 'NETWR', 'WAERK']),
+        buildStubTable('LFA1', ['LIFNR', 'NAME1', 'LAND1', 'ORT01', 'STRAS']),
+        buildStubTable('KNA1', ['KUNNR', 'NAME1', 'LAND1', 'ORT01', 'STRAS']),
+      ])
 
     case 'netsuite':
       return buildMinimalSchema('netsuite', 'SuiteQL', [
