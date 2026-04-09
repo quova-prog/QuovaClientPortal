@@ -295,6 +295,7 @@ export function erpTypeToProfile(erpType: ERPType): ErpProfile | undefined {
  */
 export async function loadDiscoveryOrchestrator(): Promise<{ DiscoveryOrchestrator: unknown } | null> {
   try {
+    // @ts-ignore — schema-discovery is a local sibling package, not available in Vercel builds
     return await import(/* @vite-ignore */ 'schema-discovery/src/discovery/orchestrator')
   } catch {
     console.warn('[schemaDiscoveryAdapter] schema-discovery package not available — ERP discovery will use fallback')

@@ -54,6 +54,7 @@ export async function buildErpSchema(erpType: ERPType): Promise<SchemaMetadata> 
       // Try to lazy-import the mock SAP schema from schema-discovery package.
       // Falls back to a built-in stub if the package isn't available (e.g. Vercel build).
       try {
+        // @ts-ignore — schema-discovery is a local sibling package, not available in Vercel builds
         const { generateMockSapSchema, FX_RELEVANT_TABLES } = await import(
           /* @vite-ignore */ 'schema-discovery/src/test/fixtures/mock-sap-schema'
         )
