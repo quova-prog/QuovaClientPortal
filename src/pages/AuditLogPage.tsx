@@ -191,7 +191,7 @@ export function AuditLogPage() {
             No audit entries found
           </div>
           <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary, #94a3b8)' }}>
-            {logs.length === 0 ? 'Actions will appear here as your team uses Orbit.' : 'Try adjusting your filters.'}
+            {logs.length === 0 ? 'Actions will appear here as your team uses Quova.' : 'Try adjusting your filters.'}
           </div>
         </div>
       ) : (

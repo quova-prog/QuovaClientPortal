@@ -813,7 +813,7 @@ export function SettingsPage() {
                   <div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Issuer</p>
                     <div className="input" style={{ display: 'flex', alignItems: 'center', opacity: 0.85 }}>
-                      {parsedTotp.issuer || 'Orbit'}
+                      {parsedTotp.issuer || 'Quova'}
                     </div>
                   </div>
                   <div>

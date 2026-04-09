@@ -29,7 +29,7 @@ function addFooter(slide: pptxgen.Slide, pageNum: number) {
     fill: { color: NAVY },
     line: { color: NAVY },
   })
-  slide.addText('Orbit Treasury Intelligence', {
+  slide.addText('Quova — The Financial Risk OS', {
     x: 0.3, y: 7.21, w: 4, h: 0.28,
     fontSize: 8, color: WHITE, bold: false,
     valign: 'middle',
@@ -544,5 +544,5 @@ export async function generateBoardReportPptx(data: BoardReportData): Promise<vo
 
   const dateStr = data.generatedAt.toISOString().split('T')[0]
   const periodSlug = data.reportPeriod.replace(/\s/g, '_')
-  await prs.writeFile({ fileName: `Orbit_Board_Report_${periodSlug}_${dateStr}.pptx` })
+  await prs.writeFile({ fileName: `Quova_Board_Report_${periodSlug}_${dateStr}.pptx` })
 }

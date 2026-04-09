@@ -241,7 +241,7 @@ export function SetupWizard(): React.ReactElement {
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ margin: '0 0 4px' }}>Company Setup</h2>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Tell us about your organisation so Orbit can tailor your FX risk profile.
+          Tell us about your organisation so Quova can tailor your FX risk profile.
         </p>
       </div>
 
@@ -328,7 +328,7 @@ export function SetupWizard(): React.ReactElement {
                   borderRadius: 'var(--r-md)', border: '1px solid rgba(0,200,160,0.2)',
                 }}>
                   <p style={{ margin: '0 0 6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--teal-dark)' }}>
-                    Currency pairs Orbit will track:
+                    Currency pairs Quova will track:
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {pairs.map(p => (
@@ -366,7 +366,7 @@ export function SetupWizard(): React.ReactElement {
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 32px', gap: '0.5rem', alignItems: 'end' }}>
                   <div>
                     {i === 0 && <label className="label" style={{ marginBottom: 3 }}>Entity Name *</label>}
-                    <input className="input" type="text" placeholder="e.g. Orbit UK Ltd"
+                    <input className="input" type="text" placeholder="e.g. Quova UK Ltd"
                       value={entity.name}
                       onChange={e => updateEntity(i, 'name', e.target.value)} />
                   </div>

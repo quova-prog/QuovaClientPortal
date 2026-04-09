@@ -159,8 +159,8 @@ export function DiscoveryFeed(): React.ReactElement {
         <h2 style={{ margin: '0 0 4px' }}>AI Discovery</h2>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           {isErp
-            ? 'Orbit AI is running dual-model analysis on your ERP schema and reconciling mappings.'
-            : 'Orbit AI is analysing your data and mapping fields to our exposure model.'}
+            ? 'Quova AI is running dual-model analysis on your ERP schema and reconciling mappings.'
+            : 'Quova AI is analysing your data and mapping fields to our exposure model.'}
         </p>
       </div>
 

@@ -16,7 +16,7 @@ export function OnboardingLayout({ status }: { status: OnboardingStatus }): Reac
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--teal)' }} />
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em' }}>
-            Orbit
+            Quova
           </span>
           <span style={{ color: 'var(--sidebar-text)', fontSize: '0.8rem' }}>/ Setup</span>
         </div>

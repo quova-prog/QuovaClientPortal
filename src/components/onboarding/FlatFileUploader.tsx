@@ -12,7 +12,7 @@ const TEMPLATE_HEADERS = [
 
 const TEMPLATE_EXAMPLE = [
   'INV-2025-001', 'ap_invoice', 'EUR', '150000.00', '2025-06-15',
-  'Siemens AG', 'Orbit US Inc', '2025-01-15', '162000.00',
+  'Siemens AG', 'Quova US Inc', '2025-01-15', '162000.00',
   'Engineering', 'Q1 software license payment', 'open',
 ]
 

@@ -1,5 +1,5 @@
 // ============================================================
-// ORBIT — Tier Feature Gating Service
+// QUOVA — Tier Feature Gating Service
 // Source of truth for what each tier can access.
 // ============================================================
 
@@ -45,9 +45,9 @@ const TIER_FEATURES: Record<TierPlan, Set<TierFeature>> = {
 
 /** Display metadata for each tier */
 export const TIER_DISPLAY: Record<TierPlan, { name: string; badge: string; badgeStyle: 'outline' | 'solid-teal' | 'solid-navy' }> = {
-  exposure:   { name: 'Orbit Exposure',    badge: 'EXPOSURE',   badgeStyle: 'outline' },
-  pro:        { name: 'Orbit Pro',         badge: 'PRO',        badgeStyle: 'solid-teal' },
-  enterprise: { name: 'Orbit Enterprise',  badge: 'ENTERPRISE', badgeStyle: 'solid-navy' },
+  exposure:   { name: 'Quova Exposure',    badge: 'EXPOSURE',   badgeStyle: 'outline' },
+  pro:        { name: 'Quova Pro',         badge: 'PRO',        badgeStyle: 'solid-teal' },
+  enterprise: { name: 'Quova Enterprise',  badge: 'ENTERPRISE', badgeStyle: 'solid-navy' },
 }
 
 /** The minimum tier required for each feature */

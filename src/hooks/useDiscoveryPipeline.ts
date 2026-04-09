@@ -149,7 +149,7 @@ async function runFlatFileFlow(
   ))
 
   // ── Stage 4: AI mapping ────────────────────────────────
-  addEvent(mkEvent('ai_analysis', 'running', 'AI analysing column structure and mapping to Orbit model…'))
+  addEvent(mkEvent('ai_analysis', 'running', 'AI analysing column structure and mapping to Quova model…'))
 
   // Create discovery record in DB
   let discId: string | null = null

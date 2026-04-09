@@ -87,7 +87,7 @@ const CONNECTOR_CONFIGS: Record<ConnectorType, ConnectorConfig> = {
     logo: 'S4',
     color: '#00aae4',
     testDetail:
-      'Company: Orbit Demo GmbH · Release: SAP S/4HANA 2023 FPS02 · 12 company codes available',
+      'Company: Quova Demo GmbH · Release: SAP S/4HANA 2023 FPS02 · 12 company codes available',
     authFields: [
       {
         key: 'host_url',
@@ -324,7 +324,7 @@ const CONNECTOR_CONFIGS: Record<ConnectorType, ConnectorConfig> = {
     logo: 'NS',
     color: '#0066cc',
     testDetail:
-      'Account: Orbit Demo LLC · 4 subsidiaries · SuiteQL governance: 15 concurrent',
+      'Account: Quova Demo LLC · 4 subsidiaries · SuiteQL governance: 15 concurrent',
     authFields: [
       {
         key: 'account_id',
@@ -435,8 +435,8 @@ const CONNECTOR_CONFIGS: Record<ConnectorType, ConnectorConfig> = {
         label: 'Sync Direction',
         type: 'radio',
         options: [
-          { value: 'read', label: 'Read-only', description: 'Import FX exposures, hedge positions, cash data into Orbit' },
-          { value: 'bidirectional', label: 'Bidirectional', description: 'Also write Orbit hedge recommendations back to Kyriba as deals' },
+          { value: 'read', label: 'Read-only', description: 'Import FX exposures, hedge positions, cash data into Quova' },
+          { value: 'bidirectional', label: 'Bidirectional', description: 'Also write Quova hedge recommendations back to Kyriba as deals' },
         ],
       },
     ],
@@ -451,7 +451,7 @@ const CONNECTOR_CONFIGS: Record<ConnectorType, ConnectorConfig> = {
     name: 'QuickBooks Online',
     logo: 'QB',
     color: '#2ca01c',
-    testDetail: 'Company: Orbit Demo Company · Country: US · Fiscal year: January',
+    testDetail: 'Company: Quova Demo Company · Country: US · Fiscal year: January',
     authFields: [
       {
         key: 'realm_id',
@@ -1268,7 +1268,7 @@ export function IntegrationSetupModal({
               </div>
 
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: 380 }}>
-                A historical sync will begin in the background. Data will appear in Orbit within a few minutes.
+                A historical sync will begin in the background. Data will appear in Quova within a few minutes.
               </p>
 
               <button

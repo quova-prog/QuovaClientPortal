@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { CheckCircle, Eye, EyeOff } from 'lucide-react'
-import { OrbitMark } from '@/components/ui/OrbitMark'
+import { QuovaMark } from '@/components/ui/QuovaMark'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -112,7 +112,7 @@ export function ResetPasswordPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <OrbitMark />
+          <QuovaMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Set new password
           </h1>

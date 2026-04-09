@@ -106,8 +106,8 @@ export function AppLayout() {
 
         {/* Logo */}
         <div style={{ padding: '1rem 0.875rem 0.625rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-          <OrbitLogo />
-          <span style={{ color: 'var(--sidebar-text-active)', fontWeight: 700, fontSize: '1rem' }}>Orbit</span>
+          <QuovaLogo />
+          <span style={{ color: 'var(--sidebar-text-active)', fontWeight: 700, fontSize: '1rem' }}>Quova</span>
         </div>
 
         {/* Entity Switcher */}
@@ -406,13 +406,14 @@ export function AppLayout() {
   )
 }
 
-function OrbitLogo() {
+function QuovaLogo() {
   return (
-    <svg width="26" height="26" viewBox="0 0 44 44" fill="none">
-      <circle cx="22" cy="22" r="7" fill="#00c8a0" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2.5" fill="none" opacity="0.6" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2.5" fill="none" opacity="0.4" transform="rotate(60 22 22)" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2.5" fill="none" opacity="0.3" transform="rotate(120 22 22)" />
-    </svg>
+    <img
+      src="/quova-icon.png"
+      alt="Quova"
+      width={26}
+      height={26}
+      style={{ objectFit: 'contain' }}
+    />
   )
 }

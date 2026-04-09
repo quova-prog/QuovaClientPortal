@@ -655,7 +655,7 @@ export function IntegrationsPage() {
                     </span>
                   </div>
                   <p style={{ color: '#94a3b8', fontSize: '0.8125rem' }}>
-                    Build your own integration using the Orbit REST API. Access real-time exposure
+                    Build your own integration using the Quova REST API. Access real-time exposure
                     data, hedge positions, and analytics programmatically.
                   </p>
                 </div>
@@ -794,7 +794,7 @@ export function IntegrationsPage() {
               }}
             >
               <div style={{ color: '#94a3b8', marginBottom: '0.75rem', fontSize: '0.75rem' }}>
-                Orbit Integration Console —{' '}
+                Quova Integration Console —{' '}
                 {new Date().toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',

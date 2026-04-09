@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { OrbitMark } from '@/components/ui/OrbitMark'
+import { QuovaMark } from '@/components/ui/QuovaMark'
 
 export function SignupPage() {
   const { signUp } = useAuth()
@@ -69,12 +69,12 @@ export function SignupPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <OrbitMark />
+          <QuovaMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Create your account
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Set up Orbit for your organisation
+            Set up Quova for your organisation
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { ShieldCheck } from 'lucide-react'
-import { OrbitMark } from '@/components/ui/OrbitMark'
+import { QuovaMark } from '@/components/ui/QuovaMark'
 
 // ── Rate limiting constants ────────────────────────────────────────────────────
 const LOGIN_MAX_ATTEMPTS  = 3
@@ -178,12 +178,12 @@ export function LoginPage() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <OrbitMark />
+          <QuovaMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
-            {mfaPending ? 'Two-Factor Verification' : 'Sign in to Orbit'}
+            {mfaPending ? 'Two-Factor Verification' : 'Sign in to Quova'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            {mfaPending ? 'Enter the 6-digit code from your authenticator app' : 'FX Risk Intelligence Platform'}
+            {mfaPending ? 'Enter the 6-digit code from your authenticator app' : 'The Financial Risk OS'}
           </p>
         </div>
 

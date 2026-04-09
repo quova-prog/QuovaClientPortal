@@ -94,7 +94,7 @@ async function exportAuditReport(
   // Sheet 1: Summary
   const summ = getEffectivenessSummary(results)
   const summaryData = [
-    ['Orbit FX – Hedge Effectiveness Audit Report'],
+    ['Quova – Hedge Effectiveness Audit Report'],
     [`Generated: ${new Date().toLocaleString()}`, `Standard: ${standard}`],
     [],
     ['Metric', 'Value'],
@@ -163,7 +163,7 @@ async function exportAuditReport(
     ? 'ASC 815-20-35-2'
     : 'IFRS 9 B6.4.1–B6.4.17'
   const methodNotes = [
-    ['Orbit FX – Hedge Effectiveness Methodology Notes'],
+    ['Quova – Hedge Effectiveness Methodology Notes'],
     [],
     ['Section', 'Description'],
     ['Standard', standard],

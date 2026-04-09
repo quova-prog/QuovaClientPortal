@@ -1,7 +1,7 @@
 // =============================================================================
 // Schema Discovery Adapter
 //
-// Bridges the schema-discovery package into the orbit-mvp onboarding flow:
+// Bridges the schema-discovery package into the Quova onboarding flow:
 //   1. BrowserLlmClient — LlmClient for browser-side Anthropic API calls
 //   2. discoveryReportToAIResult — converts DiscoveryReport → AIDiscoveryResult
 //   3. erpTypeToProfile — maps ERPType → ErpProfile
@@ -303,7 +303,7 @@ export async function loadDiscoveryOrchestrator(): Promise<{ DiscoveryOrchestrat
 }
 
 /**
- * Maps the schema-discovery field naming convention back to orbit-mvp's
+ * Maps the schema-discovery field naming convention back to Quova's
  * canonical field names used in discoveryService.ts ORBIT_TARGET_FIELDS.
  */
 function mapOrbitFieldToTargetField(orbitField: string): string {

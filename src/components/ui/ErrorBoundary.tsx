@@ -32,7 +32,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         componentStack: errorInfo.componentStack,
       },
     })
-    if (import.meta.env.DEV) console.error('Orbit error boundary caught:', error, errorInfo)
+    if (import.meta.env.DEV) console.error('Quova error boundary caught:', error, errorInfo)
   }
 
   handleReset = () => {

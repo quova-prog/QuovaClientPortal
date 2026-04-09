@@ -14,7 +14,7 @@ export function useMfa() {
   async function enroll(): Promise<{ factorId: string; totpUri: string; error: string | null }> {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
-        friendlyName: 'Orbit MFA',
+        friendlyName: 'Quova MFA',
         factorType: 'totp',
       })
       if (error) return { factorId: '', totpUri: '', error: error.message }

@@ -1,18 +1,19 @@
-/* Fonts loaded via <link> in index.html to avoid render-blocking @import */
+/* Quova — The Financial Risk OS
+   Fonts loaded via <link> in index.html to avoid render-blocking @import */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --teal: #00c8a0;
-  --teal-dim: #00c8a015;
-  --teal-hover: #00b890;
-  --teal-dark: #007a60;
-  --sidebar-bg: #0b1526;
-  --sidebar-border: #1a2e47;
+  --teal: #00C2A8;
+  --teal-dim: #00C2A815;
+  --teal-hover: #00b098;
+  --teal-dark: #009882;
+  --sidebar-bg: #0A0F1E;
+  --sidebar-border: #1A2340;
   --sidebar-text: #94a3b8;
   --sidebar-text-active: #e2e8f0;
-  --sidebar-hover: #162036;
-  --sidebar-active: #1a2e47;
+  --sidebar-hover: #131A2E;
+  --sidebar-active: #1A2340;
   --bg-app: #f0f4f8;
   --bg-card: #ffffff;
   --bg-surface: #f8fafc;

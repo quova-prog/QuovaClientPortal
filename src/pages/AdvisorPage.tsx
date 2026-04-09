@@ -718,7 +718,7 @@ export function AdvisorPage() {
             <h1 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Hedge Advisor</h1>
             {aiLoading && (
               <span style={{ fontSize: '0.6875rem', color: 'var(--teal)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Sparkles size={11} className="animate-spin" /> Orbit AI is analysing…
+                <Sparkles size={11} className="animate-spin" /> Quova AI is analysing…
               </span>
             )}
           </div>

@@ -1,16 +1,17 @@
-# Orbit — Claude Code Context
+# Quova — Claude Code Context
 
-> **Last updated:** 2026-04-06 (session 8 — schema discovery pipeline)
-> **Product:** Orbit Treasury Intelligence — Enterprise FX Risk Management SaaS
+> **Last updated:** 2026-04-09 (session 9 — rebrand to Quova + Vercel deployment)
+> **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
 > **Positioning:** "The other 95% of the FX workflow" — everything except trade execution
+> **Domain:** www.quovaOS.com | Client Portal: www.quovaOS.com/ClientPortal
 
 ---
 
 ## Project Overview
 
-Orbit is an enterprise treasury SaaS platform that manages the entire FX risk workflow:
+Quova is an enterprise treasury SaaS platform that manages the entire FX risk workflow:
 exposure capture → coverage analysis → hedge advisor → trade entry → analytics → board reporting.
 
 It is a **React SPA** backed by **Supabase** (PostgreSQL + Auth + RLS). All data is strictly
@@ -59,7 +60,7 @@ src/
 │
 ├── components/
 │   ├── layout/AppLayout.tsx    # Sidebar nav, entity picker, rates ticker, onboarding steps
-│   ├── ui/                     # ErrorBoundary, IdleTimeout, OrbitMark, UpgradeModal
+│   ├── ui/                     # ErrorBoundary, IdleTimeout, QuovaMark, UpgradeModal
 │   ├── advisor/ScenarioPanel.tsx
 │   ├── analytics/
 │   │   ├── BoardReportPanel.tsx
@@ -112,7 +113,7 @@ src/
     ├── [existing pages]        # One file per route (see Routes section below)
     └── onboarding/             # ← NEW (session 4)
         ├── OnboardingRouter.tsx    # State machine controller — URL-based step, auto-redirect from /onboarding
-        ├── OnboardingLayout.tsx    # Standalone shell (no sidebar): Orbit top bar + progress bar + outlet
+        ├── OnboardingLayout.tsx    # Standalone shell (no sidebar): Quova top bar + progress bar + outlet
         ├── SetupWizard.tsx         # 4-section accordion: currency, exposure profile, entities, optional
         ├── ConnectERP.tsx          # ERP grid + flat file upload + credential forms + test connection
         ├── DiscoveryFeed.tsx       # Live event log + summary cards, auto-starts pipeline
@@ -222,7 +223,7 @@ enforced at the DB level via RLS policies using `current_user_org_id()` helper f
 
 | Table | Purpose |
 |---|---|
-| `organisations` | One row per Orbit customer. `plan`: exposure/pro/enterprise. `monthly_fee`, `setup_fee` pricing columns |
+| `organisations` | One row per Quova customer. `plan`: exposure/pro/enterprise. `monthly_fee`, `setup_fee` pricing columns |
 | `tier_definitions` | Feature flag matrix per tier. Boolean columns for each feature, pricing, support level. Source of truth for feature gating |
 | `profiles` | Extends `auth.users`. `role`: admin/editor/viewer. `email`, `phone` contact fields |
 | `hedge_policies` | One active policy per org. `min_coverage_pct`, `max_coverage_pct`, `min_notional_threshold`, `min_tenor_days`, `base_currency` |
@@ -305,7 +306,7 @@ Full 5-step self-serve onboarding flow: **SETUP → CONNECT → DISCOVER → VAL
 
 **Step 4 — Validate Mappings (`ValidateMappings.tsx`):**
 - Table of proposed mappings sorted by confidence (lowest first for review)
-- Per-row actions: Confirm (✓), Edit (dropdown of Orbit canonical fields), Reject (✗), Undo
+- Per-row actions: Confirm (✓), Edit (dropdown of Quova canonical fields), Reject (✗), Undo
 - "Confirm all ≥90%" bulk action button
 - Right panel: Mapping Progress (confirmed count + progress bar), Required Fields checklist (7 fields), Go Live button (enabled when ≥4 required fields confirmed)
 - `useMappings.ts` reads from **sessionStorage first**, falls back to DB query. **Status changes (confirmed/rejected/modified) are persisted back to sessionStorage** so GoLive and back-navigation preserve review work
@@ -313,7 +314,7 @@ Full 5-step self-serve onboarding flow: **SETUP → CONNECT → DISCOVER → VAL
 
 **Step 5 — Go Live (`GoLive.tsx`):**
 - Reads raw CSV rows from sessionStorage (`orbit_onboarding_raw_rows`)
-- **Reads confirmed field mappings** from sessionStorage and remaps raw column names → Orbit canonical fields before import (supports non-template CSVs)
+- **Reads confirmed field mappings** from sessionStorage and remaps raw column names → Quova canonical fields before import (supports non-template CSVs)
 - Filters out same-currency rows (no FX risk)
 - Creates `upload_batches` record + inserts rows as `fx_exposures` (proper currency_pair, direction, entity, settlement_date)
 - 7-step progress animation with real DB writes
@@ -473,7 +474,7 @@ Comprehensive code review identified and fixed **50+ bugs** across security, dat
 - **Auth context memoized:** All auth functions wrapped in `useCallback`, context value in `useMemo`
 
 ### Onboarding Fixes
-- **GoLive applies field mappings:** Reads confirmed mappings from sessionStorage and remaps CSV column names to Orbit canonical fields before import
+- **GoLive applies field mappings:** Reads confirmed mappings from sessionStorage and remaps CSV column names to Quova canonical fields before import
 - **Mapping status persists:** `useMappings` writes status changes back to sessionStorage so confirmed/rejected state survives navigation
 - **Stale trade_date:** Module-level `EMPTY` constants replaced with `freshForm()` factory functions
 
@@ -485,7 +486,7 @@ Comprehensive code review identified and fixed **50+ bugs** across security, dat
 - **Missing indexes:** Added on `profiles.org_id`, `upload_batches.org_id`, `hedge_policies.org_id`, `hedge_positions(org_id, currency_pair)`
 
 ### Code Quality
-- **Shared components:** `OrbitMark` SVG extracted; `.error-banner` CSS class replaces 7 inline style blocks
+- **Shared components:** `QuovaMark` logo component extracted; `.error-banner` CSS class replaces 7 inline style blocks
 - **Duplicate code:** `fireAuditLog` helper in `useAuth`; `parseTotpUri` and `getStrength` cached per render
 - **Build optimization:** Vite chunk splitting (vendor, supabase, charts); Google Fonts moved from CSS @import to HTML preconnect
 - **ESLint:** Added to devDependencies with TypeScript and React Hooks plugins
@@ -539,7 +540,7 @@ Reference implementation: `TradePage.tsx` lines 130–133.
 VITE_SUPABASE_URL         — Supabase project URL
 VITE_SUPABASE_ANON_KEY    — Supabase anonymous (public) API key
 VITE_ANTHROPIC_API_KEY    — Anthropic API key (WARNING: exposed client-side — MVP only)
-VITE_APP_NAME             — "Orbit" (display name)
+VITE_APP_NAME             — "Quova" (display name)
 VITE_APP_VERSION          — "0.1.0"
 VITE_MONITORING_ENDPOINT  — (optional) telemetry ingest URL
 ```
@@ -568,7 +569,7 @@ import { toUsd, FALLBACK_FX } from '@/lib/fx'
 Never define local copies.
 
 ### Shared UI Components
-- `<OrbitMark size={44} />` — brand logo SVG, used on Login/Signup/ResetPassword
+- `<QuovaMark size={44} />` — brand logo SVG, used on Login/Signup/ResetPassword
 - `.error-banner` CSS class — standard red error message bar
 
 ### Styling
@@ -587,7 +588,7 @@ PDF, PPTX, XLSX are heavy — import dynamically inside handlers, never at top o
 ## Schema Discovery Pipeline (`packages/schema-discovery`)
 
 > **Location:** `/Users/stevenlabella/Git/packages/schema-discovery`
-> **Purpose:** AI-powered ERP schema analysis for automated onboarding — takes raw ERP metadata, identifies FX-relevant tables, maps columns to Orbit's exposure model, and generates a customer-facing mapping report.
+> **Purpose:** AI-powered ERP schema analysis for automated onboarding — takes raw ERP metadata, identifies FX-relevant tables, maps columns to Quova's exposure model, and generates a customer-facing mapping report.
 > **Runtime:** Standalone TypeScript package (Node.js, not browser). Runs via `npx tsx`.
 
 ### Architecture
@@ -601,7 +602,7 @@ packages/schema-discovery/
 ├── src/
 │   ├── types/
 │   │   ├── schema-metadata.ts      # SchemaMetadata, TableMetadata, ColumnMetadata
-│   │   ├── mapping-proposal.ts     # TableMappingProposal, ColumnMapping, OrbitField
+│   │   ├── mapping-proposal.ts     # TableMappingProposal, ColumnMapping, QuovaField
 │   │   └── reconciliation.ts       # ReconciliationResult, ReconciliationVerdict
 │   │
 │   ├── discovery/
@@ -619,7 +620,7 @@ packages/schema-discovery/
 │   │
 │   ├── prompts/
 │   │   ├── table-triage.ts         # Prompt builder for table classification (HIGH/MEDIUM/SKIP)
-│   │   └── column-analysis.ts      # Prompt builder for column-to-Orbit-field mapping
+│   │   └── column-analysis.ts      # Prompt builder for column-to-Quova-field mapping
 │   │
 │   ├── llm/
 │   │   ├── anthropic-client.ts     # LlmClient implementation using @anthropic-ai/sdk
@@ -706,7 +707,7 @@ ORBIT_DISCOVERY_LOG_LEVEL      # Default: info
 
 5. **Connector stubs:** SAP HANA, NetSuite, and JDBC connectors are interface-only. Real implementations need their respective SDKs and will run server-side (never in browser).
 
-### Integration with Orbit MVP
+### Integration with Quova client portal
 
 The schema-discovery pipeline is the backend engine for the onboarding flow's DISCOVER and VALIDATE steps. Currently the MVP uses a simpler rule-based `discoveryService.ts` in the browser. The plan is to:
 1. Wrap this pipeline in an Edge Function / BFF endpoint
@@ -724,7 +725,7 @@ Built the complete `packages/schema-discovery` package — a standalone AI-power
 - **Reconciliation engine:** Dual-LLM reconciliation with tiebreaker cascade (ERP profile → sample data → data type → confidence gap)
 - **Sample data validator:** Pattern matching on sample data to resolve ambiguous column mappings
 - **SAP S/4HANA ERP profile:** Field naming conventions, table catalog, data type mappings for ~50 core SAP tables
-- **Prompt builders:** Table triage (HIGH/MEDIUM/SKIP classification) and column analysis (map to Orbit exposure model)
+- **Prompt builders:** Table triage (HIGH/MEDIUM/SKIP classification) and column analysis (map to Quova exposure model)
 - **Orchestrator:** Full pipeline runner — triage → dual analysis → reconciliation → report generation
 - **Anthropic LLM client:** Real `@anthropic-ai/sdk` integration with retry logic, rate limit handling, token tracking, cost estimation
 - **Multi-model client:** Dual-model wrapper (temp 0 + temp 0.3) for independent analysis passes
@@ -733,7 +734,7 @@ Built the complete `packages/schema-discovery` package — a standalone AI-power
 - **Ingestion parsers:** CSV (flat + sectioned), SQL DDL, SAP data dictionary (TSV), JSON (information_schema + API metadata) — all with auto-detection via `ParserRegistry`
 - **Sample data loader:** Enriches schema with sample data from files or connectors, with PII redaction
 - **Connector stubs:** SAP HANA, NetSuite, generic JDBC interfaces (not yet implemented)
-- **HTML report generator:** Customer-facing mapping report with executive summary dashboard, per-table mappings, human review queue, validation SQL, methodology section, skipped tables appendix. Orbit brand styling (navy + teal).
+- **HTML report generator:** Customer-facing mapping report with executive summary dashboard, per-table mappings, human review queue, validation SQL, methodology section, skipped tables appendix. Quova brand styling (navy + teal).
 - **PDF export:** Puppeteer-based HTML→PDF with page headers, footers, and clean page breaks
 - **Test harness:** 60-table mock SAP schema, deterministic mock LLM client with designed disagreements, CLI pipeline runner (`--live` / `--input` / mock modes), reconciliation assertion tests, parser tests with generated fixtures, live API integration test
 

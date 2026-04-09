@@ -31,7 +31,7 @@ function loadColumnMap(): Record<string, string> {
     for (const m of mappings) {
       // Skip rejected mappings; include confirmed, proposed, modified
       if (m.status === 'rejected') continue
-      // Map the original CSV column name → Orbit canonical field name
+      // Map the original CSV column name → Quova canonical field name
       // e.g. "Currency" → "transaction_currency", "Amount" → "notional_amount"
       map[m.source_field] = m.target_field
     }

@@ -21,3 +21,4 @@ npm-debug.log*
 tmp/
 output/
 supabase/.temp/
+.vercel

@@ -1,5 +1,5 @@
 /**
- * Orbit Advisor — Deterministic Risk Engine
+ * Quova Advisor — Deterministic Risk Engine
  *
  * All numbers in this file are computed from real data.
  * Claude receives the output of this engine and explains it in plain English.

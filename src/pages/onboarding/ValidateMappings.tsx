@@ -192,7 +192,7 @@ export function ValidateMappings(): React.ReactElement {
                     <tr>
                       <th>Source Field</th>
                       <th style={{ width: 24 }} />
-                      <th>Orbit Field</th>
+                      <th>Quova Field</th>
                       <th>Sample Values</th>
                       <th style={{ width: isErpMode ? 140 : 100 }}>
                         {isErpMode ? 'Confidence / Verdict' : 'Confidence'}

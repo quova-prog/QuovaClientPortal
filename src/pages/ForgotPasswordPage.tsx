@@ -34,7 +34,7 @@ export function ForgotPasswordPage() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <OrbitMark />
+          <QuovaMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Reset your password
           </h1>
@@ -111,13 +111,14 @@ export function ForgotPasswordPage() {
   )
 }
 
-function OrbitMark() {
+function QuovaMark() {
   return (
-    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ margin: '0 auto', display: 'block' }}>
-      <circle cx="22" cy="22" r="7" fill="#00c8a0" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" transform="rotate(60 22 22)" />
-      <ellipse cx="22" cy="22" rx="18" ry="9" stroke="#00c8a0" strokeWidth="2" fill="none" opacity="0.5" transform="rotate(120 22 22)" />
-    </svg>
+    <img
+      src="/quova-icon.png"
+      alt="Quova"
+      width={44}
+      height={44}
+      style={{ margin: '0 auto', display: 'block', objectFit: 'contain' }}
+    />
   )
 }

@@ -153,7 +153,7 @@ export function downloadCsvTemplate() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'orbit_exposure_template.csv'
+  a.download = 'quova_exposure_template.csv'
   a.click()
   URL.revokeObjectURL(url)
 }

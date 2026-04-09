@@ -20,7 +20,7 @@ export interface FlatFileSchema {
   fileName: string
 }
 
-/** Orbit canonical exposure model — all possible target fields */
+/** Quova canonical exposure model — all possible target fields */
 export const ORBIT_TARGET_FIELDS: Array<{ entity: string; field: string; label: string; required: boolean }> = [
   { entity: 'exposure', field: 'transaction_id',       label: 'Transaction ID',        required: true  },
   { entity: 'exposure', field: 'transaction_type',     label: 'Transaction Type',      required: true  },
@@ -41,7 +41,7 @@ export const ORBIT_TARGET_FIELDS: Array<{ entity: string; field: string; label: 
 function buildPrompt(schema: FlatFileSchema, profile: OrganizationProfile): string {
   return `You are an enterprise data mapping specialist for FX risk management.
 
-Analyze a customer's uploaded flat file and map its columns to Orbit's canonical exposure model.
+Analyze a customer's uploaded flat file and map its columns to Quova's canonical exposure model.
 
 ## Customer Context
 - Functional currency: ${profile.functional_currency}
@@ -50,14 +50,14 @@ Analyze a customer's uploaded flat file and map its columns to Orbit's canonical
 - Total rows: ${schema.rowCount}
 - File: ${schema.fileName}
 
-## Orbit Canonical Exposure Model (target fields)
+## Quova Canonical Exposure Model (target fields)
 ${ORBIT_TARGET_FIELDS.map(f => `- exposure.${f.field} (${f.required ? 'REQUIRED' : 'optional'}): ${f.label}`).join('\n')}
 
 ## Customer File Columns (with sample values)
 ${schema.columns.map(c => `- "${c.name}" [${c.dataType}]: ${c.sampleValues.slice(0, 5).join(' | ')}`).join('\n')}
 
 ## Task
-1. Map EACH customer column to the best matching Orbit target field
+1. Map EACH customer column to the best matching Quova target field
 2. Assign confidence 0.00–1.00 to each mapping
 3. List required fields that are MISSING (gaps)
 4. Summarize currencies found in the data
