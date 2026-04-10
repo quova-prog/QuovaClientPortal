@@ -8,6 +8,8 @@ const EMAIL_RE = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g
 const PHONE_RE = /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g
 const SSN_RE   = /\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b/g
 const CC_RE    = /\b(?:\d{4}[\s-]?){3}\d{4}\b/g
+const IBAN_RE  = /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g
+const BIC_RE   = /\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b/g
 
 export function stripPIIString(value: string): string {
   return value
@@ -15,6 +17,8 @@ export function stripPIIString(value: string): string {
     .replace(SSN_RE,   '[SSN]')
     .replace(CC_RE,    '[CC]')
     .replace(PHONE_RE, '[PHONE]')
+    .replace(IBAN_RE,  '[IBAN]')
+    .replace(BIC_RE,   '[BIC]')
 }
 
 export function stripPII(value: unknown): unknown {
@@ -50,10 +54,40 @@ export function pseudonymizeNames(
   })
 }
 
-/** Strip PII from up to maxRows rows before sending to AI */
+const NAME_COL_RE = /vendor|customer|counterparty|company|supplier|name|partner/i
+
+/** Strip PII from ALL rows and pseudonymize name-like columns before sending to AI */
 export function prepareForAI(
   rows: Record<string, unknown>[],
-  maxRows = 100,
 ): Record<string, unknown>[] {
-  return rows.slice(0, maxRows).map(row => stripPII(row) as Record<string, unknown>)
+  if (rows.length === 0) return []
+
+  // Detect name-like columns from headers
+  const headers = Object.keys(rows[0])
+  const nameColumns = headers.filter(h => NAME_COL_RE.test(h))
+
+  // Build pseudonym map across all name-like columns
+  const nameMap = new Map<string, string>()
+  let counter = 0
+  function pseudonymize(val: string): string {
+    if (!nameMap.has(val)) {
+      const idx = counter++
+      const letter = idx < 26
+        ? String.fromCharCode(65 + idx)
+        : String.fromCharCode(65 + Math.floor(idx / 26) - 1) + String.fromCharCode(65 + (idx % 26))
+      nameMap.set(val, `Entity_${letter}`)
+    }
+    return nameMap.get(val)!
+  }
+
+  return rows.map(row => {
+    const stripped = stripPII(row) as Record<string, unknown>
+    for (const col of nameColumns) {
+      const val = stripped[col]
+      if (typeof val === 'string' && val.length > 0) {
+        stripped[col] = pseudonymize(val)
+      }
+    }
+    return stripped
+  })
 }

@@ -114,12 +114,8 @@ export function GoLive(): React.ReactElement {
         setProgress(10)
         await pause(400)
 
-        // Read raw CSV rows stored during upload
-        let rawRows: Record<string, string | undefined>[] = []
-        try {
-          const rawStr = sessionStorage.getItem('orbit_onboarding_raw_rows')
-          if (rawStr) rawRows = JSON.parse(rawStr)
-        } catch { /* ignore */ }
+        // Raw rows no longer stored in sessionStorage for security — data stays in React state
+        const rawRows: Record<string, string | undefined>[] = []
 
         setCurrentStep(1)
         setProgress(20)

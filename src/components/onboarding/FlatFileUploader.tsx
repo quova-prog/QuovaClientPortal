@@ -90,10 +90,7 @@ export function FlatFileUploader({ onParsed }: FlatFileUploaderProps): React.Rea
         setParsing(false)
 
         if (errs.length === 0) {
-          // Persist raw rows for GoLive to import into fx_exposures
-          try {
-            sessionStorage.setItem('orbit_onboarding_raw_rows', JSON.stringify(rows))
-          } catch { /* sessionStorage might be full */ }
+          // Raw rows kept in React state only — never persisted to sessionStorage (security)
           onParsed(schema, strippedRows)
         } else {
           setErrors(errs)

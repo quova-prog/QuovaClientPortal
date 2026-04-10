@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { QuovaMark } from '@/components/ui/QuovaMark'
@@ -9,6 +9,19 @@ export function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
+  const [attempts, setAttempts] = useState<number[]>([])
+  const [cooldownEnd, setCooldownEnd] = useState(0)
+  const [cooldownLeft, setCooldownLeft] = useState(0)
+
+  useEffect(() => {
+    if (cooldownEnd <= 0) return
+    const id = setInterval(() => {
+      const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000)
+      if (remaining <= 0) { setCooldownLeft(0); setCooldownEnd(0); clearInterval(id) }
+      else setCooldownLeft(remaining)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [cooldownEnd])
 
   function set(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -17,6 +30,18 @@ export function SignupPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // Rate limiting: max 3 attempts per 60 seconds
+    const now = Date.now()
+    const recentAttempts = attempts.filter(t => now - t < 60000)
+    if (recentAttempts.length >= 3) {
+      const waitUntil = recentAttempts[0] + 60000
+      setCooldownEnd(waitUntil)
+      setCooldownLeft(Math.ceil((waitUntil - now) / 1000))
+      return
+    }
+    setAttempts([...recentAttempts, now])
+
     setError('')
     setLoading(true)
     try {
@@ -97,12 +122,17 @@ export function SignupPage() {
             <label className="label">Password</label>
             <input className="input" type="password" value={form.password} onChange={set('password')} placeholder="8+ characters" required minLength={8} />
           </div>
+          {cooldownLeft > 0 && (
+            <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: 8, padding: '0.75rem 1rem', color: '#f59e0b', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>
+              Too many attempts. Please wait {cooldownLeft} seconds.
+            </div>
+          )}
           {error && (
             <div className="error-banner">
               {error}
             </div>
           )}
-          <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}>
+          <button className="btn btn-primary" type="submit" disabled={loading || cooldownLeft > 0} style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}>
             {loading ? <span className="spinner" style={{ width: 16, height: 16 }} /> : 'Create account'}
           </button>
         </form>
