@@ -430,7 +430,11 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 ## Known Issues / Technical Debt
 
 ### Security
-- Anthropic API key exposed in browser bundle (MVP-only; BFF proxy planned)
+- Anthropic API key removed — all direct browser-to-Anthropic calls blocked (discoveryService.ts, claudeClient.ts, schemaDiscoveryAdapter.ts hardcoded to undefined; CSP connect-src no longer allows api.anthropic.com). AI features use rule-based/deterministic fallback until BFF proxy is implemented.
+- Customer audit_logs identity enforced server-side via BEFORE INSERT trigger (user_id, user_email, created_at overwritten from auth.uid())
+- Support audit_logs writes go through support_write_audit_log RPC — direct INSERT blocked
+- Onboarding table writes (sessions, profiles, discoveries, mappings) restricted to admin/editor
+- All SECURITY DEFINER functions have SET search_path = public, auth
 - No server-side validation of financial data
 - ERP credentials must never flow through the browser
 
@@ -539,7 +543,6 @@ Reference implementation: `TradePage.tsx` lines 130–133.
 ```
 VITE_SUPABASE_URL         — Supabase project URL
 VITE_SUPABASE_ANON_KEY    — Supabase anonymous (public) API key
-VITE_ANTHROPIC_API_KEY    — Anthropic API key (WARNING: exposed client-side — MVP only)
 VITE_APP_NAME             — "Quova" (display name)
 VITE_APP_VERSION          — "0.1.0"
 VITE_MONITORING_ENDPOINT  — (optional) telemetry ingest URL
@@ -742,6 +745,59 @@ Built the complete `packages/schema-discovery` package — a standalone AI-power
 - Mock mode: full pipeline runs end-to-end with deterministic results
 - Live mode: successfully ran against Anthropic API with real Claude Sonnet calls. Rate limit retry logic works correctly on free tier (30K input tokens/min limit).
 - HTML report generates at `output/mapping-report.html` — 18 tables analyzed, 77 columns mapped, 88.4% confidence, 98.7% agreement rate
+
+---
+
+## Session 9 — Rebrand to Quova + Deployment (2026-04-09)
+
+- Rebranded all UI text, page titles, and metadata from "Orbit" to "Quova"
+- Replaced Orbit logo/favicon with Quova brand assets from `Quova_Brand_Assets.zip`
+- Deployed orbit-mvp to Vercel at `app.quovaos.com` (A record → 76.76.21.21)
+- Deployed orbit-support to Vercel at `support.quovaos.com`
+- Added Login pill button to Orbit Website navbar linking to `app.quovaos.com`
+- Fixed npm audit vulnerabilities: upgraded @anthropic-ai/sdk, jspdf, @typescript-eslint, lodash
+- Replaced xlsx with exceljs (xlsx has unfixable prototype pollution vulnerability)
+- Created CLAUDE.md for orbit-support project
+
+---
+
+## Session 10 — Security Hardening (2026-04-09)
+
+Comprehensive security audit and hardening for public deployment.
+
+### Anthropic API Key & Data Leakage
+- Removed `VITE_ANTHROPIC_API_KEY` from Vercel env vars and redeployed
+- Hardcoded `ANTHROPIC_KEY = undefined` in `discoveryService.ts`, `claudeClient.ts`, `schemaDiscoveryAdapter.ts`
+- Removed `api.anthropic.com` from CSP `connect-src` in `vercel.json`
+- Discovery prompts contained entity names, currencies, file metadata, sample column values
+- Advisor prompts contained exposure amounts, hedge ratios, VaR, settlement timing
+- All AI features use rule-based/deterministic fallback until BFF proxy is implemented
+
+### Audit Log Identity Enforcement
+- Customer `audit_logs`: BEFORE INSERT trigger (`enforce_audit_log_fields`) overwrites `user_id`, `user_email`, `created_at` from `auth.uid()` — prevents identity forgery within same tenant
+- Support `support_audit_logs`: Replaced direct INSERT with `support_write_audit_log` RPC that validates action against allowed enum, resolves `target_org_name` from `target_org_id` server-side, enforces actor identity. Direct INSERT blocked via `WITH CHECK (false)` policy.
+
+### Onboarding RLS Hardening
+- `onboarding_sessions`, `organization_profiles`, `schema_discoveries`, `field_mappings`: INSERT/UPDATE restricted to admin/editor role (viewers could previously write via direct Supabase calls)
+
+### SECURITY DEFINER search_path Fix
+- Added `SET search_path = public, auth` to: `is_support_user()`, `get_support_user_role()`, `enforce_support_audit_log_fields()`, `prevent_audit_log_mutation()`
+
+### Client-Side Security Fixes
+- Removed raw CSV storage from sessionStorage (`FlatFileUploader.tsx`, `GoLive.tsx`)
+- Expanded PII stripping: added IBAN/BIC regex, name pseudonymization for vendor/customer/counterparty columns, removed 100-row limit
+- Added signup rate limiting (max 3 attempts per 60 seconds)
+- Added CSP header to orbit-support `vercel.json`
+- Support audit log retry with error state exposed to UI
+- Payment method last-4 digits masked with `••••` prefix
+- 30-minute idle session timeout for support staff with 2-minute warning
+- Pagination warnings on audit log pages (300-record cap)
+
+### New Migrations (applied 2026-04-09)
+- `20260409_audit_log_enforce_identity.sql`
+- `20260409_support_audit_log_rpc.sql`
+- `20260409_onboarding_rls_admin_editor.sql`
+- `20260409_search_path_hardening.sql`
 
 ---
 
