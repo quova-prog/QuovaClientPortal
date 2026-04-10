@@ -6,7 +6,11 @@
 
 import type { AIDiscoveryResult, OrganizationProfile } from '@/types'
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
+// SECURITY: Direct browser-to-Anthropic API calls are disabled.
+// Prompts contain sensitive business data (entity names, currencies, file metadata,
+// column sample values) that must not leave the client without a server-side proxy.
+// All AI features use rule-based fallback until a BFF proxy is implemented.
+const ANTHROPIC_KEY: string | undefined = undefined
 
 export interface FlatFileColumn {
   name: string

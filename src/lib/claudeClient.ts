@@ -9,7 +9,11 @@ export interface AiAnalysis {
   confidenceNote:          string
 }
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
+// SECURITY: Direct browser-to-Anthropic API calls are disabled.
+// The advisor prompt contains sensitive portfolio data (exposure amounts, hedge ratios,
+// VaR, settlement timing, strategy details) that must not leave the client without
+// a server-side proxy. Uses deterministic fallback analysis until BFF is implemented.
+const ANTHROPIC_KEY: string | undefined = undefined
 
 export const isConfigured = !!ANTHROPIC_KEY
 

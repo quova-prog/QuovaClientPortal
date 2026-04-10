@@ -117,7 +117,10 @@ const SAP_S4HANA_PROFILE: ErpProfile = {
 
 // ── BrowserLlmClient ─────────────────────────────────────────────────────────
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined
+// SECURITY: Direct browser-to-Anthropic API calls are disabled.
+// ERP schema data contains table names, column metadata, and sample values that
+// must not leave the client without a server-side proxy.
+const ANTHROPIC_KEY: string | undefined = undefined
 
 /**
  * Implements the schema-discovery LlmClient interface using direct browser
