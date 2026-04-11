@@ -1,4 +1,5 @@
 import type { RiskMetrics, Strategy, BacktestResult } from './advisorEngine'
+import { callAnthropicProxy } from './anthropicProxy'
 
 export interface AiAnalysis {
   cfoCoverHeadline:        string
@@ -9,13 +10,7 @@ export interface AiAnalysis {
   confidenceNote:          string
 }
 
-// SECURITY: Direct browser-to-Anthropic API calls are disabled.
-// The advisor prompt contains sensitive portfolio data (exposure amounts, hedge ratios,
-// VaR, settlement timing, strategy details) that must not leave the client without
-// a server-side proxy. Uses deterministic fallback analysis until BFF is implemented.
-const ANTHROPIC_KEY: string | undefined = undefined
-
-export const isConfigured = !!ANTHROPIC_KEY
+export const isConfigured = true
 
 // Strip accidental leading/trailing quote characters that LLMs sometimes add.
 // Covers ASCII quotes, curly quotes, guillemets, low-9 quotes, and angle quotes.
@@ -46,10 +41,6 @@ export async function getAdvisorAnalysis(
   strategies: Strategy[],
   backtest: BacktestResult,
 ): Promise<AiAnalysis> {
-  if (!ANTHROPIC_KEY) {
-    return generateFallbackAnalysis(metrics)
-  }
-
   const top = strategies[0]
 
   const prompt = `You are a senior FX risk advisor writing a concise executive summary for a corporate treasurer.
@@ -84,19 +75,10 @@ Rules:
 - Professional, direct tone — no fluff`
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const res = await callAnthropicProxy({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
     })
 
     if (!res.ok) {

@@ -117,14 +117,11 @@ const SAP_S4HANA_PROFILE: ErpProfile = {
 
 // ── BrowserLlmClient ─────────────────────────────────────────────────────────
 
-// SECURITY: Direct browser-to-Anthropic API calls are disabled.
-// ERP schema data contains table names, column metadata, and sample values that
-// must not leave the client without a server-side proxy.
-const ANTHROPIC_KEY: string | undefined = undefined
+import { callAnthropicProxy } from './anthropicProxy'
 
 /**
- * Implements the schema-discovery LlmClient interface using direct browser
- * fetch to the Anthropic Messages API. Same pattern as discoveryService.ts.
+ * Implements the schema-discovery LlmClient interface using the Supabase
+ * Edge Function proxy to the Anthropic Messages API.
  */
 export class BrowserLlmClient implements LlmClient {
   async complete(params: {
@@ -133,30 +130,17 @@ export class BrowserLlmClient implements LlmClient {
     modelId: string
     temperature?: number
   }): Promise<{ text: string; modelId: string }> {
-    if (!ANTHROPIC_KEY) {
-      throw new Error('VITE_ANTHROPIC_API_KEY is not set — cannot run ERP schema discovery')
-    }
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: params.modelId,
-        max_tokens: 16384,
-        temperature: params.temperature ?? 0,
-        system: params.systemPrompt,
-        messages: [{ role: 'user', content: params.userPrompt }],
-      }),
+    const res = await callAnthropicProxy({
+      model: params.modelId,
+      max_tokens: 16384,
+      temperature: params.temperature ?? 0,
+      system: params.systemPrompt,
+      messages: [{ role: 'user', content: params.userPrompt }],
     })
 
     if (!res.ok) {
       const body = await res.text().catch(() => '')
-      throw new Error(`Anthropic API ${res.status}: ${body.slice(0, 200)}`)
+      throw new Error(`Anthropic proxy ${res.status}: ${body.slice(0, 200)}`)
     }
 
     const data = await res.json() as { content?: Array<{ type: string; text: string }> }

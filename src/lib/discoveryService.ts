@@ -5,12 +5,7 @@
 // ============================================================
 
 import type { AIDiscoveryResult, OrganizationProfile } from '@/types'
-
-// SECURITY: Direct browser-to-Anthropic API calls are disabled.
-// Prompts contain sensitive business data (entity names, currencies, file metadata,
-// column sample values) that must not leave the client without a server-side proxy.
-// All AI features use rule-based fallback until a BFF proxy is implemented.
-const ANTHROPIC_KEY: string | undefined = undefined
+import { callAnthropicProxy } from './anthropicProxy'
 
 export interface FlatFileColumn {
   name: string
@@ -201,25 +196,11 @@ export async function runFlatFileDiscovery(
   }
 
   // Column names are non-standard — call AI for help with unmapped columns
-  if (!ANTHROPIC_KEY) {
-    console.warn('[discoveryService] No API key — using rule-based result as-is')
-    return ruleResult
-  }
-
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: buildPrompt(schema, profile) }],
-      }),
+    const res = await callAnthropicProxy({
+      model: 'claude-haiku-4-5',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: buildPrompt(schema, profile) }],
     })
 
     if (!res.ok) throw new Error(`Anthropic API ${res.status}`)
