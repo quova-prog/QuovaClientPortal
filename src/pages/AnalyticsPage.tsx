@@ -10,6 +10,7 @@ import { useHedgePositions, useExposures, useExposureSummary, useFxRates, useDas
 import { useCombinedCoverage, type CombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useDerivedExposures, type DerivedExposure } from '@/hooks/useDerivedExposures'
 import { useCashFlows, type CashFlowEntry } from '@/hooks/useCashFlows'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuditLog } from '@/hooks/useAuditLog'
 import { useEntity } from '@/context/EntityContext'
@@ -387,10 +388,10 @@ function crBuildMtm(positions: HedgePosition[], fxRates: Record<string, number>,
   return rows.map((p, i) => {
     const current = fxRates[p.currency_pair] ?? p.contracted_rate
     const diff    = p.direction === 'buy' ? current - p.contracted_rate : p.contracted_rate - current
-    let pnl       = diff * p.notional_base
-    // Convert to USD for USD-base pairs (e.g. USD/JPY: raw P&L is in JPY)
-    const isUsdBase = p.currency_pair.startsWith('USD/')
-    if (isUsdBase && current > 0) pnl = pnl / current
+    const pnlQuote = diff * p.notional_base
+    // Convert from quote currency to USD (handles all pair types: EUR/USD, USD/JPY, EUR/CAD)
+    const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
+    const pnl = toUsd(Math.abs(pnlQuote), quoteCcy, fxRates) * (pnlQuote >= 0 ? 1 : -1)
     return {
       'Reference':         p.reference_number ?? `TRD-${String(i + 1).padStart(4, '0')}`,
       'Trade Date':        p.trade_date,
@@ -529,6 +530,7 @@ export function AnalyticsPage() {
   const { exposures } = useExposures()
   const { summary   } = useExposureSummary()
   const { rates: fxRates }            = useFxRates()
+  const { lastUpdated: ratesLastUpdated } = useLiveFxRates()
   const { combinedCoverage }          = useCombinedCoverage()
   const { derivedExposures: allDerivedExposures } = useDerivedExposures()
   const { flows                      }            = useCashFlows()
@@ -1237,6 +1239,7 @@ export function AnalyticsPage() {
             }
             preparedBy={user?.email ?? 'Treasury Team'}
             orgName={(user?.organisation as any)?.name}
+            ratesAsOf={ratesLastUpdated}
           />
         )}
 

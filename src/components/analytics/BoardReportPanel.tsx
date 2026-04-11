@@ -32,6 +32,7 @@ interface BoardReportPanelProps {
   complianceStatus: 'compliant' | 'under_hedged' | 'over_hedged'
   preparedBy: string
   orgName?: string
+  ratesAsOf?: Date | null
 }
 
 // ── Section definitions ───────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export function BoardReportPanel({
   complianceStatus,
   preparedBy,
   orgName,
+  ratesAsOf,
 }: BoardReportPanelProps) {
   const [companyName,    setCompanyName   ] = useState<string>(orgName ?? 'My Company')
   const [reportPeriod,   setReportPeriod  ] = useState<string>(getCurrentQuarter())
@@ -204,6 +206,7 @@ export function BoardReportPanel({
         reportPeriod,
         generatedAt: new Date(),
         preparedBy,
+        ratesAsOf: ratesAsOf ?? undefined,
       })
       setLastGenerated(new Date())
     } finally {

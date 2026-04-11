@@ -10,7 +10,7 @@ import { useHedgePositions, useExposureSummary, useDashboardMetrics, useFxRates 
 import { useDerivedExposures } from '@/hooks/useDerivedExposures'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
-import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag } from '@/lib/utils'
+import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag, formatPnl } from '@/lib/utils'
 
 import { toUsd } from '@/lib/fx'
 import type { HedgePositionForm } from '@/types'
@@ -257,9 +257,10 @@ export function HedgePage() {
             const diff = p.direction === 'buy'
               ? currentRate - p.contracted_rate
               : p.contracted_rate - currentRate
-            let pnl = diff * p.notional_base
-            if (p.currency_pair.startsWith('USD/') && currentRate > 0) pnl = pnl / currentRate
-            return s + pnl
+            const pnlQuote = diff * p.notional_base
+            const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
+            const pnlUsd = toUsd(Math.abs(pnlQuote), quoteCcy, ratesMap) * (pnlQuote >= 0 ? 1 : -1)
+            return s + pnlUsd
           }, 0)
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -280,7 +281,7 @@ export function HedgePage() {
                 },
                 {
                   label: 'Unrealized P&L',
-                  value: (totalPnlUsd >= 0 ? '+' : '') + formatCurrency(Math.abs(totalPnlUsd), 'USD', true),
+                  value: formatPnl(totalPnlUsd, 'USD', true),
                   sub: totalPnlUsd >= 0 ? 'net gain across all positions' : 'net loss across all positions',
                   icon: TrendingUp,
                   color: totalPnlUsd >= 0 ? '#10b981' : '#ef4444',

@@ -19,6 +19,7 @@ export interface BoardReportData {
   reportPeriod: string
   generatedAt: Date
   preparedBy: string
+  ratesAsOf?: Date
   policyMinPct: number
   policyMaxPct: number
   baseCurrency: string
@@ -181,6 +182,11 @@ function addCoverPage(doc: jsPDF, data: BoardReportData) {
 
   // Generated
   doc.text('Generated: ' + fmtDate(data.generatedAt), 18, 132)
+
+  // Rates valuation timestamp
+  if (data.ratesAsOf) {
+    doc.text('Rates as of: ' + data.ratesAsOf.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }), 18, 142)
+  }
 
   // Teal line
   setDraw(doc, TEAL)

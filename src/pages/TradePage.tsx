@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { CheckCircle, Download, Shield, Search, X, AlertTriangle, Clock } from 'lucide-react'
 import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useEntity } from '@/context/EntityContext'
-import { formatCurrency, formatDate, daysUntil } from '@/lib/utils'
+import { formatCurrency, formatDate, daysUntil, formatPnl, formatFxRate, formatValuationTimestamp } from '@/lib/utils'
 
 type TabKey = 'summary' | 'blotter' | 'management'
 type SummaryView = 'overview' | 'rfq' | 'executed'
@@ -117,7 +117,7 @@ export function TradePage() {
   const ALL_STATUSES = ['active', 'expired', 'cancelled', 'rolled', 'closed'] as const
   const { positions, loading: positionsLoading, addPosition, rollPosition, amendPosition, closePosition, refresh: refreshPositions } = useHedgePositions(ALL_STATUSES)
   const { currentEntityId } = useEntity()
-  const { ratesMap: liveRatesMap } = useLiveFxRates()
+  const { ratesMap: liveRatesMap, lastUpdated: ratesLastUpdated } = useLiveFxRates()
   const { combinedCoverage } = useCombinedCoverage()
   const { rates: dbFxRates } = useFxRates()
   // Prefer live rates; fall back to Supabase stored rates
@@ -156,10 +156,25 @@ export function TradePage() {
     // Convert MTM from quote currency to USD
     const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
     const mtmUsd = toUsd(Math.abs(mtmQuote), quoteCcy, fxRates) * (mtmQuote >= 0 ? 1 : -1)
-    return { ...p, spot, mtmUsd }
+    return { ...p, spot, mtmUsd, mtmQuote, quoteCcy }
   })
 
   const totalMtmUsd = positionsWithMtm.reduce((s, p) => s + p.mtmUsd, 0)
+
+  // Group positions by currency pair for P&L attribution
+  const pairGroups = (() => {
+    const groups: Record<string, typeof positionsWithMtm> = {}
+    for (const p of positionsWithMtm) {
+      ;(groups[p.currency_pair] ??= []).push(p)
+    }
+    return Object.entries(groups).map(([pair, positions]) => ({
+      pair,
+      positions,
+      subtotalMtmUsd: positions.reduce((s, p) => s + p.mtmUsd, 0),
+      subtotalMtmQuote: positions.reduce((s, p) => s + p.mtmQuote, 0),
+      quoteCcy: positions[0].quoteCcy,
+    }))
+  })()
 
   // Exposure offset: for a direct 1:1 forward the underlying exposure moves equal and
   // opposite to the instrument. We calculate it per-position using spot_rate_at_trade
@@ -409,7 +424,7 @@ export function TradePage() {
                   Hedge Instrument MTM
                 </div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: totalMtmUsd >= 0 ? 'var(--green)' : 'var(--text-secondary)' }}>
-                  {totalMtmUsd >= 0 ? '+' : ''}{formatCurrency(totalMtmUsd, 'USD', true)}
+                  {formatPnl(totalMtmUsd, 'USD', true)}
                 </div>
                 <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                   FV change on forwards &amp; options
@@ -422,7 +437,7 @@ export function TradePage() {
                   Exposure Offset (est.)
                 </div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: exposureOffsetUsd >= 0 ? 'var(--green)' : 'var(--text-secondary)' }}>
-                  {exposureOffsetUsd >= 0 ? '+' : ''}{formatCurrency(exposureOffsetUsd, 'USD', true)}
+                  {formatPnl(exposureOffsetUsd, 'USD', true)}
                 </div>
                 <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                   Offsetting gain/loss on hedged items
@@ -439,7 +454,7 @@ export function TradePage() {
                   Net Economic Impact
                 </div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: Math.abs(netEconomicMtmUsd) < 50_000 ? 'var(--teal)' : netEconomicMtmUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>
-                  {netEconomicMtmUsd >= 0 ? '+' : ''}{formatCurrency(netEconomicMtmUsd, 'USD', true)}
+                  {formatPnl(netEconomicMtmUsd, 'USD', true)}
                 </div>
                 <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                   Combined hedge + exposure
@@ -467,6 +482,13 @@ export function TradePage() {
               </div>
             </div>
 
+            {/* Valuation timestamp */}
+            {ratesLastUpdated && (
+              <div style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                Rates as of {formatValuationTimestamp(ratesLastUpdated)}
+              </div>
+            )}
+
             {/* OVERVIEW */}
             {summaryView === 'overview' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1rem' }}>
@@ -474,7 +496,9 @@ export function TradePage() {
                 <div className="card" style={{ padding: 0 }}>
                   <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Position Mark-to-Market</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Live spot vs contracted rate</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {ratesLastUpdated ? `As of ${formatValuationTimestamp(ratesLastUpdated)}` : 'Live spot vs contracted rate'}
+                    </span>
                   </div>
 
                   {positionsLoading ? (
@@ -496,37 +520,65 @@ export function TradePage() {
                             <th className="text-right">Notional</th>
                             <th className="text-right">Contracted</th>
                             <th className="text-right">Live Spot</th>
-                            <th className="text-right">MTM P&L</th>
+                            <th className="text-right">P&L (Quote)</th>
+                            <th className="text-right">P&L (USD)</th>
+                            <th className="text-right">%</th>
                             <th>Settlement</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {positionsWithMtm.map(p => (
-                            <tr key={p.id}>
-                              <td>
-                                <div style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
-                                  {p.currency_pair}
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', marginTop: '0.125rem' }}>
-                                  <span className={`badge badge-${p.direction === 'buy' ? 'green' : 'blue'}`} style={{ fontSize: '0.65rem' }}>
-                                    {p.direction === 'buy' ? '↑ Buy' : '↓ Sell'}
-                                  </span>
-                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{instrumentLabel(p.instrument_type)}</span>
-                                </div>
-                              </td>
-                              <td className="text-right mono">{formatCurrency(p.notional_base, p.base_currency)}</td>
-                              <td className="text-right mono" style={{ fontSize: '0.8125rem' }}>{p.contracted_rate.toFixed(4)}</td>
-                              <td className="text-right mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                {p.spot.toFixed(4)}
-                              </td>
-                              <td className="text-right mono" style={{ fontWeight: 700, color: p.mtmUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>
-                                {p.mtmUsd >= 0 ? '+' : ''}{formatCurrency(p.mtmUsd, 'USD', true)}
-                              </td>
-                              <td>
-                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{formatDate(p.value_date)}</div>
-                                <div style={{ marginTop: '0.125rem' }}>{settlementDaysBadge(p.value_date)}</div>
-                              </td>
-                            </tr>
+                          {pairGroups.map(group => (
+                            <React.Fragment key={group.pair}>
+                              {/* Pair subtotal row */}
+                              {pairGroups.length > 1 && (
+                                <tr style={{ background: 'var(--bg-surface)' }}>
+                                  <td colSpan={5} style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                    {group.pair} ({group.positions.length} position{group.positions.length !== 1 ? 's' : ''})
+                                  </td>
+                                  <td className="text-right mono" style={{ fontWeight: 700, color: group.subtotalMtmUsd >= 0 ? 'var(--green)' : 'var(--red)', fontSize: '0.8125rem' }}>
+                                    {formatPnl(group.subtotalMtmUsd, 'USD', true)}
+                                  </td>
+                                  <td className="text-right mono" style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    {totalMtmUsd !== 0 ? `${(group.subtotalMtmUsd / totalMtmUsd * 100).toFixed(0)}%` : '—'}
+                                  </td>
+                                  <td />
+                                </tr>
+                              )}
+                              {/* Individual position rows */}
+                              {group.positions.map(p => (
+                                <tr key={p.id}>
+                                  <td>
+                                    <div style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                                      {p.currency_pair}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', marginTop: '0.125rem' }}>
+                                      <span className={`badge badge-${p.direction === 'buy' ? 'green' : 'blue'}`} style={{ fontSize: '0.65rem' }}>
+                                        {p.direction === 'buy' ? '↑ Buy' : '↓ Sell'}
+                                      </span>
+                                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{instrumentLabel(p.instrument_type)}</span>
+                                    </div>
+                                  </td>
+                                  <td className="text-right mono">{formatCurrency(p.notional_base, p.base_currency)}</td>
+                                  <td className="text-right mono" style={{ fontSize: '0.8125rem' }}>{formatFxRate(p.contracted_rate, p.currency_pair)}</td>
+                                  <td className="text-right mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                    {formatFxRate(p.spot, p.currency_pair)}
+                                  </td>
+                                  <td className="text-right mono" style={{ fontSize: '0.8125rem', color: p.mtmQuote >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                    {p.mtmQuote >= 0 ? '+' : ''}{p.mtmQuote.toFixed(0)} {p.quoteCcy}
+                                  </td>
+                                  <td className="text-right mono" style={{ fontWeight: 700, color: p.mtmUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                    {formatPnl(p.mtmUsd, 'USD', true)}
+                                  </td>
+                                  <td className="text-right mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    {totalMtmUsd !== 0 ? `${(p.mtmUsd / totalMtmUsd * 100).toFixed(1)}%` : '—'}
+                                  </td>
+                                  <td>
+                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{formatDate(p.value_date)}</div>
+                                    <div style={{ marginTop: '0.125rem' }}>{settlementDaysBadge(p.value_date)}</div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>
@@ -535,7 +587,7 @@ export function TradePage() {
                           {positionsWithMtm.length} active position{positionsWithMtm.length !== 1 ? 's' : ''}
                         </span>
                         <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: totalMtmUsd >= 0 ? 'var(--green)' : 'var(--text-secondary)' }}>
-                          Instrument MTM: {totalMtmUsd >= 0 ? '+' : ''}{formatCurrency(totalMtmUsd, 'USD', true)}
+                          Instrument MTM: {formatPnl(totalMtmUsd, 'USD', true)}
                         </span>
                       </div>
                     </>

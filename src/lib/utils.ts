@@ -41,6 +41,23 @@ export function formatRate(rate: number): string {
   return rate.toFixed(4)
 }
 
+/** Format P&L with explicit + sign for gains */
+export function formatPnl(amount: number, currency = 'USD', compact = false): string {
+  const prefix = amount >= 0 ? '+' : ''
+  return prefix + formatCurrency(amount, currency, compact)
+}
+
+/** Format FX rate with appropriate decimal places (2 for JPY pairs, 4 for others) */
+export function formatFxRate(rate: number, pair?: string): string {
+  const dp = pair?.includes('JPY') ? 2 : 4
+  return rate.toFixed(dp)
+}
+
+/** Format a date/time for valuation stamps: "Apr 11, 2026, 2:30 PM" */
+export function formatValuationTimestamp(date: Date): string {
+  return date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
 // ── Date formatting ───────────────────────────────────────
 
 export function formatDate(dateStr: string): string {
