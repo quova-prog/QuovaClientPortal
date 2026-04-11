@@ -248,6 +248,7 @@ export interface CsvParseResult {
 
 export interface HedgePositionForm {
   instrument_type: 'forward' | 'swap' | 'option' | 'spot'
+  hedge_type: 'cash_flow' | 'fair_value' | 'net_investment'
   currency_pair: string
   direction: 'buy' | 'sell'
   notional_base: number

@@ -10,7 +10,7 @@ const BANKS = ['JPMorgan Chase','Goldman Sachs','Citibank','BMO Capital Markets'
 
 function freshForm(): HedgePositionForm {
   return {
-    instrument_type: 'forward', currency_pair: 'EUR/USD', direction: 'sell',
+    instrument_type: 'forward', hedge_type: 'cash_flow', currency_pair: 'EUR/USD', direction: 'sell',
     notional_base: 0, contracted_rate: 0, trade_date: new Date().toISOString().split('T')[0],
     value_date: '', counterparty_bank: '', reference_number: '', notes: '',
   }

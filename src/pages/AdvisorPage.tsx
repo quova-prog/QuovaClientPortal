@@ -635,6 +635,7 @@ export function AdvisorPage() {
       state: {
         prefill: {
           instrument_type:  instrumentType,
+          hedge_type:       'cash_flow',
           currency_pair:    pair,
           direction:        'sell',
           notional_base:    baseNotional,

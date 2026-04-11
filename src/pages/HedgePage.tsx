@@ -81,13 +81,19 @@ const BANKS = ['JPMorgan Chase', 'Goldman Sachs', 'Citibank', 'BMO Capital Marke
 
 function freshForm(): HedgePositionForm {
   return {
-    instrument_type: 'forward', currency_pair: 'EUR/CAD', direction: 'sell',
+    instrument_type: 'forward', hedge_type: 'cash_flow', currency_pair: 'EUR/CAD', direction: 'sell',
     notional_base: 150000, contracted_rate: 1.362514, trade_date: new Date().toISOString().split('T')[0],
     value_date: '', counterparty_bank: 'BMO Capital Markets', reference_number: '', notes: '',
   }
 }
 
-type FormStep = 'select-strategy' | 'entry' | 'review' | 'success'
+type FormStep = 'select-strategy' | 'designation' | 'entry' | 'review' | 'success'
+
+const HEDGE_TYPES = [
+  { id: 'cash_flow' as const, title: 'Cash Flow Hedge', desc: 'Hedges variability in future cash flows from a forecasted transaction', icon: '💵' },
+  { id: 'fair_value' as const, title: 'Fair Value Hedge', desc: 'Hedges changes in fair value of a recognized asset or liability', icon: '📊' },
+  { id: 'net_investment' as const, title: 'Net Investment Hedge', desc: 'Hedges FX exposure from net investment in a foreign operation', icon: '🌐' },
+]
 
 function RiskBadge({ level }: { level: string }) {
   const cls = { Low: 'badge-green', Medium: 'badge-amber', High: 'badge-red' }[level] ?? 'badge-gray'
@@ -166,6 +172,7 @@ export function HedgePage() {
       setForm(prev => ({
         ...prev,
         ...(p.instrument_type && { instrument_type: p.instrument_type }),
+        ...(p.hedge_type      && { hedge_type: p.hedge_type }),
         ...(p.currency_pair   && { currency_pair: p.currency_pair }),
         ...(p.direction       && { direction: p.direction }),
         ...(p.notional_base   && { notional_base: p.notional_base }),
@@ -174,7 +181,7 @@ export function HedgePage() {
         ...(p.base_currency   && { base_currency: p.base_currency }),
         ...(p.quote_currency  && { quote_currency: p.quote_currency }),
       }))
-      setFormStep('entry')
+      setFormStep('designation')
       setShowForm(true)
     }
   }, [location.state])
@@ -218,7 +225,10 @@ export function HedgePage() {
     if (formStep === 'entry') { setFormStep('review'); return }
     setSubmitting(true)
     const [base, quote] = form.currency_pair.split('/')
-    const { error } = await addPosition({ ...form, base_currency: base, quote_currency: quote, notional_usd: null, status: 'active' } as any)
+    const hedgeTypeLabel = form.hedge_type === 'cash_flow' ? 'cash flow' : form.hedge_type === 'fair_value' ? 'fair value' : 'net investment'
+    const designationNote = `${hedgeTypeLabel} hedge — FX rate risk on ${form.currency_pair} exposure`
+    const notes = form.notes ? `${form.notes}\n${designationNote}` : designationNote
+    const { error } = await addPosition({ ...form, notes, base_currency: base, quote_currency: quote, notional_usd: null, status: 'active' } as any)
     setSubmitting(false)
     if (error) { setFormError(error); return }
     setFormStep('success')
@@ -241,7 +251,7 @@ export function HedgePage() {
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>Hedge your FX exposure in a few clicks</p>
         </div>
         <button className="btn btn-primary btn-sm" onClick={() => { setShowForm(true); setFormStep('select-strategy') }}>
-          <Plus size={13} /> Add Hedge
+          <Plus size={13} /> Book Hedge
         </button>
       </div>
 
@@ -262,43 +272,60 @@ export function HedgePage() {
             const pnlUsd = toUsd(Math.abs(pnlQuote), quoteCcy, ratesMap) * (pnlQuote >= 0 ? 1 : -1)
             return s + pnlUsd
           }, 0)
+          // Exposure offset: equal-and-opposite move on underlying (same formula as TradePage)
+          const exposureOffsetUsd = positions.reduce((s, p) => {
+            const inceptionSpot = p.spot_rate_at_trade ?? p.contracted_rate
+            const currentSpot = ratesMap[p.currency_pair] ?? p.contracted_rate
+            const qCcy = p.currency_pair.split('/')[1] ?? 'USD'
+            const exposureMove = p.direction === 'buy'
+              ? p.notional_base * (inceptionSpot - currentSpot)
+              : p.notional_base * (currentSpot - inceptionSpot)
+            return s + toUsd(Math.abs(exposureMove), qCcy, ratesMap) * (exposureMove >= 0 ? 1 : -1)
+          }, 0)
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-              {[
-                {
-                  label: 'Total Notional Hedged',
-                  value: formatCurrency(totalHedgedUsd, 'USD', true),
-                  sub: `${positions.length} position${positions.length !== 1 ? 's' : ''} across ${uniquePairs.size} pair${uniquePairs.size !== 1 ? 's' : ''}`,
-                  icon: DollarSign, color: 'var(--teal)', bg: '#f0fdfa',
-                },
-                {
-                  label: 'Nearest Maturity',
-                  value: nearestDays <= 0 ? 'Today' : `${nearestDays}d`,
-                  sub: formatDate(nearest.value_date) + ' · ' + nearest.currency_pair,
-                  icon: Calendar,
-                  color: nearestDays <= 7 ? 'var(--red)' : nearestDays <= 30 ? 'var(--amber)' : 'var(--teal)',
-                  bg: nearestDays <= 7 ? '#fef2f2' : nearestDays <= 30 ? '#fffbeb' : '#f0fdfa',
-                },
-                {
-                  label: 'Unrealized P&L',
-                  value: formatPnl(totalPnlUsd, 'USD', true),
-                  sub: totalPnlUsd >= 0 ? 'net gain across all positions' : 'net loss across all positions',
-                  icon: TrendingUp,
-                  color: totalPnlUsd >= 0 ? '#10b981' : '#ef4444',
-                  bg: totalPnlUsd >= 0 ? '#f0fdfa' : '#fef2f2',
-                },
-              ].map(({ label, value, sub, icon: Icon, color, bg }) => (
-                <div key={label} className="card" style={{ padding: '1rem' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.625rem' }}>
-                    <Icon size={15} color={color} />
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: '1.375rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
-                    {value}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.125rem' }}>{label}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{sub}</div>
+              {/* Total Notional Hedged */}
+              <div className="card" style={{ padding: '1rem' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.625rem' }}>
+                  <DollarSign size={15} color="var(--teal)" />
                 </div>
-              ))}
+                <div style={{ fontWeight: 700, fontSize: '1.375rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+                  {formatCurrency(totalHedgedUsd, 'USD', true)}
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.125rem' }}>Total Notional Hedged</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{positions.length} position{positions.length !== 1 ? 's' : ''} across {uniquePairs.size} pair{uniquePairs.size !== 1 ? 's' : ''}</div>
+              </div>
+
+              {/* Nearest Maturity */}
+              <div className="card" style={{ padding: '1rem' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: nearestDays <= 7 ? '#fef2f2' : nearestDays <= 30 ? '#fffbeb' : '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.625rem' }}>
+                  <Calendar size={15} color={nearestDays <= 7 ? 'var(--red)' : nearestDays <= 30 ? 'var(--amber)' : 'var(--teal)'} />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '1.375rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+                  {nearestDays <= 0 ? 'Today' : `${nearestDays}d`}
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.125rem' }}>Nearest Maturity</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{formatDate(nearest.value_date)} · {nearest.currency_pair}</div>
+              </div>
+
+              {/* Unrealized P&L with context */}
+              <div className="card" style={{ padding: '1rem' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: totalPnlUsd >= 0 ? '#f0fdfa' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.625rem' }}>
+                  <TrendingUp size={15} color={totalPnlUsd >= 0 ? '#10b981' : '#ef4444'} />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '1.375rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+                  {formatPnl(totalPnlUsd, 'USD', true)}
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.125rem' }}>Hedge Instrument P&L</div>
+                <div style={{ fontSize: '0.72rem', color: exposureOffsetUsd >= 0 ? '#10b981' : 'var(--text-muted)' }}>
+                  Est. exposure offset: {formatPnl(exposureOffsetUsd, 'USD', true)}
+                </div>
+                {totalPnlUsd < 0 && (
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: 1.3 }}>
+                    Hedge losses are typically offset by gains on underlying exposures. See Trade page for net impact.
+                  </div>
+                )}
+              </div>
             </div>
           )
         })()}
@@ -560,9 +587,9 @@ export function HedgePage() {
               <div className="empty-state">
                 <Shield size={32} />
                 <h3>No hedge positions{search ? ' matching' : ''}</h3>
-                <p>Add your first hedge using the "Add Hedge" button above.</p>
+                <p>Book your first hedge using the button above.</p>
                 <button className="btn btn-primary btn-sm" onClick={() => { setShowForm(true); setFormStep('select-strategy') }}>
-                  <Plus size={13} /> Add Hedge
+                  <Plus size={13} /> Book Hedge
                 </button>
               </div>
             ) : (
@@ -625,11 +652,12 @@ export function HedgePage() {
       {/* Modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card fade-in" style={{ width: '100%', maxWidth: formStep === 'select-strategy' ? 560 : 480, maxHeight: '90vh', overflowY: 'auto', background: '#fff' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: formStep === 'select-strategy' || formStep === 'designation' ? 560 : 480, maxHeight: '90vh', overflowY: 'auto', background: '#fff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {formStep === 'select-strategy' ? 'Create a New Hedge Strategy' :
+                  {formStep === 'select-strategy' ? 'Book New Hedge' :
+                   formStep === 'designation' ? 'Hedge Designation' :
                    formStep === 'entry' ? 'FX Forward' :
                    formStep === 'review' ? 'Review & Confirm' : 'Transaction Sent'}
                 </h3>
@@ -644,7 +672,7 @@ export function HedgePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                   {STRATEGY_TYPES.map(s => (
                     <div key={s.id}
-                      onClick={() => { setSelectedStrategy(s.id); setFormStep('entry') }}
+                      onClick={() => { setSelectedStrategy(s.id); setFormStep('designation') }}
                       style={{ padding: '1.25rem', border: `1px solid ${selectedStrategy === s.id ? 'var(--teal)' : 'var(--border)'}`, borderRadius: 'var(--r-lg)', cursor: 'pointer', transition: 'all 0.15s', background: selectedStrategy === s.id ? '#f0fdfa' : 'var(--bg-surface)' }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--teal)')}
                       onMouseLeave={e => { if (selectedStrategy !== s.id) (e.currentTarget.style.borderColor = 'var(--border)') }}>
@@ -657,6 +685,94 @@ export function HedgePage() {
                 <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>+ Add Custom Strategy</button>
               </div>
             )}
+
+            {/* Designation Step */}
+            {formStep === 'designation' && (() => {
+              const pairExposure = combinedCoverage.find(c => c.currency_pair === form.currency_pair)
+              const exposureUsd = pairExposure ? toUsd(Math.abs(pairExposure.net_exposure), pairExposure.base_currency, ratesMap) : 0
+              const exposureDirection = pairExposure ? (pairExposure.net_exposure > 0 ? 'receivables' : 'payables') : 'exposure'
+              const exposureCount = pairExposure ? Math.max(1, Math.round(Math.abs(pairExposure.net_exposure) / 50000)) : 0
+              const hedgeTypeLabel = HEDGE_TYPES.find(h => h.id === form.hedge_type)?.title ?? 'Cash Flow Hedge'
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {/* Hedge Type Selection */}
+                  <div>
+                    <label className="label">Hedge Type (ASC 815 / IFRS 9)</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                      {HEDGE_TYPES.map(h => (
+                        <div key={h.id}
+                          onClick={() => set('hedge_type', h.id)}
+                          style={{ padding: '0.75rem', border: `1px solid ${form.hedge_type === h.id ? 'var(--teal)' : 'var(--border)'}`, borderRadius: 'var(--r-md)', cursor: 'pointer', background: form.hedge_type === h.id ? '#f0fdfa' : 'var(--bg-surface)', transition: 'all 0.15s' }}>
+                          <div style={{ fontSize: '1.25rem', marginBottom: '0.375rem' }}>{h.icon}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: '0.125rem' }}>{h.title}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>{h.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hedged Item */}
+                  <div>
+                    <label className="label">Hedged Item</label>
+                    <div>
+                      <label className="label" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>Currency Pair</label>
+                      <select className="input" value={form.currency_pair} onChange={e => set('currency_pair', e.target.value)}
+                        style={{ marginBottom: '0.5rem' }}>
+                        {combinedCoverage.filter(c => Math.abs(c.net_exposure) > 100).map(c => (
+                          <option key={c.currency_pair} value={c.currency_pair}>{c.currency_pair}</option>
+                        ))}
+                        <option value={form.currency_pair}>{form.currency_pair}</option>
+                      </select>
+                    </div>
+                    {pairExposure ? (
+                      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--r-md)', padding: '0.75rem', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Net Exposure</span>
+                          <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{formatCurrency(exposureUsd, 'USD', true)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Direction</span>
+                          <span style={{ fontWeight: 500 }}>{pairExposure.net_exposure > 0 ? 'Net Receivable' : 'Net Payable'}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Coverage</span>
+                          <span style={{ fontWeight: 500 }}>{pairExposure.coverage_pct.toFixed(0)}% hedged</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ background: '#fffbeb', borderRadius: 'var(--r-md)', padding: '0.75rem', border: '1px solid #fde68a', fontSize: '0.8125rem', color: '#92400e' }}>
+                        No exposure data for {form.currency_pair}. Upload exposures first or select a different pair.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Risk Being Hedged */}
+                  <div>
+                    <label className="label">Risk Being Hedged</label>
+                    <div className="input" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
+                      Foreign currency exchange rate risk
+                    </div>
+                  </div>
+
+                  {/* Designation Summary */}
+                  <div style={{ background: '#f0fdfa', borderRadius: 'var(--r-md)', padding: '0.75rem', border: '1px solid var(--teal)', fontSize: '0.8125rem' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--teal-dark)' }}>Designation Summary</div>
+                    <div style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      This {form.instrument_type} hedges {hedgeTypeLabel.toLowerCase()} variability in <strong>{form.currency_pair}</strong> {exposureDirection}
+                      {exposureUsd > 0 ? ` totaling ${formatCurrency(exposureUsd, 'USD', true)}` : ''}.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <button className="btn btn-ghost" onClick={() => setFormStep('select-strategy')}>← Back</button>
+                    <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
+                      onClick={() => setFormStep('entry')}>
+                      Continue to Trade Details
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Entry Form */}
             {formStep === 'entry' && (
@@ -750,7 +866,7 @@ export function HedgePage() {
                 {formError && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-sm)', padding: '0.625rem 0.875rem', fontSize: '0.875rem', color: 'var(--red)' }}>{formError}</div>}
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn btn-ghost" onClick={() => setFormStep('select-strategy')}>← Back</button>
+                  <button className="btn btn-ghost" onClick={() => setFormStep('designation')}>← Back</button>
                   <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleSubmit}>Review →</button>
                 </div>
               </div>
@@ -759,6 +875,13 @@ export function HedgePage() {
             {/* Review */}
             {formStep === 'review' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                {/* Designation badge */}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.8125rem' }}>
+                  <span className="badge badge-teal">{form.hedge_type === 'cash_flow' ? 'Cash Flow' : form.hedge_type === 'fair_value' ? 'Fair Value' : 'Net Investment'} Hedge</span>
+                  <span style={{ color: 'var(--text-muted)' }}>·</span>
+                  <span style={{ color: 'var(--text-muted)' }}>FX rate risk on {form.currency_pair} exposure</span>
+                </div>
+
                 <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--r-md)', padding: '1rem', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
