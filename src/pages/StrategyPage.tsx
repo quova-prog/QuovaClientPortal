@@ -409,12 +409,20 @@ export function StrategyPage() {
                                 {p.instrument_type} · {fmtDate(p.value_date)}
                               </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
-                                {fmt(toUsd(p.notional_base, p.base_currency, rates))}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: col, fontWeight: 600 }}>
-                                {d}d
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              {d <= 30 && (
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', color: 'var(--teal-dark)', borderColor: 'var(--teal)' }}
+                                  onClick={() => navigate('/trade', { state: { action: 'roll', positionId: p.id } })}>
+                                  Roll
+                                </button>
+                              )}
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
+                                  {fmt(toUsd(p.notional_base, p.base_currency, rates))}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: col, fontWeight: 600 }}>
+                                  {d}d
+                                </div>
                               </div>
                             </div>
                           </div>

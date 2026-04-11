@@ -292,7 +292,171 @@ export function useHedgePositions(statuses: readonly string[] = DEFAULT_STATUSES
     })
   }
 
-  return { positions, loading, refresh: load, addPosition, deletePosition }
+  // ── Roll Position ──────────────────────────────────────────
+  // Marks old position as 'rolled', creates a new linked position
+  async function rollPosition(
+    oldPosition: HedgePosition,
+    rollForm: {
+      value_date: string
+      notional_base: number
+      contracted_rate: number
+      spot_rate_at_trade: number | null
+      counterparty_bank: string | null
+      notes: string | null
+    },
+  ): Promise<{ error: string | null; newPosition?: HedgePosition }> {
+    if (!user?.profile) return { error: 'Not authenticated' }
+
+    // Step 1: Mark old position as rolled
+    const { error: updateErr } = await db
+      .from('hedge_positions')
+      .update({ status: 'rolled' })
+      .eq('id', oldPosition.id)
+    if (updateErr) return { error: updateErr.message }
+
+    // Step 2: Insert new position linked to the old one
+    const today = new Date().toISOString().split('T')[0]
+    const ref = oldPosition.reference_number
+      ? `${oldPosition.reference_number}-R`
+      : `ORB-${Date.now().toString(36).toUpperCase().slice(-8)}`
+
+    const { data, error: insertErr } = await db
+      .from('hedge_positions')
+      .insert({
+        org_id: user.profile.org_id,
+        created_by: user.id,
+        entity_id: oldPosition.entity_id,
+        instrument_type: oldPosition.instrument_type,
+        hedge_type: oldPosition.hedge_type,
+        currency_pair: oldPosition.currency_pair,
+        base_currency: oldPosition.base_currency,
+        quote_currency: oldPosition.quote_currency,
+        direction: oldPosition.direction,
+        notional_base: rollForm.notional_base,
+        notional_usd: null,
+        contracted_rate: rollForm.contracted_rate,
+        spot_rate_at_trade: rollForm.spot_rate_at_trade,
+        trade_date: today,
+        value_date: rollForm.value_date,
+        counterparty_bank: rollForm.counterparty_bank,
+        reference_number: ref,
+        status: 'active',
+        notes: rollForm.notes,
+        rolled_from_id: oldPosition.id,
+      })
+      .select()
+      .single()
+
+    if (insertErr || !data) {
+      // Revert old position back to active on failure
+      await db.from('hedge_positions').update({ status: 'active' }).eq('id', oldPosition.id)
+      return { error: insertErr?.message ?? 'Failed to create rolled position' }
+    }
+
+    // Optimistic state: remove old (no longer active), add new
+    setPositions(prev => [...prev.filter(p => p.id !== oldPosition.id), data])
+
+    await log({
+      action: 'update',
+      resource: 'hedge_position',
+      resource_id: oldPosition.id,
+      summary: `Rolled ${oldPosition.currency_pair} from ${oldPosition.value_date} to ${rollForm.value_date}`,
+      metadata: {
+        old_value_date: oldPosition.value_date,
+        new_value_date: rollForm.value_date,
+        new_position_id: data.id,
+        old_notional: oldPosition.notional_base,
+        new_notional: rollForm.notional_base,
+      },
+    })
+
+    return { error: null, newPosition: data }
+  }
+
+  // ── Amend Position ─────────────────────────────────────────
+  // In-place update of editable fields with audit trail
+  async function amendPosition(
+    positionId: string,
+    amendForm: {
+      notional_base?: number
+      contracted_rate?: number
+      value_date?: string
+      counterparty_bank?: string
+      notes?: string
+    },
+    beforeValues: Record<string, unknown>,
+  ): Promise<{ error: string | null }> {
+    if (!user?.profile) return { error: 'Not authenticated' }
+
+    const { data, error } = await db
+      .from('hedge_positions')
+      .update({ ...amendForm, amended_at: new Date().toISOString() })
+      .eq('id', positionId)
+      .select()
+      .single()
+
+    if (error || !data) return { error: error?.message ?? 'Amendment failed' }
+
+    setPositions(prev => prev.map(p => p.id === positionId ? data : p))
+
+    await log({
+      action: 'update',
+      resource: 'hedge_position',
+      resource_id: positionId,
+      summary: `Amended hedge position ${data.currency_pair}`,
+      metadata: {
+        changed_fields: Object.keys(amendForm),
+        before: beforeValues,
+        after: amendForm,
+      },
+    })
+
+    return { error: null }
+  }
+
+  // ── Close Position Early ───────────────────────────────────
+  // Marks position as closed with close date/rate for P&L tracking
+  async function closePosition(
+    position: HedgePosition,
+    closeForm: { close_date: string; close_rate: number },
+  ): Promise<{ error: string | null }> {
+    if (!user?.profile) return { error: 'Not authenticated' }
+
+    const { error } = await db
+      .from('hedge_positions')
+      .update({
+        status: 'closed',
+        close_date: closeForm.close_date,
+        close_rate: closeForm.close_rate,
+      })
+      .eq('id', position.id)
+
+    if (error) return { error: error.message }
+
+    setPositions(prev => prev.filter(p => p.id !== position.id))
+
+    // Calculate realized P&L for the audit record
+    const realizedPnl = position.direction === 'buy'
+      ? position.notional_base * (closeForm.close_rate - position.contracted_rate)
+      : position.notional_base * (position.contracted_rate - closeForm.close_rate)
+
+    await log({
+      action: 'update',
+      resource: 'hedge_position',
+      resource_id: position.id,
+      summary: `Early closed ${position.currency_pair}, realized P&L: ${realizedPnl >= 0 ? '+' : ''}${realizedPnl.toFixed(2)} ${position.quote_currency}`,
+      metadata: {
+        close_date: closeForm.close_date,
+        close_rate: closeForm.close_rate,
+        realized_pnl: realizedPnl,
+        quote_currency: position.quote_currency,
+      },
+    })
+
+    return { error: null }
+  }
+
+  return { positions, loading, refresh: load, addPosition, deletePosition, rollPosition, amendPosition, closePosition }
 }
 
 // ── Hedge Coverage (view) ─────────────────────────────────

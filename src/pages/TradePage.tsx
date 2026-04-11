@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { CheckCircle, Download, Shield, Search, X, AlertTriangle, Clock } from 'lucide-react'
 import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
@@ -63,6 +64,8 @@ function positionStatusLabel(s: string): { label: string; cls: string } {
     active:    { label: 'Active',    cls: 'badge-teal'  },
     expired:   { label: 'Settled',   cls: 'badge-green' },
     cancelled: { label: 'Cancelled', cls: 'badge-red'   },
+    rolled:    { label: 'Rolled',    cls: 'badge-blue'  },
+    closed:    { label: 'Closed',    cls: 'badge-amber' },
   }[s] ?? { label: s, cls: 'badge-gray' }
 }
 
@@ -91,25 +94,47 @@ function BankLogo({ name }: { name: string }) {
 }
 
 export function TradePage() {
+  const location = useLocation()
   const [tab, setTab] = useState<TabKey>('summary')
   const [summaryView, setSummaryView] = useState<SummaryView>('overview')
   const [rfqCoverage, setRfqCoverage] = useState<any | null>(null)
   const [selectedDealer, setSelectedDealer] = useState<string | null>(null)
   const [countdownSecs, setCountdownSecs] = useState(4 * 60 + 32)
   const [blotterSearch, setBlotterSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'cancelled'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'cancelled' | 'rolled' | 'closed'>('all')
   const [actionModal, setActionModal] = useState<{ type: ActionType; position: any } | null>(null)
-  const [closingConfirmed, setClosingConfirmed] = useState(false)
+  const [modalStep, setModalStep] = useState<'form' | 'review' | 'success'>('form')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const { positions, loading: positionsLoading, addPosition, refresh: refreshPositions } = useHedgePositions()
+  // Roll form state
+  const [rollForm, setRollForm] = useState({ value_date: '', notional_base: 0, contracted_rate: 0, spot_rate_at_trade: 0, counterparty_bank: '', notes: '' })
+  // Amend form state
+  const [amendForm, setAmendForm] = useState({ notional_base: 0, contracted_rate: 0, value_date: '', counterparty_bank: '', notes: '' })
+  // Close form state
+  const [closeForm, setCloseForm] = useState({ close_date: '', close_rate: 0 })
+
+  const ALL_STATUSES = ['active', 'expired', 'cancelled', 'rolled', 'closed'] as const
+  const { positions, loading: positionsLoading, addPosition, rollPosition, amendPosition, closePosition, refresh: refreshPositions } = useHedgePositions(ALL_STATUSES)
   const { currentEntityId } = useEntity()
   const { ratesMap: liveRatesMap } = useLiveFxRates()
   const { combinedCoverage } = useCombinedCoverage()
   const { rates: dbFxRates } = useFxRates()
   // Prefer live rates; fall back to Supabase stored rates
   const fxRates = Object.keys(liveRatesMap).length > 0 ? liveRatesMap : dbFxRates
+
+  // Auto-open roll modal when navigating from StrategyPage
+  useEffect(() => {
+    const state = location.state as any
+    if (state?.action === 'roll' && state?.positionId && positions.length > 0) {
+      setTab('management')
+      const pos = positions.find(p => p.id === state.positionId)
+      if (pos && pos.status === 'active') openRollModal(pos)
+      // Clear state to prevent re-triggering
+      window.history.replaceState({}, '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, positions])
 
   // Countdown ticks only while RFQ is active
   useEffect(() => {
@@ -223,6 +248,91 @@ export function TradePage() {
     setSelectedDealer(bank)
     setSummaryView('executed')
     await refreshPositions()
+  }
+
+  // ── Modal Open Helpers ─────────────────────────────────────
+  function openRollModal(p: any) {
+    const defaultDate = new Date(p.value_date)
+    defaultDate.setMonth(defaultDate.getMonth() + 1)
+    const spot = liveRatesMap[p.currency_pair] ?? p.contracted_rate
+    setRollForm({
+      value_date: defaultDate.toISOString().split('T')[0],
+      notional_base: p.notional_base,
+      contracted_rate: +(spot * 1.002).toFixed(6), // estimate fwd rate with small premium
+      spot_rate_at_trade: spot,
+      counterparty_bank: p.counterparty_bank ?? '',
+      notes: '',
+    })
+    setModalStep('form')
+    setSaveError(null)
+    setActionModal({ type: 'roll', position: p })
+  }
+
+  function openAmendModal(p: any) {
+    setAmendForm({
+      notional_base: p.notional_base,
+      contracted_rate: p.contracted_rate,
+      value_date: p.value_date,
+      counterparty_bank: p.counterparty_bank ?? '',
+      notes: p.notes ?? '',
+    })
+    setModalStep('form')
+    setSaveError(null)
+    setActionModal({ type: 'amend', position: p })
+  }
+
+  function openCloseModal(p: any) {
+    const today = new Date().toISOString().split('T')[0]
+    const spot = liveRatesMap[p.currency_pair] ?? p.contracted_rate
+    setCloseForm({ close_date: today, close_rate: spot })
+    setModalStep('form')
+    setSaveError(null)
+    setActionModal({ type: 'close', position: p })
+  }
+
+  // ── Modal Submit Handlers ──────────────────────────────────
+  async function handleRollSubmit() {
+    if (!actionModal || saving) return
+    setSaving(true)
+    setSaveError(null)
+    const result = await rollPosition(actionModal.position, {
+      ...rollForm,
+      spot_rate_at_trade: rollForm.spot_rate_at_trade || null,
+      counterparty_bank: rollForm.counterparty_bank || null,
+      notes: rollForm.notes || null,
+    })
+    setSaving(false)
+    if (result.error) { setSaveError(result.error); return }
+    setModalStep('success')
+  }
+
+  async function handleAmendSubmit() {
+    if (!actionModal || saving) return
+    setSaving(true)
+    setSaveError(null)
+    const pos = actionModal.position
+    const changes: Record<string, any> = {}
+    const before: Record<string, unknown> = {}
+    if (amendForm.notional_base !== pos.notional_base) { changes.notional_base = amendForm.notional_base; before.notional_base = pos.notional_base }
+    if (amendForm.contracted_rate !== pos.contracted_rate) { changes.contracted_rate = amendForm.contracted_rate; before.contracted_rate = pos.contracted_rate }
+    if (amendForm.value_date !== pos.value_date) { changes.value_date = amendForm.value_date; before.value_date = pos.value_date }
+    if (amendForm.counterparty_bank !== (pos.counterparty_bank ?? '')) { changes.counterparty_bank = amendForm.counterparty_bank; before.counterparty_bank = pos.counterparty_bank }
+    if (amendForm.notes !== (pos.notes ?? '')) { changes.notes = amendForm.notes; before.notes = pos.notes }
+    if (Object.keys(changes).length === 0) { setSaving(false); setActionModal(null); return }
+    const result = await amendPosition(pos.id, changes, before)
+    setSaving(false)
+    if (result.error) { setSaveError(result.error); return }
+    setModalStep('success')
+  }
+
+  async function handleCloseSubmit() {
+    if (!actionModal || saving) return
+    setSaving(true)
+    setSaveError(null)
+    const result = await closePosition(actionModal.position, closeForm)
+    setSaving(false)
+    if (result.error) { setSaveError(result.error); return }
+    setModalStep('success')
   }
 
   const filteredPositions = positions.filter(p => {
@@ -655,6 +765,8 @@ export function TradePage() {
                   <option value="active">Active</option>
                   <option value="expired">Settled</option>
                   <option value="cancelled">Cancelled</option>
+                  <option value="rolled">Rolled</option>
+                  <option value="closed">Closed</option>
                 </select>
               </div>
 
@@ -836,22 +948,26 @@ export function TradePage() {
                           <td><span className={`badge ${positionStatusLabel(p.status).cls}`}>{positionStatusLabel(p.status).label}</span></td>
                           <td>
                             <div style={{ display: 'flex', gap: '0.375rem' }}>
-                              <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
-                                title="Roll forward to a new settlement date"
-                                onClick={() => setActionModal({ type: 'roll', position: p })}>
-                                Roll
-                              </button>
-                              <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
-                                title="Amend notional or rate"
-                                onClick={() => setActionModal({ type: 'amend', position: p })}>
-                                Amend
-                              </button>
-                              {!matured && (
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'var(--red)', borderColor: 'var(--red)' }}
-                                  title="Close this position early"
-                                  onClick={() => { setClosingConfirmed(false); setActionModal({ type: 'close', position: p }) }}>
-                                  Close
+                              {p.status === 'active' && (
+                                <>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                  title="Roll forward to a new settlement date"
+                                  onClick={() => openRollModal(p)}>
+                                  Roll
                                 </button>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                  title="Amend notional or rate"
+                                  onClick={() => openAmendModal(p)}>
+                                  Amend
+                                </button>
+                                {!matured && (
+                                  <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'var(--red)', borderColor: 'var(--red)' }}
+                                    title="Close this position early"
+                                    onClick={() => openCloseModal(p)}>
+                                    Close
+                                  </button>
+                                )}
+                                </>
                               )}
                             </div>
                           </td>
@@ -869,79 +985,283 @@ export function TradePage() {
     </div>
 
     {/* ── Position Action Modal ─────────────────────────────────────────── */}
-    {actionModal && (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-        <div className="card fade-in" style={{ width: '100%', maxWidth: 440, background: '#fff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>
-                {actionModal.type === 'roll' ? '↻ Roll Position' : actionModal.type === 'amend' ? '✏️ Amend Position' : '✕ Close Position Early'}
+    {actionModal && (() => {
+      const pos = actionModal.position
+      const posRef = pos.reference_number || `ORB-${pos.id.slice(0, 8).toUpperCase()}`
+      const spotForClose = liveRatesMap[pos.currency_pair] ?? pos.contracted_rate
+      const closeMtm = getMtmPnl(pos.notional_base, pos.direction, pos.contracted_rate, closeForm.close_rate || spotForClose)
+      const quoteCcy = pos.currency_pair.split('/')[1] ?? 'USD'
+      const closeMtmUsd = toUsd(Math.abs(closeMtm), quoteCcy, fxRates) * (closeMtm >= 0 ? 1 : -1)
+      const inputStyle = { width: '100%', padding: '0.5rem 0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', background: 'var(--bg-card)' }
+      const labelStyle = { fontSize: '0.75rem', fontWeight: 600 as const, color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }
+
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: 480, background: '#fff', maxHeight: '90vh', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>
+                  {actionModal.type === 'roll' ? '↻ Roll Position' : actionModal.type === 'amend' ? '✏ Amend Position' : '✕ Close Position Early'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {pos.currency_pair} · {formatCurrency(pos.notional_base, pos.base_currency, true)}
+                </div>
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {actionModal.position.currency_pair} · {formatCurrency(actionModal.position.notional_base, actionModal.position.base_currency, true)}
-              </div>
+              <button onClick={() => setActionModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={18} />
+              </button>
             </div>
-            <button onClick={() => setActionModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-              <X size={18} />
-            </button>
-          </div>
 
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--r-md)', padding: '0.75rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {[
-              ['Reference',   actionModal.position.reference_number || `ORB-${actionModal.position.id.slice(0, 8).toUpperCase()}`],
-              ['Counterparty', actionModal.position.counterparty_bank ?? '—'],
-              ['Settlement',  formatDate(actionModal.position.value_date)],
-              ['Rate',        actionModal.position.contracted_rate.toFixed(4)],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                <span style={{ fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>{value}</span>
+            {/* Original position summary */}
+            <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--r-md)', padding: '0.75rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              {[
+                ['Reference', posRef],
+                ['Instrument', instrumentLabel(pos.instrument_type)],
+                ['Direction', pos.direction === 'buy' ? 'Buy' : 'Sell'],
+                ['Counterparty', pos.counterparty_bank ?? '—'],
+                ['Settlement', formatDate(pos.value_date)],
+                ['Rate', pos.contracted_rate.toFixed(6)],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                  <span style={{ fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Error banner */}
+            {saveError && (
+              <div className="error-banner" style={{ marginBottom: '1rem' }}>{saveError}</div>
+            )}
+
+            {/* ── ROLL MODAL ──────────────────────────── */}
+            {actionModal.type === 'roll' && modalStep === 'form' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>New Settlement Date</label>
+                  <input type="date" style={inputStyle} value={rollForm.value_date}
+                    min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                    onChange={e => setRollForm(f => ({ ...f, value_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>New Notional ({pos.base_currency})</label>
+                  <input type="number" style={inputStyle} value={rollForm.notional_base || ''}
+                    min={0} step="0.01"
+                    onChange={e => setRollForm(f => ({ ...f, notional_base: parseFloat(e.target.value) || 0 }))} />
+                  {rollForm.notional_base > 0 && rollForm.notional_base < pos.notional_base && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--amber)', marginTop: '0.25rem' }}>
+                      Partial roll — {formatCurrency(pos.notional_base - rollForm.notional_base, pos.base_currency)} settles at maturity
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={labelStyle}>New Contracted Rate</label>
+                  <input type="number" style={inputStyle} value={rollForm.contracted_rate || ''}
+                    min={0} step="0.000001"
+                    onChange={e => setRollForm(f => ({ ...f, contracted_rate: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Spot Rate at Roll</label>
+                  <input type="number" style={{ ...inputStyle, background: 'var(--bg-surface)', color: 'var(--text-muted)' }}
+                    value={rollForm.spot_rate_at_trade || ''} readOnly />
+                </div>
+                <div>
+                  <label style={labelStyle}>Counterparty</label>
+                  <input type="text" style={inputStyle} value={rollForm.counterparty_bank}
+                    onChange={e => setRollForm(f => ({ ...f, counterparty_bank: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Notes</label>
+                  <textarea style={{ ...inputStyle, fontFamily: 'inherit', minHeight: 48, resize: 'vertical' }}
+                    value={rollForm.notes} placeholder="Optional notes..."
+                    onChange={e => setRollForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setActionModal(null)}>Cancel</button>
+                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
+                    disabled={!rollForm.value_date || rollForm.notional_base <= 0 || rollForm.contracted_rate <= 0}
+                    onClick={() => setModalStep('review')}>
+                    Review Roll
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
 
-          {actionModal.type === 'close' && !closingConfirmed ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-md)', padding: '0.75rem', marginBottom: '1rem' }}>
-                <AlertTriangle size={15} color="var(--red)" style={{ flexShrink: 0, marginTop: 1 }} />
-                <p style={{ fontSize: '0.8125rem', color: '#b91c1c', margin: 0 }}>
-                  Closing this position early may result in a mark-to-market loss. This action cannot be undone.
+            {actionModal.type === 'roll' && modalStep === 'review' && (
+              <div>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem' }}>Roll Summary</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem', fontSize: '0.8125rem', marginBottom: '1rem' }}>
+                  <div style={{ color: 'var(--text-muted)' }}>Field</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontWeight: 600 }}>
+                    <span>Original</span><span style={{ color: 'var(--teal-dark)' }}>New</span>
+                  </div>
+                  {[
+                    ['Settlement', formatDate(pos.value_date), formatDate(rollForm.value_date)],
+                    ['Notional', formatCurrency(pos.notional_base, pos.base_currency), formatCurrency(rollForm.notional_base, pos.base_currency)],
+                    ['Rate', pos.contracted_rate.toFixed(6), rollForm.contracted_rate.toFixed(6)],
+                    ['Counterparty', pos.counterparty_bank ?? '—', rollForm.counterparty_bank || '—'],
+                  ].map(([field, orig, next]) => (
+                    <div key={field} style={{ display: 'contents' }}>
+                      <div style={{ color: 'var(--text-muted)', padding: '0.25rem 0' }}>{field}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontFamily: 'var(--font-mono)', padding: '0.25rem 0' }}>
+                        <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)' }}>{orig}</span>
+                        <span style={{ color: 'var(--teal-dark)', fontWeight: 600 }}>{next}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {rollForm.notional_base < pos.notional_base && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--r-md)', padding: '0.75rem', marginBottom: '1rem' }}>
+                    <AlertTriangle size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span style={{ fontSize: '0.8125rem', color: '#92400e' }}>
+                      Partial roll: {formatCurrency(pos.notional_base - rollForm.notional_base, pos.base_currency)} will settle at the original maturity date.
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setModalStep('form')}>Back</button>
+                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
+                    disabled={saving} onClick={handleRollSubmit}>
+                    {saving ? <span className="spinner" style={{ width: 16, height: 16 }} /> : 'Confirm Roll'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {actionModal.type === 'roll' && modalStep === 'success' && (
+              <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+                <CheckCircle size={32} color="var(--green)" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Position Rolled Successfully</div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  Original position marked as rolled. New position created with settlement {formatDate(rollForm.value_date)}.
                 </p>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setActionModal(null); refreshPositions() }}>Done</button>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setActionModal(null)}>Cancel</button>
-                <button className="btn btn-sm" style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', color: '#fff', border: 'none' }}
-                  onClick={() => setClosingConfirmed(true)}>
-                  Confirm Close
-                </button>
+            )}
+
+            {/* ── AMEND MODAL ─────────────────────────── */}
+            {actionModal.type === 'amend' && modalStep === 'form' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Notional ({pos.base_currency})</label>
+                  <input type="number" style={inputStyle} value={amendForm.notional_base || ''}
+                    min={0} step="0.01"
+                    onChange={e => setAmendForm(f => ({ ...f, notional_base: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Contracted Rate</label>
+                  <input type="number" style={inputStyle} value={amendForm.contracted_rate || ''}
+                    min={0} step="0.000001"
+                    onChange={e => setAmendForm(f => ({ ...f, contracted_rate: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Settlement Date</label>
+                  <input type="date" style={inputStyle} value={amendForm.value_date}
+                    min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                    onChange={e => setAmendForm(f => ({ ...f, value_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Counterparty</label>
+                  <input type="text" style={inputStyle} value={amendForm.counterparty_bank}
+                    onChange={e => setAmendForm(f => ({ ...f, counterparty_bank: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Notes</label>
+                  <textarea style={{ ...inputStyle, fontFamily: 'inherit', minHeight: 48, resize: 'vertical' }}
+                    value={amendForm.notes} placeholder="Reason for amendment..."
+                    onChange={e => setAmendForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setActionModal(null)}>Cancel</button>
+                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
+                    disabled={saving || amendForm.notional_base <= 0 || amendForm.contracted_rate <= 0}
+                    onClick={handleAmendSubmit}>
+                    {saving ? <span className="spinner" style={{ width: 16, height: 16 }} /> : 'Save Amendment'}
+                  </button>
+                </div>
               </div>
-            </>
-          ) : actionModal.type === 'close' && closingConfirmed ? (
-            <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-              <CheckCircle size={32} color="var(--green)" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Close request submitted</div>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Your close request has been sent to your counterparty for confirmation.</p>
-              <button className="btn btn-ghost btn-sm" onClick={() => setActionModal(null)}>Done</button>
-            </div>
-          ) : (
-            <>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                {actionModal.type === 'roll'
-                  ? 'Rolling will extend this position to a new settlement date at the current forward rate. Contact your counterparty to confirm new terms.'
-                  : 'Amending allows you to adjust the notional amount or rate. Changes require counterparty approval before taking effect.'}
-              </p>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setActionModal(null)}>Cancel</button>
-                <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={() => setActionModal(null)}>
-                  Submit Request
-                </button>
+            )}
+
+            {actionModal.type === 'amend' && modalStep === 'success' && (
+              <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+                <CheckCircle size={32} color="var(--green)" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Position Amended</div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Changes saved and recorded in the audit trail.</p>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setActionModal(null); refreshPositions() }}>Done</button>
               </div>
-            </>
-          )}
+            )}
+
+            {/* ── CLOSE MODAL ─────────────────────────── */}
+            {actionModal.type === 'close' && modalStep === 'form' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {/* MTM P&L display */}
+                <div style={{ background: closeMtm >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${closeMtm >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius: 'var(--r-md)', padding: '0.75rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Estimated Realized P&L</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: closeMtm >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                    {closeMtmUsd >= 0 ? '+' : ''}{formatCurrency(closeMtmUsd, 'USD')}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {closeMtm >= 0 ? '+' : ''}{closeMtm.toFixed(2)} {quoteCcy}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-md)', padding: '0.75rem' }}>
+                  <AlertTriangle size={15} color="var(--red)" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ fontSize: '0.8125rem', color: '#b91c1c', margin: 0 }}>
+                    Closing this position early is irreversible. The realized P&L will be recorded in your audit trail.
+                  </p>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Close Date</label>
+                  <input type="date" style={inputStyle} value={closeForm.close_date}
+                    max={pos.value_date}
+                    onChange={e => setCloseForm(f => ({ ...f, close_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Close Rate</label>
+                  <input type="number" style={inputStyle} value={closeForm.close_rate || ''}
+                    min={0} step="0.000001"
+                    onChange={e => setCloseForm(f => ({ ...f, close_rate: parseFloat(e.target.value) || 0 }))} />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Pre-filled with live spot. Adjust to match your counterparty's closing rate.
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Settlement Amount ({quoteCcy})</label>
+                  <div style={{ ...inputStyle, background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
+                    {formatCurrency(pos.notional_base * (closeForm.close_rate || 0), quoteCcy)}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setActionModal(null)}>Cancel</button>
+                  <button className="btn btn-sm" style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', color: '#fff', border: 'none' }}
+                    disabled={saving || !closeForm.close_date || closeForm.close_rate <= 0}
+                    onClick={handleCloseSubmit}>
+                    {saving ? <span className="spinner" style={{ width: 16, height: 16 }} /> : 'Confirm Close'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {actionModal.type === 'close' && modalStep === 'success' && (
+              <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+                <CheckCircle size={32} color="var(--green)" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Position Closed</div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                  Realized P&L: <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: closeMtmUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                    {closeMtmUsd >= 0 ? '+' : ''}{formatCurrency(closeMtmUsd, 'USD')}
+                  </span>
+                </p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Recorded in the audit trail.</p>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setActionModal(null); refreshPositions() }}>Done</button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    )}
+      )
+    })()}
     </>
   )
 }

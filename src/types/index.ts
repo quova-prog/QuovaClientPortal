@@ -133,8 +133,12 @@ export interface HedgePosition {
   value_date: string
   counterparty_bank: string | null
   reference_number: string | null
-  status: 'active' | 'expired' | 'cancelled'
+  status: 'active' | 'expired' | 'cancelled' | 'rolled' | 'closed'
   notes: string | null
+  rolled_from_id: string | null
+  close_date: string | null
+  close_rate: number | null
+  amended_at: string | null
   created_at: string
   updated_at: string
 }
