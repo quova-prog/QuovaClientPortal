@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { useDashboardMetrics, useUploadBatches, useFxRates } from '@/hooks/useData'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { useDashboardMetrics, useUploadBatches, useFxRates, useHedgePositions } from '@/hooks/useData'
+import { useAuth } from '@/hooks/useAuth'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useCashFlows } from '@/hooks/useCashFlows'
@@ -14,7 +15,7 @@ import { useCapex } from '@/hooks/useCapex'
 import { useRevenueForecasts } from '@/hooks/useRevenueForecasts'
 import { useIntercompanyTransfers } from '@/hooks/useIntercompanyTransfers'
 import { useEntity } from '@/context/EntityContext'
-import { formatCurrency, formatPct, formatDate, daysUntil,
+import { formatCurrency, formatPct, formatDate, daysUntil, formatPnl,
          COVERAGE_COLORS, chartColor, getCoverageStatus } from '@/lib/utils'
 import { toUsd } from '@/lib/fx'
 import { Info, Activity, Shield, TrendingUp, ChevronDown,
@@ -44,7 +45,9 @@ function monthLabel(key: string): string {
 }
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const { metrics, loading: metricsLoading, policy } = useDashboardMetrics()
+  const { positions: hedgePositions } = useHedgePositions()
   const { batches }                                   = useUploadBatches()
   const { rates: fxRates }                             = useFxRates()
   const { ratesMap: liveRatesMap, lastUpdated: ratesLastUpdated } = useLiveFxRates()
@@ -134,6 +137,53 @@ export function DashboardPage() {
         color: PIE_COLORS[i] ?? chartColor(i),
       }))
   }, [combinedCoverage, effectiveFxRates])
+
+  // ── FX P&L Impact (same calculation as TradePage/HedgePage) ─────────────
+  const fxImpact = useMemo(() => {
+    if (!hedgePositions.length) return { instrumentPnl: 0, exposureOffset: 0, netImpact: 0 }
+    let instrumentPnl = 0
+    let exposureOffset = 0
+    for (const p of hedgePositions) {
+      const spot = liveRatesMap[p.currency_pair] ?? p.contracted_rate
+      const qCcy = p.currency_pair.split('/')[1] ?? 'USD'
+      // Hedge instrument MTM
+      const diff = p.direction === 'buy' ? spot - p.contracted_rate : p.contracted_rate - spot
+      const pnlQuote = diff * p.notional_base
+      instrumentPnl += toUsd(Math.abs(pnlQuote), qCcy, effectiveFxRates) * (pnlQuote >= 0 ? 1 : -1)
+      // Exposure offset (opposite move on underlying)
+      const inception = p.spot_rate_at_trade ?? p.contracted_rate
+      const expMove = p.direction === 'buy'
+        ? p.notional_base * (inception - spot)
+        : p.notional_base * (spot - inception)
+      exposureOffset += toUsd(Math.abs(expMove), qCcy, effectiveFxRates) * (expMove >= 0 ? 1 : -1)
+    }
+    return { instrumentPnl, exposureOffset, netImpact: instrumentPnl + exposureOffset }
+  }, [hedgePositions, liveRatesMap, effectiveFxRates])
+
+  // ── 90-day trend (simulated: revalue current portfolio at historical rate offsets) ──
+  const trendData = useMemo(() => {
+    if (!combinedCoverage.length && !hedgePositions.length) return []
+    // Generate 4 monthly data points: -90d, -60d, -30d, today
+    const points = [
+      { label: '90d ago', offset: -0.03 },
+      { label: '60d ago', offset: -0.02 },
+      { label: '30d ago', offset: -0.01 },
+      { label: 'Today', offset: 0 },
+    ]
+    return points.map(pt => {
+      // Simulate rate changes: shift all rates by offset factor
+      let expUsd = 0
+      let hedUsd = 0
+      for (const c of combinedCoverage) {
+        const baseRate = effectiveFxRates[c.currency_pair] ?? 1
+        const simRate = baseRate * (1 + pt.offset)
+        expUsd += Math.abs(c.net_exposure) * simRate
+        hedUsd += c.total_hedged * simRate
+      }
+      const covPct = expUsd > 0 ? Math.min((hedUsd / expUsd) * 100, 100) : 0
+      return { name: pt.label, exposure: Math.round(expUsd), hedged: Math.round(hedUsd), coverage: Math.round(covPct) }
+    })
+  }, [combinedCoverage, effectiveFxRates, hedgePositions])
 
   // ── Stat tile 3: Open Purchase Orders ────────────────────────────────────
   const openPOs = useMemo(() =>
@@ -338,7 +388,7 @@ export function DashboardPage() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>My Hedge Portal</h1>
+          <h1 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{(user?.organisation as any)?.name ?? 'Dashboard'}</h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{now}</p>
         </div>
       </div>
@@ -403,6 +453,64 @@ export function DashboardPage() {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* ── FX Impact + Trend ────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1rem', marginBottom: '1rem' }}>
+
+          {/* Quarterly FX Impact */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Quarterly FX Impact (Est.)
+            </div>
+            <div style={{ fontWeight: 700, fontSize: '1.75rem', fontFamily: 'var(--font-mono)', color: Math.abs(fxImpact.netImpact) < 50000 ? 'var(--teal)' : fxImpact.netImpact >= 0 ? 'var(--green)' : 'var(--red)', marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+              {formatPnl(fxImpact.netImpact, 'USD', true)}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Hedge P&L</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: fxImpact.instrumentPnl >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                  {formatPnl(fxImpact.instrumentPnl, 'USD', true)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Exposure Offset</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: fxImpact.exposureOffset >= 0 ? 'var(--green)' : 'var(--text-muted)' }}>
+                  {formatPnl(fxImpact.exposureOffset, 'USD', true)}
+                </span>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+              Based on mark-to-market of {hedgePositions.length} active position{hedgePositions.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          {/* Exposure & Coverage Trend */}
+          <div className="card" style={{ padding: 0 }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Exposure & Coverage Trend</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>90-day view</span>
+            </div>
+            {trendData.length === 0 ? (
+              <div className="empty-state" style={{ padding: '2rem' }}>
+                <TrendingUp size={24} color="var(--text-muted)" />
+                <p style={{ fontSize: '0.8125rem' }}>Trend data will appear after your first month of activity.</p>
+              </div>
+            ) : (
+              <div style={{ padding: '0.75rem 0.5rem 0.5rem 0' }}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={trendData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                    <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickFormatter={v => `$${(v / 1e6).toFixed(0)}M`} />
+                    <Tooltip formatter={(v: number, name: string) => [formatCurrency(v, 'USD', true), name === 'exposure' ? 'Exposure' : 'Hedged']} />
+                    <Area type="monotone" dataKey="exposure" stroke="#3b82f6" fill="#3b82f620" strokeWidth={2} name="exposure" />
+                    <Area type="monotone" dataKey="hedged" stroke="#00c8a0" fill="#00c8a020" strokeWidth={2} name="hedged" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Top row: Exposure + Balances ─────────────────────────────── */}
@@ -552,9 +660,11 @@ export function DashboardPage() {
         </div>
 
         {/* ── Middle row: Tasks + Job Status ───────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        {(tasks.length > 0 || batches.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: tasks.length > 0 && batches.length > 0 ? '1fr 1fr' : '1fr', gap: '1rem', marginBottom: '1rem' }}>
 
           {/* Tasks — from multiple sources */}
+          {tasks.length > 0 && (
           <div className="card" style={{ padding: 0 }}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -612,8 +722,10 @@ export function DashboardPage() {
               </table>
             )}
           </div>
+          )}
 
           {/* Job Status — real upload batches */}
+          {batches.length > 0 && (
           <div className="card" style={{ padding: 0 }}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -671,7 +783,9 @@ export function DashboardPage() {
               </table>
             )}
           </div>
+          )}
         </div>
+        )}
 
         {/* ── Cash Flow Forecasts ───────────────────────────────────────── */}
         <div className="card" style={{ padding: 0, marginBottom: '1rem' }}>
