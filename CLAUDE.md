@@ -1,6 +1,6 @@
 # Quova — Claude Code Context
 
-> **Last updated:** 2026-04-09 (session 9 — rebrand to Quova + Vercel deployment)
+> **Last updated:** 2026-04-12 (session 11 — treasurer review: trade lifecycle, MTM, hedge designation, dashboard)
 > **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
@@ -19,9 +19,9 @@ multi-tenant, scoped to `org_id`. The MVP is fully functional end-to-end; active
 is focused on depth (ERP integrations, audit-grade compliance features, board-level reporting).
 
 The app has **no backend server** — it is a Vite + React SPA that talks directly to Supabase
-from the browser. AI calls (Anthropic API) are made directly from the browser via
-`anthropic-dangerous-direct-browser-access`. This is MVP behaviour; a BFF proxy is planned
-before GA.
+from the browser. AI calls (Anthropic API) are routed through a Supabase Edge Function proxy
+(`supabase/functions/anthropic-proxy/index.ts`) — the API key is stored as a Supabase secret
+and never exposed to the client. All AI callers use `callAnthropicProxy()` from `src/lib/anthropicProxy.ts`.
 
 ---
 
@@ -430,7 +430,7 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 ## Known Issues / Technical Debt
 
 ### Security
-- Anthropic API key removed — all direct browser-to-Anthropic calls blocked (discoveryService.ts, claudeClient.ts, schemaDiscoveryAdapter.ts hardcoded to undefined; CSP connect-src no longer allows api.anthropic.com). AI features use rule-based/deterministic fallback until BFF proxy is implemented.
+- Anthropic API calls now routed through Supabase Edge Function proxy (`supabase/functions/anthropic-proxy/index.ts`). API key stored as Supabase secret, never exposed to client. All AI callers use `callAnthropicProxy()` from `src/lib/anthropicProxy.ts` which authenticates via user's Supabase JWT. Model allowlist: claude-haiku-4-5, claude-sonnet-4-20250514.
 - Customer audit_logs identity enforced server-side via BEFORE INSERT trigger (user_id, user_email, created_at overwritten from auth.uid())
 - Support audit_logs writes go through support_write_audit_log RPC — direct INSERT blocked
 - Onboarding table writes (sessions, profiles, discoveries, mappings) restricted to admin/editor
@@ -798,6 +798,58 @@ Comprehensive security audit and hardening for public deployment.
 - `20260409_support_audit_log_rpc.sql`
 - `20260409_onboarding_rls_admin_editor.sql`
 - `20260409_search_path_hardening.sql`
+
+---
+
+## Session 11 — Treasurer Review: Trade Lifecycle, MTM, Hedge Designation, Dashboard (2026-04-12)
+
+Comprehensive feature review by an experienced treasurer at a $30B international business. Addressed all feedback across 4 major areas.
+
+### Anthropic API Proxy (Supabase Edge Function)
+- Created `supabase/functions/anthropic-proxy/index.ts` — Deno-based proxy that authenticates via Supabase JWT, validates model allowlist (claude-haiku-4-5, claude-sonnet-4-20250514), and forwards to Anthropic API with server-side key
+- Created `src/lib/anthropicProxy.ts` — shared `callAnthropicProxy()` helper used by all AI callers
+- Updated `claudeClient.ts`, `discoveryService.ts`, `schemaDiscoveryAdapter.ts` to use proxy instead of direct API calls
+- API key stored as Supabase Edge Function secret, never exposed to client
+
+### Trade Lifecycle: Roll / Amend / Early Close
+- **Migration:** `20260411_hedge_lifecycle.sql` — added `rolled_from_id` FK, `close_date`, `close_rate`, `amended_at` columns; expanded status CHECK to include 'rolled' and 'closed'
+- **Roll workflow:** 3-step modal (form → review comparison → success). Old position → status='rolled', new position linked via `rolled_from_id`. Supports partial rolls with amber warning. Reverts on insert failure.
+- **Amend workflow:** Single-step form for notional, rate, settlement, counterparty, notes. Tracks before/after in audit log.
+- **Close workflow:** Shows estimated realized P&L before confirmation. Stores `close_date` and `close_rate`. Records realized P&L in audit trail.
+- **StrategyPage:** "Roll" button on positions maturing within 30 days, navigates to TradePage with auto-open modal
+- **Status badges:** 'rolled' (blue) and 'closed' (amber) added to blotter
+
+### MTM Formatting & P&L Attribution
+- **Bug fix:** Cross-pair MTM conversion in AnalyticsPage `crBuildMtm` and HedgePage unrealized P&L tile — now uses `toUsd()` via quote currency for all pair types (EUR/CAD, GBP/JPY). Previously only handled USD-base pairs.
+- **P&L attribution table:** TradePage MTM table enhanced with P&L (Quote Ccy), P&L (USD), % of Total columns. Pair-level grouping with subtotal rows when multiple pairs exist.
+- **Valuation timestamps:** "Rates as of [date time]" added to TradePage 5-tile summary, MTM table header, and board report PDF cover page. Threaded `ratesAsOf` through BoardReportPanel → boardReportPdf.
+- **Formatting helpers:** `formatPnl()` (explicit + for gains), `formatFxRate()` (2dp JPY, 4dp others), `formatValuationTimestamp()` added to `src/lib/utils.ts`. Applied across TradePage, HedgePage tiles.
+
+### HedgePage: P&L Context, Rename, Hedge Designation
+- **P&L context:** "Unrealized P&L" tile renamed to "Hedge Instrument P&L", now shows estimated exposure offset below the loss value + explanatory text for negative P&L ("Hedge losses are typically offset by gains on underlying exposures").
+- **Rename:** "Add Hedge" → "Book Hedge" on header button, empty state, modal title ("Book New Hedge").
+- **Hedge designation step:** New step in booking flow between strategy selection and trade entry. Collects ASC 815 / IFRS 9 hedge type (Cash Flow / Fair Value / Net Investment) via selectable cards. Shows hedged item from exposure data (pair, direction, coverage %). Auto-generates designation summary stored in position notes for audit trail. Review step shows designation badge.
+- **`hedge_type` added to `HedgePositionForm`** interface and `freshForm()`. AdvisorPage prefill includes `hedge_type: 'cash_flow'`.
+
+### Dashboard Improvements
+- **Title:** "My Hedge Portal" replaced with org name from Supabase (falls back to "Dashboard")
+- **Quarterly FX Impact tile:** Shows net economic impact (hedge P&L + exposure offset) with breakdown — answers CFO's #1 question
+- **Exposure & Coverage Trend chart:** 90-day Recharts AreaChart showing exposure and hedged amounts (simulated via rate-based portfolio revaluation). Graceful fallback for new accounts.
+- **Empty sections hidden:** Upcoming Actions and Job Status sections only render when data exists
+
+### New Migrations (applied 2026-04-12)
+- `20260411_hedge_lifecycle.sql` — Roll/Amend/Close columns and status expansion
+
+### Files Created
+- `supabase/functions/anthropic-proxy/index.ts`
+- `src/lib/anthropicProxy.ts`
+- `supabase/migrations/20260411_hedge_lifecycle.sql`
+
+### Key Patterns Established
+- **MTM P&L canonical pattern:** All locations now use `toUsd(Math.abs(pnlQuote), quoteCcy, rates) * (pnlQuote >= 0 ? 1 : -1)`
+- **Exposure offset pattern:** `spot_rate_at_trade → current spot`, opposite direction, same `toUsd` conversion
+- **Trade lifecycle:** Linked chain for rolls (`rolled_from_id` FK), in-place update for amends, status change for closes
+- **Hedge designation:** Currency-pair level (not transaction-level), stored in position notes for audit trail
 
 ---
 
