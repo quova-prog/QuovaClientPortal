@@ -6,6 +6,7 @@
 
 import { createAdminClient, htmlResponse, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { unsubscribeConfirmationHtml } from '../_shared/emailTemplates.ts'
+import { verifyUnsubscribeToken } from '../_shared/crypto.ts'
 
 const PREF_LABELS: Record<string, string> = {
   email_urgent: 'urgent alert',
@@ -28,17 +29,10 @@ Deno.serve(async (req: Request) => {
     return htmlResponse('<h1>Missing token</h1><p>Invalid unsubscribe link.</p>', 400)
   }
 
-  // Decode token
-  let payload: { user_id: string; pref: string; exp: number }
-  try {
-    payload = JSON.parse(atob(tokenStr))
-  } catch {
-    return htmlResponse('<h1>Invalid token</h1><p>This unsubscribe link is malformed.</p>', 400)
-  }
-
-  // Check expiry
-  if (payload.exp && Date.now() > payload.exp) {
-    return htmlResponse('<h1>Link expired</h1><p>This unsubscribe link has expired. Please update your notification preferences in Quova settings.</p>', 410)
+  // Decode and verify token
+  const payload = await verifyUnsubscribeToken(tokenStr)
+  if (!payload) {
+    return htmlResponse('<h1>Invalid or Expired Link</h1><p>This unsubscribe link is malformed or has expired. Please update your notification preferences in Quova settings.</p>', 400)
   }
 
   const { user_id, pref } = payload

@@ -4,7 +4,7 @@ import { useAuditLog } from '@/hooks/useAuditLog'
 import { useEntity } from '@/context/EntityContext'
 import { useMfa } from '@/hooks/useMfa'
 import type { Entity } from '@/types'
-import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown } from 'lucide-react'
+import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown, Zap } from 'lucide-react'
 import { TIER_DISPLAY, getUpgradeTier, getUpgradeFeatures, normalizePlan } from '@/lib/tierService'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
@@ -90,6 +90,62 @@ export function SettingsPage() {
       alert_types: notifPrefs.alert_types,
     })
     if (ok) { setSavedNotif(true); setTimeout(() => setSavedNotif(false), 3000) }
+  }
+
+  // ── Test Email ──────────────────────────────────────────────────────────
+  const [testEmailSending, setTestEmailSending] = useState(false)
+  const [testEmailResult, setTestEmailResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  async function handleSendTestEmail() {
+    if (!user?.profile?.org_id || !db) return
+    setTestEmailSending(true)
+    setTestEmailResult(null)
+    try {
+      const orgId = user.profile.org_id
+      // Insert a test urgent alert
+      const { data: alert, error: insertErr } = await db.from('alerts').insert({
+        org_id: orgId,
+        alert_key: `test_email_${Date.now()}`,
+        type: 'policy_breach',
+        severity: 'urgent',
+        title: 'Test Alert — SendGrid Integration',
+        body: 'This is a test email from Quova to verify your SendGrid integration is working correctly. No action required.',
+        href: '/inbox',
+      }).select('id').single()
+
+      if (insertErr || !alert) {
+        setTestEmailResult({ ok: false, message: insertErr?.message ?? 'Failed to create test alert' })
+        setTestEmailSending(false)
+        return
+      }
+
+      // Call the Edge Function
+      const { data, error: fnErr } = await db.functions.invoke('send-urgent-email', {
+        body: { alert_id: alert.id, org_id: orgId },
+      })
+
+      if (fnErr) {
+        // Extract the actual response body from FunctionsHttpError
+        let detail = fnErr.message
+        try {
+          if ('context' in fnErr) {
+            const ctx = (fnErr as any).context
+            if (ctx instanceof Response) {
+              const body = await ctx.json()
+              detail = JSON.stringify(body)
+            }
+          }
+        } catch { /* ignore parse errors */ }
+        setTestEmailResult({ ok: false, message: detail })
+      } else if (data?.sent > 0) {
+        setTestEmailResult({ ok: true, message: `Test email sent to ${data.sent} recipient(s). Check your inbox!` })
+      } else {
+        setTestEmailResult({ ok: false, message: data?.message ?? 'No emails sent — check notification preferences and org plan' })
+      }
+    } catch (err) {
+      setTestEmailResult({ ok: false, message: String(err) })
+    }
+    setTestEmailSending(false)
   }
 
   // ── Team Members ─────────────────────────────────────────────────────────
@@ -610,6 +666,34 @@ export function SettingsPage() {
                 <CheckCircle size={14} /> Preferences saved
               </div>
             )}
+
+            {/* Send Test Email */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleSendTestEmail}
+                  disabled={testEmailSending || notifGated}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+                >
+                  {testEmailSending ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Zap size={14} />}
+                  {testEmailSending ? 'Sending...' : 'Send Test Email'}
+                </button>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Creates a test urgent alert and emails all opted-in users
+                </span>
+              </div>
+              {testEmailResult && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.375rem',
+                  fontSize: '0.8125rem', marginTop: '0.5rem',
+                  color: testEmailResult.ok ? 'var(--green)' : 'var(--red)',
+                }}>
+                  {testEmailResult.ok ? <CheckCircle size={14} /> : <X size={14} />}
+                  {testEmailResult.message}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Team Notification Summary (admin only) ──────────────────── */}

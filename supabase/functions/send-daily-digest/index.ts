@@ -8,6 +8,7 @@ import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } fro
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { dailyDigestEmail } from '../_shared/emailTemplates.ts'
 import { generateDigestPdf, type DigestPdfData } from '../_shared/digestPdf.ts'
+import { signUnsubscribeToken } from '../_shared/crypto.ts'
 
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com'
 
@@ -96,8 +97,8 @@ Deno.serve(async (req: Request) => {
       const emailType = pref.digest_frequency === 'weekly' ? 'weekly_digest' : 'daily_digest'
 
       // Build unsubscribe URL
-      const tokenPayload = btoa(JSON.stringify({ user_id: pref.user_id, pref: 'email_digest', exp: Date.now() + 7 * 86400000 }))
-      const unsubscribeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe-email?token=${tokenPayload}`
+      const tokenStr = await signUnsubscribeToken({ user_id: pref.user_id, pref: 'email_digest' }, 7 * 86400000)
+      const unsubscribeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe-email?token=${tokenStr}`
 
       const emailContent = dailyDigestEmail({
         orgName: org.name,

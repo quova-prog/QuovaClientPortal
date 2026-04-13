@@ -7,6 +7,7 @@
 import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { urgentAlertEmail } from '../_shared/emailTemplates.ts'
+import { signUnsubscribeToken } from '../_shared/crypto.ts'
 
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com'
 
@@ -97,9 +98,6 @@ Deno.serve(async (req: Request) => {
   const { data: users } = await admin.auth.admin.listUsers()
   const userMap = new Map(users?.users?.map(u => [u.id, u]) ?? [])
 
-  // Generate unsubscribe token (simple HMAC — in production use a proper JWT)
-  const unsubSecret = Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'quova-unsub-default'
-
   let sentCount = 0
   const errors: string[] = []
 
@@ -108,8 +106,8 @@ Deno.serve(async (req: Request) => {
     if (!authUser?.email) continue
 
     // Build unsubscribe URL
-    const tokenPayload = btoa(JSON.stringify({ user_id: pref.user_id, pref: 'email_urgent', exp: Date.now() + 7 * 86400000 }))
-    const unsubscribeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe-email?token=${tokenPayload}`
+    const tokenStr = await signUnsubscribeToken({ user_id: pref.user_id, pref: 'email_urgent' }, 7 * 86400000)
+    const unsubscribeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe-email?token=${tokenStr}`
 
     const emailData = urgentAlertEmail({
       alertTitle: alert.title,
