@@ -1,6 +1,6 @@
 # Quova — Claude Code Context
 
-> **Last updated:** 2026-04-12 (session 11 — treasurer review: trade lifecycle, MTM, hedge designation, dashboard)
+> **Last updated:** 2026-04-12 (session 12 — email notifications, multi-user role-aware preferences)
 > **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
@@ -403,6 +403,43 @@ Three tiers: `exposure`, `pro`, `enterprise`. No entity limits on any tier.
 **Settings page:** Organisation tab shows tier badge and upgrade comparison card.
 **tier_definitions table:** DB source of truth for feature flags, pricing, support SLA.
 Plans are changed by support_admin via the Support Portal.
+
+### Email Notifications (NEW — session 12)
+Full email notification system: urgent alerts + daily/weekly digest PDFs.
+
+**Architecture:**
+- **Supabase Edge Functions:** `send-urgent-email` (triggered by DB on urgent alert creation), `send-daily-digest` (hourly cron, sends at user's preferred UTC hour), `unsubscribe-email` (one-click opt-out via tokenized URL)
+- **SendGrid integration:** `_shared/sendgrid.ts` wraps SendGrid API v3. Branded HTML templates in `_shared/emailTemplates.ts` (navy + teal inline CSS). PDF attachment support via `_shared/digestPdf.ts`.
+- **Tier gated:** `email_notifications` feature requires Pro or Enterprise plan (`tierService.ts`)
+
+**Per-User Notification Preferences (`notification_preferences` table):**
+- `email_urgent` (bool), `email_digest` (bool), `digest_frequency` (daily/weekly), `digest_time` (0-23 UTC hour), `alert_types` (array of subscribed alert types)
+- Role-aware defaults via `getDefaultPrefs(role)`:
+  - Admin: urgent ON, digest ON (daily, 8 AM), all 4 alert types
+  - Editor: urgent ON, digest OFF, all 4 alert types
+  - Viewer: urgent OFF, digest OFF, only policy_breach
+- Users can override defaults from Settings > Notifications
+- Hook: `useNotificationPreferences.ts` with graceful fallback when table doesn't exist
+
+**Settings > Notifications Tab:**
+- Toggle urgent email alerts, toggle digest with frequency/time pickers
+- Alert type checkboxes (policy breach, maturing positions, cash flows due, unhedged exposure)
+- **Team Notification Summary** (admin only): table showing all org members' notification settings with role badges and status indicators. Warning banner if no one has urgent emails enabled.
+- **Email History** (admin only): paginated audit log from `email_logs` table with type filter (All/Urgent/Daily/Weekly), status indicators, and date/recipient/subject columns
+
+**Email Logs (`email_logs` table):**
+- Immutable audit trail: org_id, user_id, email_type, recipient, subject, alert_id, status (sent/failed/bounced), error, sent_at
+- RLS: admin-only SELECT, no client INSERT (Edge Functions use service role)
+
+**Inbox Integration:**
+- `email_sent_at` column on `alerts` table prevents duplicate urgent emails
+- "Emailed" teal badge on inbox alert rows when `email_sent_at` is set
+
+**Hooks Created:**
+- `useNotificationPreferences.ts` — per-user prefs with role-aware defaults + graceful fallback
+- `useEmailLogs.ts` — paginated admin audit log with type filter
+- `useTeamMembers.ts` — fetches all org members with roles
+- `useTeamNotificationSummary.ts` — joins team members with their notification settings
 
 ### Support Portal (orbit-support)
 Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177).
@@ -850,6 +887,44 @@ Comprehensive feature review by an experienced treasurer at a $30B international
 - **Exposure offset pattern:** `spot_rate_at_trade → current spot`, opposite direction, same `toUsd` conversion
 - **Trade lifecycle:** Linked chain for rolls (`rolled_from_id` FK), in-place update for amends, status change for closes
 - **Hedge designation:** Currency-pair level (not transaction-level), stored in position notes for audit trail
+
+---
+
+## Session 12 — Email Notifications & Multi-User Role-Aware Preferences (2026-04-12)
+
+Built end-to-end email notification system supporting multiple users with different roles per organization.
+
+### Edge Functions Created
+- **`send-urgent-email/index.ts`** — Immediate email when urgent alert fires. Queries `notification_preferences` for opted-in users with matching alert type. Marks `email_sent_at` on alert to prevent duplicates. Logs to `email_logs`.
+- **`send-daily-digest/index.ts`** — Hourly cron job. Per-org: finds users with digest enabled + matching delivery hour, gathers exposure/coverage/alert data, generates PDF, sends via SendGrid with attachment. Handles daily vs weekly (Monday only) frequency.
+- **`unsubscribe-email/index.ts`** — One-click unsubscribe via tokenized URL. Updates user's notification preferences.
+- **`_shared/sendgrid.ts`** — SendGrid API v3 wrapper with attachment support
+- **`_shared/emailTemplates.ts`** — Branded HTML email templates (urgent alert + daily digest) with inline CSS for email client compatibility
+- **`_shared/digestPdf.ts`** — PDF generator for digest attachment (KPIs, coverage by pair, alerts, maturing positions)
+- **`_shared/auth.ts`** — Shared auth helpers (createAdminClient, authenticateRequest, CORS)
+
+### Migrations Created
+- `20260413_notification_preferences.sql` — Per-user notification settings with RLS
+- `20260413_email_logs.sql` — Immutable email audit trail (admin-only SELECT)
+- `20260413_alert_email_sent.sql` — `email_sent_at` column on alerts table
+- `20260413_alert_email_trigger.sql` — DB trigger placeholder for urgent email invocation
+- `20260413_team_invites.sql` — Team invite infrastructure
+
+### Hooks Created
+- `useNotificationPreferences.ts` — Per-user prefs with `getDefaultPrefs(role)` role-aware defaults, graceful fallback when table doesn't exist
+- `useEmailLogs.ts` — Paginated admin audit log with type filter
+- `useTeamMembers.ts` — Fetches all org members with profiles
+- `useTeamNotificationSummary.ts` — Joins team members with notification settings for admin overview
+
+### UI Changes
+- **SettingsPage.tsx** — Major expansion: Notifications tab with urgent/digest toggles, frequency/time pickers, alert type checkboxes, Team Notification Summary table (admin), Email History audit log (admin) with pagination and type filter
+- **InboxPage.tsx** — "Emailed" teal badge on alerts with `email_sent_at`
+- **tierService.ts** — Added `email_notifications` to Pro/Enterprise feature sets
+
+### Key Design Decisions
+- **Role-aware defaults, not role-based restrictions:** Viewers default to emails OFF but can opt in. Admins default to digest ON. This respects user autonomy while providing sensible starting points.
+- **Graceful degradation:** Hook falls back to local defaults with `id: 'pending'` when the DB table doesn't exist yet (pre-migration). UI renders fully, saves work locally.
+- **Immutable email logs:** No UPDATE/DELETE on `email_logs` — append-only audit trail. Edge Functions write via service role; client-side is read-only for admins.
 
 ---
 
