@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Bell, AlertTriangle, Clock, CheckCircle2, X, ChevronRight, Info,
+  Bell, AlertTriangle, Clock, CheckCircle2, X, ChevronRight, Info, Mail,
 } from 'lucide-react'
 import { useAlerts } from '@/hooks/useAlerts'
 import { useAlertGenerator } from '@/hooks/useAlertGenerator'
@@ -344,6 +344,24 @@ function AlertCard({ alert, isLast, onRead, onDismiss }: AlertCardProps) {
                 border: '1px solid rgba(34,197,94,0.25)',
               }}>
                 Resolved
+              </span>
+            )}
+            {alert.email_sent_at && (
+              <span
+                title={`Email sent ${new Date(alert.email_sent_at).toLocaleString()}`}
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '999px',
+                  background: 'rgba(0,200,160,0.1)',
+                  color: 'var(--teal)',
+                  border: '1px solid rgba(0,200,160,0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}>
+                <Mail size={10} /> Emailed
               </span>
             )}
           </div>

@@ -27,6 +27,7 @@ const TIER_FEATURES: Record<TierPlan, Set<TierFeature>> = {
     'audit_trail',
     'board_reporting',
     'ai_recommendations',
+    'email_notifications',
   ]),
   enterprise: new Set([
     'exposure_dashboard',
@@ -37,6 +38,7 @@ const TIER_FEATURES: Record<TierPlan, Set<TierFeature>> = {
     'audit_trail',
     'board_reporting',
     'ai_recommendations',
+    'email_notifications',
     'api_access',
     'sso',
     'custom_integrations',
@@ -60,6 +62,7 @@ export const FEATURE_MIN_TIER: Record<TierFeature, TierPlan> = {
   audit_trail:          'pro',
   board_reporting:      'pro',
   ai_recommendations:   'pro',
+  email_notifications:  'pro',
   trade_execution:      'enterprise',
   multi_bank_rfq:       'enterprise',
   api_access:           'enterprise',
@@ -75,6 +78,7 @@ export const PRO_FEATURES = [
   'Approval workflows and audit trail',
   'Board-ready reporting',
   'AI hedge recommendations',
+  'Email notifications (urgent alerts + daily digest)',
 ]
 
 /** Features that Enterprise adds on top of Pro */

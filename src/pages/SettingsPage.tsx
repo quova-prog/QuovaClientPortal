@@ -4,8 +4,12 @@ import { useAuditLog } from '@/hooks/useAuditLog'
 import { useEntity } from '@/context/EntityContext'
 import { useMfa } from '@/hooks/useMfa'
 import type { Entity } from '@/types'
-import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ArrowUpRight } from 'lucide-react'
+import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown } from 'lucide-react'
 import { TIER_DISPLAY, getUpgradeTier, getUpgradeFeatures, normalizePlan } from '@/lib/tierService'
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
+import { useTeamMembers } from '@/hooks/useTeamMembers'
+import { useTeamNotificationSummary } from '@/hooks/useTeamNotificationSummary'
+import { useEmailLogs } from '@/hooks/useEmailLogs'
 
 type TabKey = 'profile' | 'notifications' | 'organisation' | 'entities' | 'security'
 
@@ -72,35 +76,62 @@ export function SettingsPage() {
     setTimeout(() => setSavedProfile(false), 3000)
   }
 
-  // ── Notification prefs ────────────────────────────────────────────────────
-  type NotifPrefs = {
-    maturing_hedges: boolean; upcoming_settlements: boolean;
-    policy_alerts: boolean; upload_events: boolean; email_digest: boolean;
-  }
-  const DEFAULT_NOTIF: NotifPrefs = {
-    maturing_hedges: true, upcoming_settlements: true,
-    policy_alerts: true, upload_events: true, email_digest: false,
-  }
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(() => {
-    try {
-      const stored = localStorage.getItem('orbit_notif_prefs')
-      if (stored) return { ...DEFAULT_NOTIF, ...JSON.parse(stored) }
-    } catch {}
-    return DEFAULT_NOTIF
-  })
-  const [savingNotif, setSavingNotif] = useState(false)
-  const [savedNotif,  setSavedNotif]  = useState(false)
-
-  function toggleNotif(k: keyof NotifPrefs) {
-    setNotifPrefs(p => ({ ...p, [k]: !p[k] }))
-  }
+  // ── Notification prefs (DB-backed) ───────────────────────────────────────
+  const { prefs: notifPrefs, loading: notifLoading, saving: savingNotif, error: notifError, isGated: notifGated, update: updateNotifPrefs } = useNotificationPreferences()
+  const [savedNotif, setSavedNotif] = useState(false)
 
   async function handleSaveNotifications() {
-    setSavingNotif(true)
-    await new Promise(r => setTimeout(r, 600))
-    localStorage.setItem('orbit_notif_prefs', JSON.stringify(notifPrefs))
-    setSavingNotif(false); setSavedNotif(true)
-    setTimeout(() => setSavedNotif(false), 3000)
+    if (!notifPrefs) return
+    const ok = await updateNotifPrefs({
+      email_urgent: notifPrefs.email_urgent,
+      email_digest: notifPrefs.email_digest,
+      digest_frequency: notifPrefs.digest_frequency,
+      digest_time: notifPrefs.digest_time,
+      alert_types: notifPrefs.alert_types,
+    })
+    if (ok) { setSavedNotif(true); setTimeout(() => setSavedNotif(false), 3000) }
+  }
+
+  // ── Team Members ─────────────────────────────────────────────────────────
+  const {
+    members: teamMembers, invites: teamInvites, loading: teamLoading,
+    error: teamError, isAdmin,
+    invite: inviteTeamMember, revokeInvite, updateRole, removeMember,
+  } = useTeamMembers()
+  const { entries: teamNotifEntries, loading: teamNotifLoading, noOneHasUrgent } = useTeamNotificationSummary()
+  const {
+    logs: emailLogs, loading: emailLogsLoading, total: emailLogsTotal,
+    page: emailLogsPage, setPage: setEmailLogsPage, typeFilter: emailTypeFilter,
+    setTypeFilter: setEmailTypeFilter, totalPages: emailLogsTotalPages,
+  } = useEmailLogs()
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'admin' | 'editor' | 'viewer'>('editor')
+  const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault()
+    setInviting(true)
+    setInviteError(null)
+    const result = await inviteTeamMember(inviteEmail, inviteRole)
+    setInviting(false)
+    if (result.error) { setInviteError(result.error); return }
+    setShowInviteModal(false)
+    setInviteEmail('')
+    setInviteRole('editor')
+  }
+
+  async function handleRemoveMember(userId: string) {
+    const result = await removeMember(userId)
+    if (result.error) setDbError(result.error)
+    setConfirmRemove(null)
+  }
+
+  async function handleRoleChange(userId: string, newRole: 'admin' | 'editor' | 'viewer') {
+    const result = await updateRole(userId, newRole)
+    if (result.error) setDbError(result.error)
   }
 
   // ── Entities ──────────────────────────────────────────────────────────────
@@ -324,13 +355,18 @@ export function SettingsPage() {
     await loadMfaFactors()
   }
 
-  const NOTIF_OPTIONS: { key: keyof NotifPrefs; label: string; desc: string }[] = [
-    { key: 'maturing_hedges',      label: 'Maturing Positions',    desc: 'Alert when a hedge position is due within 7 days' },
-    { key: 'upcoming_settlements', label: 'Upcoming Settlements',  desc: 'Alert when an exposure settles within 3 days' },
-    { key: 'policy_alerts',        label: 'Policy Compliance',     desc: 'Alert when coverage falls outside policy range' },
-    { key: 'upload_events',        label: 'Upload Events',         desc: 'Alert on CSV import success or failure' },
-    { key: 'email_digest',         label: 'Weekly Email Digest',   desc: 'Send a weekly summary to your email address' },
+  const ALERT_TYPE_OPTIONS: { key: string; label: string; desc: string }[] = [
+    { key: 'policy_breach',      label: 'Policy Breaches',       desc: 'Coverage falls outside policy range' },
+    { key: 'maturing_position',  label: 'Maturing Positions',    desc: 'Hedge position matures within 7–30 days' },
+    { key: 'cash_flow_due',      label: 'Cash Flows Due',        desc: 'Large cash flow settlement approaching' },
+    { key: 'unhedged_exposure',  label: 'Unhedged Exposure',     desc: 'Currency pair below minimum hedge coverage' },
   ]
+
+  const DIGEST_HOURS = Array.from({ length: 24 }, (_, i) => {
+    const h = i % 12 || 12
+    const ampm = i < 12 ? 'AM' : 'PM'
+    return { value: i, label: `${h}:00 ${ampm}` }
+  })
 
   return (
     <div className="fade-in" style={{ maxWidth: 720, padding: '1.75rem' }}>
@@ -420,50 +456,342 @@ export function SettingsPage() {
 
       {/* ── Notifications ─────────────────────────────────────────────────── */}
       {tab === 'notifications' && (
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <Bell size={16} color="var(--teal)" />
-            <h3 style={{ fontWeight: 600 }}>Notification Preferences</h3>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {NOTIF_OPTIONS.map((opt, i) => (
-              <div key={opt.key}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 0', borderBottom: i < NOTIF_OPTIONS.length - 1 ? '1px solid var(--border-dim)' : 'none' }}>
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.125rem' }}>{opt.label}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
-                </div>
-                {/* Toggle */}
-                <button
-                  onClick={() => toggleNotif(opt.key)}
-                  style={{
-                    width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', flexShrink: 0,
-                    background: notifPrefs[opt.key] ? 'var(--teal)' : '#cbd5e1',
-                    position: 'relative', transition: 'background 0.2s',
-                  }}>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: '50%', background: '#fff',
-                    position: 'absolute', top: 3,
-                    left: notifPrefs[opt.key] ? 21 : 3,
-                    transition: 'left 0.2s',
-                  }} />
-                </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+          {/* Tier gating banner */}
+          {notifGated && (
+            <div className="card" style={{ border: '1px solid rgba(0,194,168,0.2)', background: 'rgba(0,194,168,0.03)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <Mail size={16} color="var(--teal)" />
+                <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>Email Notifications</span>
               </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
-            <button className="btn btn-primary btn-sm" disabled={savingNotif} onClick={handleSaveNotifications}>
-              {savingNotif
-                ? <><span className="spinner" style={{ width: 13, height: 13 }} /> Saving…</>
-                : <><Save size={13} /> Save Preferences</>
-              }
-            </button>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                Email notifications for urgent alerts and daily digests are available on Pro and Enterprise plans.
+              </p>
+              <a
+                href="mailto:sales@orbitfx.com?subject=Upgrade%20Inquiry"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                  padding: '0.5rem 1rem',
+                  background: '#00C2A8', color: '#fff', border: 'none', borderRadius: 'var(--r-md)',
+                  fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer',
+                }}
+              >
+                Upgrade to Pro <ArrowUpRight size={13} />
+              </a>
+            </div>
+          )}
+
+          {/* Email notification settings */}
+          <div className="card" style={{ opacity: notifGated ? 0.5 : 1, pointerEvents: notifGated ? 'none' : 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <Bell size={16} color="var(--teal)" />
+              <h3 style={{ fontWeight: 600 }}>Email Notifications</h3>
+            </div>
+
+            {notifLoading ? (
+              <div className="spinner" style={{ width: 20, height: 20 }} />
+            ) : notifPrefs ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {/* Urgent email toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 0', borderBottom: '1px solid var(--border-dim)' }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.125rem' }}>Urgent Alert Emails</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Send immediate email when an urgent alert fires</div>
+                  </div>
+                  <button
+                    onClick={() => updateNotifPrefs({ email_urgent: !notifPrefs.email_urgent })}
+                    style={{
+                      width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', flexShrink: 0,
+                      background: notifPrefs.email_urgent ? 'var(--teal)' : '#cbd5e1',
+                      position: 'relative', transition: 'background 0.2s',
+                    }}>
+                    <div style={{
+                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: 3,
+                      left: notifPrefs.email_urgent ? 21 : 3,
+                      transition: 'left 0.2s',
+                    }} />
+                  </button>
+                </div>
+
+                {/* Digest email toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 0', borderBottom: '1px solid var(--border-dim)' }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.125rem' }}>Daily / Weekly Digest</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Receive a summary PDF with KPIs, alerts, and upcoming actions</div>
+                  </div>
+                  <button
+                    onClick={() => updateNotifPrefs({ email_digest: !notifPrefs.email_digest })}
+                    style={{
+                      width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', flexShrink: 0,
+                      background: notifPrefs.email_digest ? 'var(--teal)' : '#cbd5e1',
+                      position: 'relative', transition: 'background 0.2s',
+                    }}>
+                    <div style={{
+                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: 3,
+                      left: notifPrefs.email_digest ? 21 : 3,
+                      transition: 'left 0.2s',
+                    }} />
+                  </button>
+                </div>
+
+                {/* Digest options (visible when digest enabled) */}
+                {notifPrefs.email_digest && (
+                  <div style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-dim)', display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="label">Frequency</label>
+                      <select
+                        className="input"
+                        value={notifPrefs.digest_frequency}
+                        onChange={e => updateNotifPrefs({ digest_frequency: e.target.value as 'daily' | 'weekly' })}
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label className="label">Delivery Time (UTC)</label>
+                      <select
+                        className="input"
+                        value={notifPrefs.digest_time}
+                        onChange={e => updateNotifPrefs({ digest_time: parseInt(e.target.value) })}
+                      >
+                        {DIGEST_HOURS.map(h => (
+                          <option key={h.value} value={h.value}>{h.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Alert types */}
+                <div style={{ padding: '1rem 0' }}>
+                  <div style={{ fontWeight: 500, fontSize: '0.8125rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+                    Alert Types to Include in Emails
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {ALERT_TYPE_OPTIONS.map(opt => {
+                      const isChecked = notifPrefs.alert_types.includes(opt.key)
+                      return (
+                        <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const next = isChecked
+                                ? notifPrefs.alert_types.filter(t => t !== opt.key)
+                                : [...notifPrefs.alert_types, opt.key]
+                              updateNotifPrefs({ alert_types: next })
+                            }}
+                            style={{ accentColor: 'var(--teal)' }}
+                          />
+                          <div>
+                            <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{opt.label}</div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {notifError && (
+              <div className="error-banner" style={{ padding: '0.625rem 0.875rem', marginTop: '0.75rem' }}>
+                {notifError}
+              </div>
+            )}
+
             {savedNotif && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--green)', fontSize: '0.875rem' }}>
-                <CheckCircle size={14} /> Saved
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--green)', fontSize: '0.875rem', marginTop: '0.75rem' }}>
+                <CheckCircle size={14} /> Preferences saved
               </div>
             )}
           </div>
+
+          {/* ── Team Notification Summary (admin only) ──────────────────── */}
+          {isAdmin && !notifGated && (
+            <>
+              {noOneHasUrgent && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.75rem 1rem', borderRadius: 'var(--r-md)',
+                  background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+                  fontSize: '0.8125rem', color: '#92400e',
+                }}>
+                  <Bell size={14} color="#f59e0b" />
+                  <span><strong>Warning:</strong> No team member has urgent email alerts enabled. Critical alerts may go unnoticed.</span>
+                </div>
+              )}
+
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                  <Users size={16} color="var(--teal)" />
+                  <h3 style={{ fontWeight: 600 }}>Team Notification Summary</h3>
+                </div>
+
+                {teamNotifLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem' }}>
+                    <div className="spinner" style={{ width: 20, height: 20 }} />
+                  </div>
+                ) : teamNotifEntries.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                    No team members have notification preferences configured yet.
+                  </p>
+                ) : (
+                  <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Member</th>
+                        <th style={{ textAlign: 'left' }}>Role</th>
+                        <th style={{ textAlign: 'center' }}>Urgent Emails</th>
+                        <th style={{ textAlign: 'center' }}>Digest</th>
+                        <th style={{ textAlign: 'center' }}>Frequency</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamNotifEntries.map(entry => (
+                        <tr key={entry.user_id}>
+                          <td style={{ fontWeight: 500 }}>
+                            {entry.full_name || '(No name)'}
+                            {entry.user_id === user?.id && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginLeft: '0.375rem' }}>(you)</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className={`badge ${entry.role === 'admin' ? 'badge-teal' : entry.role === 'editor' ? 'badge-blue' : 'badge-gray'}`}
+                              style={{ textTransform: 'capitalize', fontSize: '0.6875rem' }}>
+                              {entry.role}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                              background: entry.email_urgent ? 'var(--green)' : '#cbd5e1',
+                            }} />
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                              background: entry.email_digest ? 'var(--green)' : '#cbd5e1',
+                            }} />
+                          </td>
+                          <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                            {entry.email_digest ? (entry.digest_frequency === 'daily' ? 'Daily' : 'Weekly') : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* ── Email History ──────────────────────────────────────── */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Mail size={16} color="var(--teal)" />
+                    <h3 style={{ fontWeight: 600 }}>Email History</h3>
+                    {emailLogsTotal > 0 && (
+                      <span className="badge badge-gray" style={{ fontSize: '0.6875rem' }}>{emailLogsTotal}</span>
+                    )}
+                  </div>
+                  <select
+                    className="input"
+                    value={emailTypeFilter}
+                    onChange={e => { setEmailTypeFilter(e.target.value); setEmailLogsPage(0) }}
+                    style={{ width: 'auto', fontSize: '0.8125rem' }}
+                  >
+                    <option value="all">All Types</option>
+                    <option value="urgent_alert">Urgent Alerts</option>
+                    <option value="daily_digest">Daily Digest</option>
+                    <option value="weekly_digest">Weekly Digest</option>
+                  </select>
+                </div>
+
+                {emailLogsLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem' }}>
+                    <div className="spinner" style={{ width: 20, height: 20 }} />
+                  </div>
+                ) : emailLogs.length === 0 ? (
+                  <div className="empty-state" style={{ padding: '2rem 0' }}>
+                    <Mail size={24} color="var(--text-muted)" />
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                      No emails sent yet. Emails will appear here once alerts fire or digests are delivered.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left' }}>Date</th>
+                          <th style={{ textAlign: 'left' }}>Recipient</th>
+                          <th style={{ textAlign: 'left' }}>Type</th>
+                          <th style={{ textAlign: 'left' }}>Subject</th>
+                          <th style={{ textAlign: 'center' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {emailLogs.map(log => (
+                          <tr key={log.id}>
+                            <td style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                              {new Date(log.sent_at).toLocaleDateString()}{' '}
+                              <span style={{ fontSize: '0.6875rem' }}>
+                                {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </td>
+                            <td>{log.recipient}</td>
+                            <td>
+                              <span className={`badge ${
+                                log.email_type === 'urgent_alert' ? 'badge-red' :
+                                log.email_type === 'daily_digest' ? 'badge-teal' : 'badge-blue'
+                              }`} style={{ fontSize: '0.6875rem' }}>
+                                {log.email_type === 'urgent_alert' ? 'Urgent' :
+                                 log.email_type === 'daily_digest' ? 'Daily' : 'Weekly'}
+                              </span>
+                            </td>
+                            <td style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {log.subject}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              {log.status === 'sent' ? (
+                                <CheckCircle size={13} color="var(--green)" />
+                              ) : (
+                                <span className="badge badge-red" title={log.error ?? ''} style={{ fontSize: '0.6875rem', cursor: log.error ? 'help' : 'default' }}>
+                                  {log.status}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    {emailLogsTotalPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontSize: '0.8125rem' }}>
+                        <button className="btn btn-sm btn-ghost" disabled={emailLogsPage === 0}
+                          onClick={() => setEmailLogsPage(p => p - 1)}>
+                          ← Prev
+                        </button>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          Page {emailLogsPage + 1} of {emailLogsTotalPages}
+                        </span>
+                        <button className="btn btn-sm btn-ghost" disabled={emailLogsPage >= emailLogsTotalPages - 1}
+                          onClick={() => setEmailLogsPage(p => p + 1)}>
+                          Next →
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -716,6 +1044,200 @@ export function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Team Members ─────────────────────────────────────────── */}
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Users size={16} color="var(--teal)" />
+                  <h3 style={{ fontWeight: 600 }}>Team Members</h3>
+                  <span className="badge badge-gray" style={{ fontSize: '0.6875rem' }}>
+                    {teamMembers.length}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <button className="btn btn-primary btn-sm" onClick={() => setShowInviteModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Plus size={13} /> Invite
+                  </button>
+                )}
+              </div>
+
+              {teamError && <div className="error-banner" style={{ marginBottom: '1rem' }}>{teamError}</div>}
+
+              {teamLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                  <div className="spinner" style={{ width: 20, height: 20 }} />
+                </div>
+              ) : (
+                <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>Name</th>
+                      <th style={{ textAlign: 'left' }}>Role</th>
+                      <th style={{ textAlign: 'left' }}>Joined</th>
+                      {isAdmin && <th style={{ textAlign: 'right' }}>Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamMembers.map(m => (
+                      <tr key={m.id}>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>
+                            {m.full_name || '(No name)'}
+                            {m.id === user?.id && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginLeft: '0.375rem' }}>(you)</span>
+                            )}
+                          </div>
+                          {m.email && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.email}</div>}
+                        </td>
+                        <td>
+                          {isAdmin && m.id !== user?.id ? (
+                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                              <select
+                                value={m.role}
+                                onChange={e => handleRoleChange(m.id, e.target.value as any)}
+                                style={{
+                                  appearance: 'none', background: 'transparent', border: '1px solid var(--border)',
+                                  borderRadius: 'var(--r-sm)', padding: '0.25rem 1.5rem 0.25rem 0.5rem',
+                                  fontSize: '0.8125rem', fontWeight: 500, textTransform: 'capitalize',
+                                  cursor: 'pointer', color: 'var(--text-primary)',
+                                }}
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="editor">Editor</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              <ChevronDown size={12} style={{ position: 'absolute', right: '0.375rem', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+                            </div>
+                          ) : (
+                            <span className={`badge ${m.role === 'admin' ? 'badge-teal' : m.role === 'editor' ? 'badge-blue' : 'badge-gray'}`}
+                              style={{ textTransform: 'capitalize', fontSize: '0.6875rem' }}>
+                              {m.role}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ color: 'var(--text-muted)' }}>
+                          {new Date(m.created_at).toLocaleDateString()}
+                        </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'right' }}>
+                            {m.id !== user?.id && (
+                              confirmRemove === m.id ? (
+                                <div style={{ display: 'inline-flex', gap: '0.375rem', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remove?</span>
+                                  <button className="btn btn-sm" onClick={() => handleRemoveMember(m.id)}
+                                    style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', fontSize: '0.75rem' }}>
+                                    Yes
+                                  </button>
+                                  <button className="btn btn-sm" onClick={() => setConfirmRemove(null)}
+                                    style={{ fontSize: '0.75rem' }}>
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="btn btn-sm btn-ghost"
+                                  onClick={() => setConfirmRemove(m.id)}
+                                  title="Remove member"
+                                  style={{ color: 'var(--text-muted)' }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Pending Invites */}
+              {isAdmin && teamInvites.length > 0 && (
+                <div style={{ marginTop: '1.25rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    Pending Invites
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {teamInvites.map(inv => (
+                      <div key={inv.id} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '0.625rem 0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--r-sm)',
+                        border: '1px solid var(--border)',
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '0.8125rem', fontWeight: 500 }}>{inv.email}</div>
+                          <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                            Invited as <span style={{ textTransform: 'capitalize' }}>{inv.role}</span> · Expires {new Date(inv.expires_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button className="btn btn-sm btn-ghost" onClick={() => revokeInvite(inv.id)}
+                          title="Revoke invite" style={{ color: 'var(--text-muted)' }}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Invite Modal */}
+            {showInviteModal && (
+              <div style={{
+                position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+              }}
+              onClick={e => { if (e.target === e.currentTarget) setShowInviteModal(false) }}>
+                <div className="card" style={{ width: 420, maxWidth: '90vw' }} onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontWeight: 600 }}>Invite Team Member</h3>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowInviteModal(false); setInviteError(null) }}>
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <form onSubmit={handleInvite}>
+                    {inviteError && <div className="error-banner" style={{ marginBottom: '0.75rem' }}>{inviteError}</div>}
+                    <label className="label">Email Address</label>
+                    <input
+                      className="input"
+                      type="email"
+                      placeholder="colleague@company.com"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      required
+                      autoFocus
+                      style={{ marginBottom: '0.75rem' }}
+                    />
+                    <label className="label">Role</label>
+                    <select
+                      className="input"
+                      value={inviteRole}
+                      onChange={e => setInviteRole(e.target.value as any)}
+                      style={{ marginBottom: '0.5rem' }}
+                    >
+                      <option value="admin">Admin — Full access, manage team</option>
+                      <option value="editor">Editor — Create & modify data</option>
+                      <option value="viewer">Viewer — Read-only access</option>
+                    </select>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                      The invite link will be valid for 7 days. The user will need to sign up with this email address to join.
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <button type="button" className="btn btn-sm" onClick={() => { setShowInviteModal(false); setInviteError(null) }}>
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-primary btn-sm" disabled={inviting}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        {inviting ? <><span className="spinner" style={{ width: 12, height: 12 }} /> Sending…</> : <><Send size={13} /> Send Invite</>}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
 
             {/* Tier comparison card */}
             {upgradeTier && (

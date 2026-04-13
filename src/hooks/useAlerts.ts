@@ -13,6 +13,7 @@ export interface Alert {
   is_read: boolean
   is_dismissed: boolean
   resolved_at: string | null
+  email_sent_at?: string | null
   created_at: string
 }
 

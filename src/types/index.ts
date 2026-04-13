@@ -53,6 +53,7 @@ export type TierFeature =
   | 'api_access'
   | 'sso'
   | 'custom_integrations'
+  | 'email_notifications'
 
 export interface Profile {
   id: string
