@@ -4,12 +4,19 @@
 
 import { SignJWT, jwtVerify } from 'https://esm.sh/jose@4.14.4'
 
+function getSecretKey(): Uint8Array {
+  const secretStr = Deno.env.get('UNSUBSCRIBE_SECRET')
+  if (!secretStr) {
+    throw new Error('CRITICAL: UNSUBSCRIBE_SECRET environment variable is not defined. Failing closed to prevent insecure tokens.')
+  }
+  return new TextEncoder().encode(secretStr)
+}
+
 /**
  * Creates a signed JWT for unsusbscribe tokens.
  */
 export async function signUnsubscribeToken(payload: { user_id: string; pref: string }, expiresInMs: number): Promise<string> {
-  const secretStr = Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'quova-unsub-default'
-  const secretKey = new TextEncoder().encode(secretStr)
+  const secretKey = getSecretKey()
   
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -22,10 +29,8 @@ export async function signUnsubscribeToken(payload: { user_id: string; pref: str
  * Verifies and decodes an unsubscribe token.
  */
 export async function verifyUnsubscribeToken(token: string): Promise<{ user_id: string; pref: string } | null> {
-  const secretStr = Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'quova-unsub-default'
-  const secretKey = new TextEncoder().encode(secretStr)
-  
   try {
+    const secretKey = getSecretKey()
     const { payload } = await jwtVerify(token, secretKey)
     return payload as { user_id: string; pref: string }
   } catch (err) {

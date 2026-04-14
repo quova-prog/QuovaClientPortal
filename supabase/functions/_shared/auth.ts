@@ -36,7 +36,7 @@ export function createAdminClient(): SupabaseClient {
 }
 
 /** Authenticate request — accepts service role key or user JWT */
-export async function authenticateRequest(req: Request): Promise<{ authenticated: boolean; error?: string }> {
+export async function authenticateRequest(req: Request): Promise<{ authenticated: boolean; isServiceRole?: boolean; user?: any; error?: string }> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
     return { authenticated: false, error: 'Missing Authorization header' }
@@ -47,7 +47,7 @@ export async function authenticateRequest(req: Request): Promise<{ authenticated
 
   // Service role key auth (used by DB triggers via pg_net)
   if (token === serviceRoleKey) {
-    return { authenticated: true }
+    return { authenticated: true, isServiceRole: true }
   }
 
   // User JWT auth
@@ -61,5 +61,5 @@ export async function authenticateRequest(req: Request): Promise<{ authenticated
     return { authenticated: false, error: 'Invalid token' }
   }
 
-  return { authenticated: true }
+  return { authenticated: true, isServiceRole: false, user }
 }

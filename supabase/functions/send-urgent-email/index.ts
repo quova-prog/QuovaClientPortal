@@ -41,6 +41,22 @@ Deno.serve(async (req: Request) => {
 
   const admin = createAdminClient()
 
+  // Guard: Logical access control
+  if (!auth.isServiceRole) {
+    if (!auth.user) {
+      return jsonResponse({ error: 'Unauthorized: User required' }, 401)
+    }
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('org_id')
+      .eq('id', auth.user.id)
+      .single()
+      
+    if (profile?.org_id !== org_id) {
+      return jsonResponse({ error: 'Forbidden: You do not have access to this organisation' }, 403)
+    }
+  }
+
   // Fetch alert
   const { data: alert, error: alertErr } = await admin
     .from('alerts')

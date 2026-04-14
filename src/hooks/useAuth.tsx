@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{
     error: string | null
     mfaRequired?: boolean
+    mfaEnforcedSetupRequired?: boolean
     mfaFactorId?: string
     pendingToken?: string
     pendingRefreshToken?: string
@@ -38,7 +39,8 @@ const AuthContext = createContext<AuthContextType | null>(null)
 async function sessionSatisfiesRequiredAal(_session: Session): Promise<boolean> {
   const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (error || !data) return false
-  if (data.nextLevel === 'aal2' && data.currentLevel !== 'aal2') return false
+  // SOC2 requirement: all users MUST have AAL2 (meaning they must enroll in MFA).
+  if (data.currentLevel !== 'aal2') return false
   return true
 }
 
@@ -175,17 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Let onAuthStateChange handle setUser to avoid race condition
-      // (both this path and the listener would call buildAuthUser concurrently)
-      // Fire audit log using session data directly
-      const userId = data.user.id
-      const userEmail = data.user.email ?? email
-      const profileResult = await supabase.from('profiles').select('org_id').eq('id', userId).maybeSingle()
-      if (profileResult.data?.org_id) {
-        fireAuditLog(profileResult.data.org_id, userId, userEmail, 'login', 'User signed in')
-      }
+      // No verified factor found -> Enforced Setup Required
+      return { error: null, mfaEnforcedSetupRequired: true }
 
-      return { error: null }
     } catch (error) {
       void reportException(error, {
         category: 'auth',

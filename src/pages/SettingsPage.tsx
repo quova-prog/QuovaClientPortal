@@ -40,7 +40,7 @@ function parseTotpUri(totpUri: string): { secret: string; issuer: string; accoun
 }
 
 export function SettingsPage() {
-  const { user, db } = useAuth()
+  const { user, db, signOut } = useAuth()
   const { log } = useAuditLog()
   const { enroll, challenge, verify, unenroll, listFactors } = useMfa()
 
@@ -336,6 +336,22 @@ export function SettingsPage() {
   const parsedTotp = useMemo(() => parseTotpUri(mfaTotpUri), [mfaTotpUri])
   const [mfaChallengeId, setMfaChallengeId] = useState('')
   const [mfaCode, setMfaCode] = useState('')
+
+  // ── Organisation Deletion ──────────────────────────────────────────────────
+  const [deletingOrg, setDeletingOrg] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  async function handleOrgTeardown() {
+    setDeletingOrg(true)
+    const { error } = await db.rpc('delete_organisation')
+    if (error) {
+      alert(`Failed to delete organisation: ${error.message}`)
+      setDeletingOrg(false)
+      return
+    }
+    // Sucessfully deleted, the auth.users context is orphaned. Just sign out.
+    await signOut()
+  }
   const [mfaVerifying, setMfaVerifying] = useState(false)
   const [mfaSuccess, setMfaSuccess] = useState(false)
   const [mfaError, setMfaError] = useState<string | null>(null)
@@ -417,6 +433,13 @@ export function SettingsPage() {
     { key: 'cash_flow_due',      label: 'Cash Flows Due',        desc: 'Large cash flow settlement approaching' },
     { key: 'unhedged_exposure',  label: 'Unhedged Exposure',     desc: 'Currency pair below minimum hedge coverage' },
   ]
+
+  // Timezone helpers: DB stores UTC hour, UI shows local time
+  const tzOffsetMinutes = new Date().getTimezoneOffset() // e.g. 300 for UTC-5
+  const tzOffsetHours = -tzOffsetMinutes / 60            // e.g. -5 for UTC-5
+  const tzLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const utcToLocal = (utcHour: number) => ((utcHour + 24 + Math.round(tzOffsetHours)) % 24)
+  const localToUtc = (localHour: number) => ((localHour + 24 - Math.round(tzOffsetHours)) % 24)
 
   const DIGEST_HOURS = Array.from({ length: 24 }, (_, i) => {
     const h = i % 12 || 12
@@ -608,11 +631,11 @@ export function SettingsPage() {
                       </select>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label className="label">Delivery Time (UTC)</label>
+                      <label className="label">Delivery Time ({tzLabel})</label>
                       <select
                         className="input"
-                        value={notifPrefs.digest_time}
-                        onChange={e => updateNotifPrefs({ digest_time: parseInt(e.target.value) })}
+                        value={utcToLocal(notifPrefs.digest_time)}
+                        onChange={e => updateNotifPrefs({ digest_time: localToUtc(parseInt(e.target.value)) })}
                       >
                         {DIGEST_HOURS.map(h => (
                           <option key={h.value} value={h.value}>{h.label}</option>
@@ -809,14 +832,14 @@ export function SettingsPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+                    <table className="data-table" style={{ fontSize: '0.8125rem', tableLayout: 'fixed', width: '100%' }}>
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'left' }}>Date</th>
-                          <th style={{ textAlign: 'left' }}>Recipient</th>
-                          <th style={{ textAlign: 'left' }}>Type</th>
-                          <th style={{ textAlign: 'left' }}>Subject</th>
-                          <th style={{ textAlign: 'center' }}>Status</th>
+                          <th style={{ textAlign: 'left', width: '18%' }}>Date</th>
+                          <th style={{ textAlign: 'left', width: '25%' }}>Recipient</th>
+                          <th style={{ textAlign: 'left', width: '10%' }}>Type</th>
+                          <th style={{ textAlign: 'left', width: '39%' }}>Subject</th>
+                          <th style={{ textAlign: 'center', width: '8%' }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -828,7 +851,7 @@ export function SettingsPage() {
                                 {new Date(log.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </td>
-                            <td>{log.recipient}</td>
+                            <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.recipient}</td>
                             <td>
                               <span className={`badge ${
                                 log.email_type === 'urgent_alert' ? 'badge-red' :
@@ -838,7 +861,7 @@ export function SettingsPage() {
                                  log.email_type === 'daily_digest' ? 'Daily' : 'Weekly'}
                               </span>
                             </td>
-                            <td style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {log.subject}
                             </td>
                             <td style={{ textAlign: 'center' }}>
@@ -1348,6 +1371,52 @@ export function SettingsPage() {
                 >
                   Contact Sales <ArrowUpRight size={13} />
                 </a>
+              </div>
+            )}
+
+            {/* ── Danger Zone (Organisation Teardown) ──────────────────── */}
+            {isAdmin && (
+              <div className="card" style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                  <ShieldAlert size={16} color="var(--red, #ef4444)" />
+                  <h3 style={{ fontWeight: 600, color: 'var(--red, #ef4444)' }}>Danger Zone</h3>
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Deleting your organisation will immediately and completely erase all data, configurations, API keys, 
+                  and user records associated with {user?.organisation?.name ?? 'your account'}. This action is irreversible.
+                </div>
+                {showDeleteConfirm ? (
+                  <div style={{ padding: '1rem', borderRadius: 'var(--r-md)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--red, #ef4444)' }}>
+                      Are you absolutely sure you wish to proceed?
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        className="btn btn-sm"
+                        disabled={deletingOrg}
+                        onClick={handleOrgTeardown}
+                        style={{ background: '#ef4444', color: '#fff', border: 'none' }}
+                      >
+                        {deletingOrg ? 'Deleteting...' : 'Yes, Delete Everything'}
+                      </button>
+                      <button 
+                        className="btn btn-ghost btn-sm"
+                        disabled={deletingOrg}
+                        onClick={() => setShowDeleteConfirm(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    className="btn btn-sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    style={{ border: '1px solid #ef4444', color: '#ef4444', background: 'transparent' }}
+                  >
+                    Delete Organisation
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -1,6 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { IdleTimeout } from '@/components/ui/IdleTimeout'
 import { useDashboardMetrics, useUploadBatches, useHedgePolicy } from '@/hooks/useData'
 import { useErpConnections } from '@/hooks/useErpConnections'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
@@ -394,7 +393,6 @@ export function AppLayout() {
         )}
         <Outlet />
       </div>
-      <IdleTimeout />
       {upgradeModal && (
         <UpgradeModal
           currentTier={orgPlan}

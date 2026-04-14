@@ -6,6 +6,7 @@ import { EntityProvider } from '@/context/EntityContext'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { MonitoringBridge } from '@/components/app/MonitoringBridge'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { IdleTimeout } from '@/components/ui/IdleTimeout'
 import { LoginPage } from '@/pages/LoginPage'
 import { SignupPage } from '@/pages/SignupPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
@@ -20,6 +21,7 @@ import { CounterpartiesPage } from '@/pages/CounterpartiesPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { BankAccountsPage } from '@/pages/BankAccountsPage'
 import { IntegrationsPage } from '@/pages/IntegrationsPage'
+import { ForceMfaSetupPage } from '@/pages/ForceMfaSetupPage'
 import { InboxPage } from '@/pages/InboxPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { AdvisorPage } from '@/pages/AdvisorPage'
@@ -35,7 +37,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     </div>
   )
   if (!user) return <Navigate to="/login" replace />
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      <IdleTimeout />
+    </>
+  )
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -99,7 +106,8 @@ export default function App() {
 
             {/* Public */}
             <Route path="/login"           element={<PublicRoute><LoginPage /></PublicRoute>} />
-            <Route path="/signup"          element={<PublicRoute><SignupPage /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+            <Route path="/mfa-setup" element={<PublicRoute><ForceMfaSetupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
             <Route path="/reset-password"  element={<ResetPasswordPage />} />
 

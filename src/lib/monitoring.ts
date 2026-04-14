@@ -79,6 +79,20 @@ function getEndpoint(): string | null {
   return endpoint
 }
 
+function getSanitizedUrl(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const url = new URL(window.location.href)
+    // Supabase password reset / magic links put sensitive auth parameters in the hash.
+    if (/(access_token|refresh_token|provider_token)=/.test(url.hash)) {
+      url.hash = '#[redacted_auth_payload]'
+    }
+    return redactString(url.href)
+  } catch {
+    return redactString(window.location.href)
+  }
+}
+
 function buildPayload(event: MonitoringEvent) {
   return {
     source: 'orbit-web',
@@ -90,7 +104,7 @@ function buildPayload(event: MonitoringEvent) {
     stack: event.stack ? event.stack.slice(0, 8000) : null,
     context: {
       ...context,
-      url: typeof window !== 'undefined' ? window.location.href : null,
+      url: getSanitizedUrl(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
     },
     metadata: sanitize(event.metadata ?? {}),

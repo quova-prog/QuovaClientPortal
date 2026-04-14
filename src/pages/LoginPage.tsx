@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { ShieldCheck } from 'lucide-react'
@@ -21,6 +21,7 @@ interface MfaPending {
 }
 
 export function LoginPage() {
+  const navigate = useNavigate()
   const { signIn, completeMfaSignIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -91,6 +92,9 @@ export function LoginPage() {
         } else {
           setError(result.error)
         }
+      } else if (result.mfaEnforcedSetupRequired) {
+        setLoginFailures(0)
+        navigate('/mfa-setup')
       } else if (result.mfaRequired) {
         setLoginFailures(0)
         setMfaPending({

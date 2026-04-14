@@ -1,6 +1,6 @@
 # Quova — Claude Code Context
 
-> **Last updated:** 2026-04-12 (session 12 — email notifications, multi-user role-aware preferences)
+> **Last updated:** 2026-04-13 (session 14 — SOC2 hardening: mandatory MFA, audit triggers, org teardown)
 > **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
@@ -53,14 +53,14 @@ and never exposed to the client. All AI callers use `callAnthropicProxy()` from 
 
 ```
 src/
-├── App.tsx                     # Routes — public + protected with AppLayout shell + SmartRedirect
+├── App.tsx                     # Routes — public + protected (IdleTimeout here) with AppLayout shell + SmartRedirect
 ├── main.tsx
 ├── types/index.ts              # Shared TypeScript types (HedgePosition, FxExposure, OnboardingSession, etc.)
 ├── index.css                   # Global styles + design token CSS variables
 │
 ├── components/
 │   ├── layout/AppLayout.tsx    # Sidebar nav, entity picker, rates ticker, onboarding steps
-│   ├── ui/                     # ErrorBoundary, IdleTimeout, QuovaMark, UpgradeModal
+│   ├── ui/                     # ErrorBoundary, IdleTimeout (in ProtectedRoute), QuovaMark, UpgradeModal
 │   ├── advisor/ScenarioPanel.tsx
 │   ├── analytics/
 │   │   ├── BoardReportPanel.tsx
@@ -110,6 +110,7 @@ src/
 │   └── [10 more *Parser.ts for each upload data type]
 │
 └── pages/
+    ├── ForceMfaSetupPage.tsx   # ← NEW (session 14): mandatory MFA enrollment for users without TOTP
     ├── [existing pages]        # One file per route (see Routes section below)
     └── onboarding/             # ← NEW (session 4)
         ├── OnboardingRouter.tsx    # State machine controller — URL-based step, auto-redirect from /onboarding
@@ -131,6 +132,7 @@ src/
 | `/onboarding/discover` | DiscoveryFeed | AI schema discovery with live event feed |
 | `/onboarding/validate` | ValidateMappings | Human review of AI-proposed field mappings |
 | `/onboarding/live` | GoLive | Data import into fx_exposures + celebration |
+| `/mfa-setup` | ForceMfaSetupPage | **NEW** — mandatory MFA enrollment (standalone, no sidebar) |
 | `/dashboard` | DashboardPage | KPI summary, coverage gauge, exposure donut |
 | `/inbox` | InboxPage | Alert inbox with read/dismiss |
 | `/upload` | UploadPage | CSV upload wizard (10+ data types) |
@@ -146,7 +148,7 @@ src/
 | `/settings` | SettingsPage | Org settings, user management |
 | `/audit-log` | AuditLogPage | Immutable audit trail |
 
-Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`
+Public routes: `/login`, `/signup`, `/mfa-setup`, `/forgot-password`, `/reset-password`
 
 ### Smart Redirect (App.tsx)
 After login/signup, `SmartRedirect` (at the `/` route) checks `onboarding_sessions`:
@@ -334,7 +336,7 @@ Full 5-step self-serve onboarding flow: **SETUP → CONNECT → DISCOVER → VAL
 
 ### Authentication & Multi-tenancy
 - Email/password auth via Supabase
-- MFA (TOTP) support
+- **Mandatory MFA (TOTP)** — SOC2 requirement. All users must have AAL2. Login flow checks for verified TOTP factor; if absent, redirects to `/mfa-setup` (standalone `ForceMfaSetupPage`) before granting access. Cleans up dangling unverified enrollments on mount.
 - Role-based access: admin / editor / viewer
 - Multi-entity support with entity context switcher (consolidated vs per-entity view)
 - Idle timeout session enforcement
@@ -441,6 +443,9 @@ Full email notification system: urgent alerts + daily/weekly digest PDFs.
 - `useTeamMembers.ts` — fetches all org members with roles
 - `useTeamNotificationSummary.ts` — joins team members with their notification settings
 
+### Organisation Teardown (NEW — session 14)
+Admin-only self-serve org deletion. `delete_organisation()` RPC (SECURITY DEFINER) verifies caller is admin, then `DELETE FROM organisations WHERE id = v_org_id` — cascades to all tenant data. Auth.users records remain orphaned but clean. UI: Danger Zone card in Settings > Organisation tab with two-step confirmation. Signs user out after successful deletion.
+
 ### Support Portal (orbit-support)
 Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177).
 - Support/support_admin roles, cross-org read access, data corrections (plan, role, pricing, payment method)
@@ -453,14 +458,14 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 ## In Progress / Pending
 
 ### Known Gaps
-1. **Notional conversion bug in AdvisorPage `handleExecute`** — passes USD amount as `notional_base`
-2. **Strategy B & C not interactive** — only Strategy A drives recommendations
-3. **ERP integrations are UI-only** — credential forms work but no actual API calls to SAP/Oracle/NetSuite. Backend Edge Functions needed for real connectivity. Connection test is simulated (90% random pass rate, clearly labelled in code).
-4. **Onboarding GoLive** — imports into `fx_exposures` but doesn't create `hedge_policies` from the onboarding profile
-5. **`as any` casts** — 15+ instances in data hooks hiding type errors. Requires Supabase DB type generation (`supabase gen types`) to fix properly.
-6. **`mapping_templates` table has no write policies** — flywheel feature (reusable ERP mapping templates) is non-functional at the DB level
-7. **Scenario engine hedged-exposure offset** — `scenarioEngine.ts` sets `hedgedExposureDelta = -hedgeInstrumentDelta` (perfect offset), so net impact = unhedged residual only. Acceptable as a conservative stress-test simplification for sub-1-year vanilla forwards but doesn't model basis mismatch.
-8. **Advisor VaR is undiversified** — `advisorEngine.ts` sums standalone per-pair VaRs with no correlation matrix. Conservative (correlation=1 assumption) but not a true portfolio VaR. Label says "P&L at Risk (95%)" which is accurate; adding "(undiversified)" would improve transparency.
+1. **Strategy B & C not interactive** — only Strategy A drives recommendations
+2. **ERP integrations are UI-only** — credential forms work but no actual API calls to SAP/Oracle/NetSuite. Backend Edge Functions needed for real connectivity. Connection test is simulated (90% random pass rate, clearly labelled in code).
+3. **Onboarding GoLive** — imports into `fx_exposures` but doesn't create `hedge_policies` from the onboarding profile
+4. **`as any` casts** — 15+ instances in data hooks hiding type errors. Requires Supabase DB type generation (`supabase gen types`) to fix properly.
+5. **`mapping_templates` table has no write policies** — flywheel feature (reusable ERP mapping templates) is non-functional at the DB level
+6. **Scenario engine hedged-exposure offset** — `scenarioEngine.ts` sets `hedgedExposureDelta = -hedgeInstrumentDelta` (perfect offset), so net impact = unhedged residual only. Acceptable as a conservative stress-test simplification for sub-1-year vanilla forwards but doesn't model basis mismatch.
+7. **Advisor VaR is undiversified** — `advisorEngine.ts` sums standalone per-pair VaRs with no correlation matrix. Conservative (correlation=1 assumption) but not a true portfolio VaR. Label says "P&L at Risk (95%)" which is accurate; adding "(undiversified)" would improve transparency.
+8. **Currency pair normalization incomplete** — `normalizeCurrencyPair()` exists in `src/lib/utils.ts` (handles EURUSD, EUR/USD, EUR-USD, EUR_USD → EUR/USD) but only applied in CSV parsers. Not used at hedge entry, GoLive import, FX rate lookups, or coverage matching.
 
 ---
 
@@ -469,14 +474,18 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 ### Security
 - Anthropic API calls now routed through Supabase Edge Function proxy (`supabase/functions/anthropic-proxy/index.ts`). API key stored as Supabase secret, never exposed to client. All AI callers use `callAnthropicProxy()` from `src/lib/anthropicProxy.ts` which authenticates via user's Supabase JWT. Model allowlist: claude-haiku-4-5, claude-sonnet-4-20250514.
 - Customer audit_logs identity enforced server-side via BEFORE INSERT trigger (user_id, user_email, created_at overwritten from auth.uid())
+- **SOC2 mandatory audit triggers** (`20260414_mandatory_audit_triggers.sql`): generic `audit_trigger_func()` (SECURITY DEFINER) applied AFTER INSERT/UPDATE/DELETE on 7 core tables: `organisations`, `fx_exposures`, `hedge_positions`, `bank_accounts`, `entities`, `profiles`, `invites`. Logs before/after state as JSONB metadata.
 - Support audit_logs writes go through support_write_audit_log RPC — direct INSERT blocked
 - Onboarding table writes (sessions, profiles, discoveries, mappings) restricted to admin/editor
 - All SECURITY DEFINER functions have SET search_path = public, auth
+- **Edge Function auth hardening:** `authenticateRequest()` returns `{ isServiceRole, user }`. `send-daily-digest` restricted to service role only. `send-urgent-email` validates caller's org membership for non-service-role requests.
+- **Unsubscribe token security:** `UNSUBSCRIBE_SECRET` env var is required — removed insecure default fallback. Missing secret throws immediately (fail-closed).
+- **Monitoring PII:** `getSanitizedUrl()` redacts `access_token`/`refresh_token`/`provider_token` from URL hash before telemetry submission.
 - No server-side validation of financial data
 - ERP credentials must never flow through the browser
 
 ### Data Accuracy
-- Currency pair string matching (`EUR/USD` vs `EURUSD`) — normalization needed
+- Currency pair string matching (`EUR/USD` vs `EURUSD`) — `normalizeCurrencyPair()` exists but only used in CSV parsers, not at all entry points
 - `spot_rate_at_trade` nullable on `hedge_positions` — now critical for hedge effectiveness testing (hypothetical derivative method). Positions missing this field fall back to `contracted_rate` with a UI warning.
 
 ### Architecture
@@ -925,6 +934,94 @@ Built end-to-end email notification system supporting multiple users with differ
 - **Role-aware defaults, not role-based restrictions:** Viewers default to emails OFF but can opt in. Admins default to digest ON. This respects user autonomy while providing sensible starting points.
 - **Graceful degradation:** Hook falls back to local defaults with `id: 'pending'` when the DB table doesn't exist yet (pre-migration). UI renders fully, saves work locally.
 - **Immutable email logs:** No UPDATE/DELETE on `email_logs` — append-only audit trail. Edge Functions write via service role; client-side is read-only for admins.
+
+---
+
+## Session 13 — SendGrid Integration & Email Deployment (2026-04-13)
+
+Connected SendGrid to the email notification system built in session 12. Deployed and tested end-to-end.
+
+### SendGrid Setup
+- **Supabase secrets configured:** `SENDGRID_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`, `UNSUBSCRIBE_SECRET`, `APP_BASE_URL`
+- **Edge Functions deployed with `--no-verify-jwt`:** Functions handle auth internally via `authenticateRequest()` (supports both user JWT and service role key from DB triggers). Supabase gateway JWT verification was blocking requests before they reached function code.
+- All three email functions deployed: `send-urgent-email`, `send-daily-digest`, `unsubscribe-email`
+
+### Send Test Email Button
+- Added "Send Test Email" button to Settings > Notifications
+- Inserts a test urgent alert (`severity: 'urgent'`, `type: 'policy_breach'`) and invokes `send-urgent-email` Edge Function via `db.functions.invoke()` (uses authenticated Supabase client, not raw fetch)
+- Shows success/error feedback inline with detailed error extraction from `FunctionsHttpError`
+
+### Unsubscribe Token Security
+- Replaced plain base64 unsubscribe tokens with HMAC-signed tokens
+- New `_shared/crypto.ts`: `signUnsubscribeToken()` / `verifyUnsubscribeToken()` using Web Crypto API
+- Both `send-urgent-email` and `send-daily-digest` use signed tokens; `unsubscribe-email` verifies signature before processing
+
+### Digest Timezone Fix
+- Delivery time picker now shows user's local timezone (e.g., "America/New_York") instead of "(UTC)"
+- UI converts local → UTC on save, UTC → local on load
+- DB still stores UTC hour (correct for server-side cron matching in Edge Function)
+- Helpers: `utcToLocal()`, `localToUtc()` using `getTimezoneOffset()`
+
+### Email History Table Fix
+- Fixed Status column checkmarks rendering outside the card boundary
+- Applied `table-layout: fixed` with percentage column widths (Date 18%, Recipient 25%, Type 10%, Subject 39%, Status 8%)
+- Removed hardcoded `maxWidth: 260` on subject column; added text overflow on recipient column
+
+### Files Modified
+- `src/pages/SettingsPage.tsx` — test email button, timezone picker, table layout fix
+- `supabase/functions/send-urgent-email/index.ts` — HMAC-signed unsubscribe tokens
+- `supabase/functions/send-daily-digest/index.ts` — HMAC-signed unsubscribe tokens
+- `supabase/functions/unsubscribe-email/index.ts` — token signature verification
+- `supabase/functions/_shared/crypto.ts` — NEW: HMAC sign/verify helpers
+
+---
+
+## Session 14 — SOC2 Hardening: Mandatory MFA, Audit Triggers, Org Teardown (2026-04-13)
+
+Security hardening pass focused on SOC2 compliance requirements.
+
+### Mandatory MFA Enforcement
+- **`sessionSatisfiesRequiredAal`** in `useAuth.tsx` now requires `currentLevel === 'aal2'` for all users (previously only checked when `nextLevel` demanded it)
+- **Login flow:** When user authenticates without a verified TOTP factor, `signIn` returns `{ mfaEnforcedSetupRequired: true }`. `LoginPage` redirects to `/mfa-setup`
+- **`ForceMfaSetupPage.tsx`** — Standalone page (no sidebar). Auto-enrolls TOTP on mount, cleans up dangling unverified factors, shows setup key + 6-digit verification input. On success, refreshes session and navigates to `/`
+- **`IdleTimeout` moved** from `AppLayout` to `ProtectedRoute` wrapper in `App.tsx` — now covers all protected routes including onboarding flow
+
+### SOC2 Mandatory Audit Triggers
+- **Migration:** `20260414_mandatory_audit_triggers.sql`
+- Generic `audit_trigger_func()` (SECURITY DEFINER, `SET search_path = public`) — logs INSERT/UPDATE/DELETE with before/after JSONB snapshots to `audit_logs`
+- Applied to 7 core tables: `organisations`, `fx_exposures`, `hedge_positions`, `bank_accounts`, `entities`, `profiles`, `invites`
+- Works with existing BEFORE INSERT trigger that populates `user_id`, `user_email`, `created_at` from `auth.uid()`
+
+### Organisation Teardown
+- **Migration:** `20260414_organization_teardown.sql`
+- `delete_organisation()` RPC — SECURITY DEFINER, validates caller is admin, cascades delete via FK constraints
+- **Settings UI:** Danger Zone card (admin only) with red styling + two-step confirmation. Signs out after successful deletion.
+
+### Edge Function Auth Hardening
+- `authenticateRequest()` (`_shared/auth.ts`) now returns `{ isServiceRole, user }` alongside `authenticated`
+- `send-daily-digest` restricted to service role only (403 for user JWTs) — prevents user-triggered mass email sends
+- `send-urgent-email` validates caller's `org_id` matches request `org_id` for non-service-role requests
+
+### Security Fixes
+- **Unsubscribe tokens:** Removed `?? 'quova-unsub-default'` fallback from `_shared/crypto.ts`. Missing `UNSUBSCRIBE_SECRET` now throws immediately (fail-closed)
+- **Monitoring PII:** New `getSanitizedUrl()` in `monitoring.ts` redacts `access_token`/`refresh_token`/`provider_token` from URL hash before telemetry
+
+### Files Created
+- `src/pages/ForceMfaSetupPage.tsx`
+- `supabase/migrations/20260414_mandatory_audit_triggers.sql`
+- `supabase/migrations/20260414_organization_teardown.sql`
+
+### Files Modified
+- `src/App.tsx` — added `/mfa-setup` route, moved `IdleTimeout` to `ProtectedRoute`
+- `src/components/layout/AppLayout.tsx` — removed `IdleTimeout` (moved up)
+- `src/hooks/useAuth.tsx` — mandatory AAL2, `mfaEnforcedSetupRequired` return path
+- `src/lib/monitoring.ts` — `getSanitizedUrl()` for auth token redaction
+- `src/pages/LoginPage.tsx` — `/mfa-setup` redirect on enforced MFA
+- `src/pages/SettingsPage.tsx` — Danger Zone org deletion UI
+- `supabase/functions/_shared/auth.ts` — `isServiceRole` + `user` in auth response
+- `supabase/functions/_shared/crypto.ts` — removed insecure default secret
+- `supabase/functions/send-daily-digest/index.ts` — service role guard
+- `supabase/functions/send-urgent-email/index.ts` — org membership validation
 
 ---
 

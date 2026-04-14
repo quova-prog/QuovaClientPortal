@@ -25,6 +25,10 @@ Deno.serve(async (req: Request) => {
   if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
   }
+  
+  if (!auth.isServiceRole) {
+    return jsonResponse({ error: 'Forbidden: Service Role required for mass digest operations' }, 403)
+  }
 
   // Optional: target a specific org
   let targetOrgId: string | null = null
