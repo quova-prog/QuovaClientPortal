@@ -13,7 +13,7 @@ ALTER FUNCTION public.current_user_role() SET search_path = public, auth;
 ALTER FUNCTION public.prevent_audit_log_mutation() SET search_path = public, auth;
 
 -- From 20260403_support_data_ops.sql
-ALTER FUNCTION public.support_change_user_role(UUID, TEXT) SET search_path = public, auth;
+ALTER FUNCTION public.support_change_user_role(UUID, TEXT, TEXT) SET search_path = public, auth;
 
 -- From 20260403_support_portal.sql
 ALTER FUNCTION public.is_support_user() SET search_path = public, auth;
@@ -22,4 +22,4 @@ ALTER FUNCTION public.enforce_support_audit_log_fields() SET search_path = publi
 ALTER FUNCTION public.prevent_support_audit_log_mutation() SET search_path = public, auth;
 
 -- From 20260409_support_audit_log_rpc.sql
-ALTER FUNCTION public.support_write_audit_log(UUID, TEXT, TEXT, TEXT, TEXT, JSONB) SET search_path = public, auth;
+ALTER FUNCTION public.support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) SET search_path = public, auth;

@@ -61,5 +61,17 @@ export async function authenticateRequest(req: Request): Promise<{ authenticated
     return { authenticated: false, error: 'Invalid token' }
   }
 
+  // Enforce AAL2 (MFA)
+  try {
+    const payloadB64 = token.split('.')[1]
+    const payloadStr = atob(payloadB64)
+    const payload = JSON.parse(payloadStr)
+    if (payload.aal !== 'aal2') {
+      return { authenticated: false, error: 'MFA required (AAL2)' }
+    }
+  } catch (e) {
+    return { authenticated: false, error: 'Invalid token payload or missing AAL' }
+  }
+
   return { authenticated: true, isServiceRole: false, user }
 }
