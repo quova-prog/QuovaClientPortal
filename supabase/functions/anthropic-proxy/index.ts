@@ -65,6 +65,34 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: `max_tokens exceeds ceiling of ${MAX_TOKENS_CEILING}` }, 400)
   }
 
+  // Rate Limiting (Financial DoS Protection)
+  // Fetch the user's org to link the quota deduction
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('org_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !profile.org_id) {
+    return jsonResponse({ error: 'User does not belong to any organisation' }, 403)
+  }
+
+  const { data: allowed, error: rpcError } = await supabase.rpc('check_and_log_ai_usage', {
+    p_user_id: user.id,
+    p_org_id: profile.org_id,
+    p_model: model as string
+  })
+
+  if (rpcError) {
+    console.error('Rate limit RPC failed:', rpcError)
+    return jsonResponse({ error: 'Failed to enforce rate limit' }, 500)
+  }
+
+  if (!allowed) {
+    return jsonResponse({ error: 'Rate limit exceeded: 50 requests per hour allowed.' }, 429)
+  }
+
+
   // Build the forwarded request body (only pass known fields)
   const anthropicBody: Record<string, unknown> = { model, messages }
   if (typeof max_tokens === 'number') anthropicBody.max_tokens = max_tokens
