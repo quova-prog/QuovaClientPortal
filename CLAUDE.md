@@ -1,6 +1,6 @@
 # Quova — Claude Code Context
 
-> **Last updated:** 2026-04-13 (session 14 — SOC2 hardening: mandatory MFA, audit triggers, org teardown)
+> **Last updated:** 2026-04-15 (session 15 — security audit: JIT support access, audit log validation, email hardening, MFA teardown gate)
 > **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
@@ -236,8 +236,9 @@ enforced at the DB level via RLS policies using `current_user_org_id()` helper f
 | `alerts` | Persistent alert store. Unique `(org_id, alert_key)`. `resolved_at` for auto-resolution |
 | `entities` | Legal entities within an org. `functional_currency`, `jurisdiction`, `parent_entity_id` |
 | `erp_connections` | ERP/TMS integration config. `credentials_set: boolean` flag. Non-sensitive config only |
-| `audit_logs` | Append-only activity log |
+| `audit_logs` | Append-only activity log. Client writes via `write_audit_log()` RPC (action validated, content sanitised). Direct INSERT blocked. SECURITY DEFINER triggers still write directly. |
 | `org_payment_methods` | Billing metadata: credit card / ACH / invoice. Metadata only (no raw numbers) |
+| `support_access_grants` | JIT access grants for support staff. `user_id`, `org_id`, `reason`, `expires_at` (4h default), `revoked_at`. All writes via RPCs. |
 
 ### Onboarding Tables (migration `20260404_onboarding_system.sql`)
 
@@ -448,8 +449,9 @@ Admin-only self-serve org deletion. `delete_organisation()` RPC (SECURITY DEFINE
 
 ### Support Portal (orbit-support)
 Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177).
-- Support/support_admin roles, cross-org read access, data corrections (plan, role, pricing, payment method)
-- Data corrections: reason field is optional; all changes are audit-logged regardless
+- Support/support_admin roles, data corrections (plan, role, pricing, payment method)
+- **JIT org-scoped access:** `AccessGate` component + `useAccessGrant` hook require reason-based access grant before viewing customer data. Grants auto-expire after 4 hours. "End Session" in ImpersonatePage revokes the grant.
+- Data corrections: reason field is optional; all changes are audit-logged regardless. All correction RPCs require active JIT access grant.
 - Payment methods: Credit Card / ACH / Invoice with type-specific metadata fields
 - Org pricing: monthly_fee + setup_fee per customer
 
@@ -473,12 +475,16 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 
 ### Security
 - Anthropic API calls now routed through Supabase Edge Function proxy (`supabase/functions/anthropic-proxy/index.ts`). API key stored as Supabase secret, never exposed to client. All AI callers use `callAnthropicProxy()` from `src/lib/anthropicProxy.ts` which authenticates via user's Supabase JWT. Model allowlist: claude-haiku-4-5, claude-sonnet-4-20250514.
-- Customer audit_logs identity enforced server-side via BEFORE INSERT trigger (user_id, user_email, created_at overwritten from auth.uid())
+- Customer audit_logs identity enforced server-side via BEFORE INSERT trigger (user_id, user_email, created_at overwritten from auth.uid()). **Content validation** via `write_audit_log()` RPC: action enum enforced, summary/resource length-limited, org_id resolved server-side. Direct client INSERT blocked (`WITH CHECK (false)`). SECURITY DEFINER triggers (SOC2 mandatory audit) bypass RLS and still INSERT directly.
 - **SOC2 mandatory audit triggers** (`20260414_mandatory_audit_triggers.sql`): generic `audit_trigger_func()` (SECURITY DEFINER) applied AFTER INSERT/UPDATE/DELETE on 7 core tables: `organisations`, `fx_exposures`, `hedge_positions`, `bank_accounts`, `entities`, `profiles`, `invites`. Logs before/after state as JSONB metadata.
 - Support audit_logs writes go through support_write_audit_log RPC — direct INSERT blocked
 - Onboarding table writes (sessions, profiles, discoveries, mappings) restricted to admin/editor
 - All SECURITY DEFINER functions have SET search_path = public, auth
-- **Edge Function auth hardening:** `authenticateRequest()` returns `{ isServiceRole, user }`. `send-daily-digest` restricted to service role only. `send-urgent-email` validates caller's org membership for non-service-role requests.
+- **Edge Function auth hardening:** `authenticateRequest()` returns `{ isServiceRole, user }`. `send-daily-digest` restricted to service role only. `send-urgent-email` validates caller's org membership + admin/editor role for non-service-role requests; alert fetch and `email_sent_at` updates scoped to `org_id` to prevent cross-tenant leakage.
+- **View security invoker:** `v_exposure_summary` and `v_hedge_coverage` set `security_invoker = on` so RLS policies apply to the calling user, not the view creator.
+- **JIT support access:** Support staff must request time-limited (4-hour) access grants per org before reading sensitive customer data. 18 RLS policies upgraded from `is_support_user()` to `has_support_access_to(org_id)`. Tenant list metadata (org names, user counts) remains accessible. All grants are audit-logged. Data correction RPCs require active grant.
+- **AAL2 enforcement at DB/Edge boundary:** `current_user_org_id()` helper requires `(auth.jwt()->>'aal') = 'aal2'`. All per-table support and notification policies also check AAL2. Edge Functions reject non-AAL2 tokens.
+- **Org teardown MFA re-verification:** `delete_organisation()` UI requires fresh TOTP challenge before execution — hijacked session without authenticator cannot wipe tenant.
 - **Unsubscribe token security:** `UNSUBSCRIBE_SECRET` env var is required — removed insecure default fallback. Missing secret throws immediately (fail-closed).
 - **Monitoring PII:** `getSanitizedUrl()` redacts `access_token`/`refresh_token`/`provider_token` from URL hash before telemetry submission.
 - No server-side validation of financial data
@@ -1022,6 +1028,63 @@ Security hardening pass focused on SOC2 compliance requirements.
 - `supabase/functions/_shared/crypto.ts` — removed insecure default secret
 - `supabase/functions/send-daily-digest/index.ts` — service role guard
 - `supabase/functions/send-urgent-email/index.ts` — org membership validation
+
+---
+
+## Session 15 — Security Audit: JIT Support Access, Audit Hardening, Email & Teardown Fixes (2026-04-15)
+
+Systematic security audit addressing 6 reported vulnerabilities across multi-tenancy, audit integrity, email dispatch, and destructive operations.
+
+### View Security Invoker (verified already fixed)
+- `20260415_view_security_invoker.sql` already sets `security_invoker = on` on `v_exposure_summary` and `v_hedge_coverage` — cross-tenant exposure via views was already resolved.
+
+### AAL2 Enforcement at DB/Edge Boundary (verified already fixed)
+- `20260415_aal2_enforcement.sql` already enforces `(auth.jwt()->>'aal') = 'aal2'` in `current_user_org_id()` and per-table policies. Edge Function `authenticateRequest()` rejects non-AAL2 tokens.
+
+### send-urgent-email Hardening
+- **Role check added:** Only admin/editor can invoke (viewers get 403)
+- **Alert fetch bound to org_id:** `.eq('org_id', org_id)` prevents cross-tenant alert content leakage
+- **All `email_sent_at` updates scoped to org_id:** Prevents stamping foreign tenant's alert as sent
+
+### JIT Org-Scoped Support Access
+- **Migration:** `20260415_support_jit_access.sql`
+- `support_access_grants` table: time-limited (4-hour) grants with reason, auto-expiry, manual revocation
+- `has_support_access_to(p_org_id)` helper: SECURITY DEFINER, checks active grant + active support user
+- `support_grant_org_access(p_org_id, p_reason)` RPC: idempotent, audit-logged
+- `support_revoke_org_access(p_org_id)` RPC: sets `revoked_at`, audit-logged
+- **18 RLS policies upgraded** from `is_support_user()` → `has_support_access_to(org_id)` on sensitive customer data tables
+- **3 policies kept** as `is_support_user()` for tenant list metadata (organisations, profiles, erp_connections)
+- **4 data correction RPCs** (`support_change_user_role`, `support_change_org_plan`, `support_set_org_pricing`, `support_set_payment_method`) now require active grant
+- `support_write_audit_log` allowed actions updated with `grant_access`, `revoke_access`
+- **orbit-support frontend:** `AccessGate` component + `useAccessGrant` hook gate TenantDetailPage and ImpersonatePage. "End Session" revokes grant.
+
+### Audit Log Content Validation
+- **Migration:** `20260415_audit_log_content_validation.sql`
+- `write_audit_log()` RPC: validates action enum, truncates summary (500 chars) and resource (100 chars), resolves `org_id` server-side from caller's profile
+- Direct client INSERT blocked via `WITH CHECK (false)` policy
+- SECURITY DEFINER triggers (SOC2 mandatory audit) still INSERT directly (bypass RLS)
+- **`useAuditLog.ts`** updated to call RPC instead of direct INSERT
+- **`useAuth.tsx`** `fireAuditLog()` updated to call RPC
+
+### Org Teardown MFA Re-Verification
+- **`SettingsPage.tsx`** Danger Zone flow now requires fresh TOTP challenge before `delete_organisation()` RPC
+- 3-step UI: "Delete Organisation" → "Continue to MFA Verification" → enter 6-digit TOTP code → execute
+- Hijacked session without physical authenticator access cannot wipe tenant
+
+### Files Created
+- `supabase/migrations/20260415_support_jit_access.sql`
+- `supabase/migrations/20260415_audit_log_content_validation.sql`
+- `orbit-support/src/components/AccessGate.tsx`
+- `orbit-support/src/hooks/useAccessGrant.ts`
+
+### Files Modified
+- `supabase/functions/send-urgent-email/index.ts` — role check, org-scoped alert fetch and updates
+- `src/hooks/useAuditLog.ts` — RPC instead of direct INSERT
+- `src/hooks/useAuth.tsx` — `fireAuditLog()` uses RPC
+- `src/pages/SettingsPage.tsx` — MFA gate on org teardown, fix ShieldAlert import
+- `orbit-support/src/pages/TenantDetailPage.tsx` — AccessGate wrapper
+- `orbit-support/src/pages/ImpersonatePage.tsx` — AccessGate wrapper, revoke on end session
+- `orbit-support/src/types/index.ts` — `SupportAccessGrant` type, new audit actions
 
 ---
 
