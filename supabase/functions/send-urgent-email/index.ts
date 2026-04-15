@@ -41,27 +41,31 @@ Deno.serve(async (req: Request) => {
 
   const admin = createAdminClient()
 
-  // Guard: Logical access control
+  // Guard: Logical access control — admin/editor only (viewers cannot trigger email blasts)
   if (!auth.isServiceRole) {
     if (!auth.user) {
       return jsonResponse({ error: 'Unauthorized: User required' }, 401)
     }
     const { data: profile } = await admin
       .from('profiles')
-      .select('org_id')
+      .select('org_id, role')
       .eq('id', auth.user.id)
       .single()
-      
+
     if (profile?.org_id !== org_id) {
       return jsonResponse({ error: 'Forbidden: You do not have access to this organisation' }, 403)
     }
+    if (!profile?.role || !['admin', 'editor'].includes(profile.role)) {
+      return jsonResponse({ error: 'Forbidden: Admin or editor role required' }, 403)
+    }
   }
 
-  // Fetch alert
+  // Fetch alert — bind to org_id to prevent cross-tenant alert content leakage
   const { data: alert, error: alertErr } = await admin
     .from('alerts')
     .select('*')
     .eq('id', alert_id)
+    .eq('org_id', org_id)
     .single()
 
   if (alertErr || !alert) {
@@ -98,14 +102,14 @@ Deno.serve(async (req: Request) => {
 
   if (!prefs || prefs.length === 0) {
     // Mark as sent to avoid re-triggering
-    await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id)
+    await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id).eq('org_id', org_id)
     return jsonResponse({ message: 'No users opted in', alert_id }, 200)
   }
 
   // Filter to users whose alert_types includes this alert type
   const eligible = prefs.filter(p => p.alert_types?.includes(alert.type))
   if (eligible.length === 0) {
-    await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id)
+    await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id).eq('org_id', org_id)
     return jsonResponse({ message: 'No users subscribed to this alert type', alert_id }, 200)
   }
 
@@ -162,8 +166,8 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Mark alert as emailed
-  await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id)
+  // Mark alert as emailed — scoped to org_id to prevent cross-tenant writes
+  await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id).eq('org_id', org_id)
 
   return jsonResponse({
     message: `Sent ${sentCount} email(s)`,

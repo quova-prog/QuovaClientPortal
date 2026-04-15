@@ -4,7 +4,7 @@ import { useAuditLog } from '@/hooks/useAuditLog'
 import { useEntity } from '@/context/EntityContext'
 import { useMfa } from '@/hooks/useMfa'
 import type { Entity } from '@/types'
-import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown, Zap } from 'lucide-react'
+import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ShieldAlert, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown, Zap } from 'lucide-react'
 import { TIER_DISPLAY, getUpgradeTier, getUpgradeFeatures, normalizePlan } from '@/lib/tierService'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
@@ -340,16 +340,56 @@ export function SettingsPage() {
   // ── Organisation Deletion ──────────────────────────────────────────────────
   const [deletingOrg, setDeletingOrg] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'mfa'>('confirm')
+  const [deleteMfaCode, setDeleteMfaCode] = useState('')
+  const [deleteMfaError, setDeleteMfaError] = useState<string | null>(null)
 
-  async function handleOrgTeardown() {
+  function resetDeleteFlow() {
+    setShowDeleteConfirm(false)
+    setDeleteStep('confirm')
+    setDeleteMfaCode('')
+    setDeleteMfaError(null)
+  }
+
+  async function handleDeleteMfaVerifyAndTeardown() {
+    if (!deleteMfaCode || deleteMfaCode.length !== 6) {
+      setDeleteMfaError('Enter a 6-digit code')
+      return
+    }
     setDeletingOrg(true)
-    const { error } = await db.rpc('delete_organisation')
-    if (error) {
-      alert(`Failed to delete organisation: ${error.message}`)
+    setDeleteMfaError(null)
+
+    // Re-verify MFA before destructive action
+    const verifiedFactor = mfaFactors.find(f => f.factor_type === 'totp' && f.status === 'verified')
+    if (!verifiedFactor) {
+      setDeleteMfaError('No verified MFA factor found. Re-enrol in MFA first.')
       setDeletingOrg(false)
       return
     }
-    // Sucessfully deleted, the auth.users context is orphaned. Just sign out.
+
+    const challengeResult = await challenge(verifiedFactor.id)
+    if (challengeResult.error) {
+      setDeleteMfaError(challengeResult.error)
+      setDeletingOrg(false)
+      return
+    }
+
+    const verifyResult = await verify(verifiedFactor.id, challengeResult.challengeId, deleteMfaCode)
+    if (verifyResult.error) {
+      setDeleteMfaError('Invalid MFA code. Please try again.')
+      setDeleteMfaCode('')
+      setDeletingOrg(false)
+      return
+    }
+
+    // MFA verified — execute teardown
+    const { error } = await db.rpc('delete_organisation')
+    if (error) {
+      setDeleteMfaError(`Failed to delete organisation: ${error.message}`)
+      setDeletingOrg(false)
+      return
+    }
+    // Successfully deleted — sign out
     await signOut()
   }
   const [mfaVerifying, setMfaVerifying] = useState(false)
@@ -1387,29 +1427,75 @@ export function SettingsPage() {
                 </div>
                 {showDeleteConfirm ? (
                   <div style={{ padding: '1rem', borderRadius: 'var(--r-md)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--red, #ef4444)' }}>
-                      Are you absolutely sure you wish to proceed?
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button 
-                        className="btn btn-sm"
-                        disabled={deletingOrg}
-                        onClick={handleOrgTeardown}
-                        style={{ background: '#ef4444', color: '#fff', border: 'none' }}
-                      >
-                        {deletingOrg ? 'Deleteting...' : 'Yes, Delete Everything'}
-                      </button>
-                      <button 
-                        className="btn btn-ghost btn-sm"
-                        disabled={deletingOrg}
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    {deleteStep === 'confirm' ? (
+                      <>
+                        <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--red, #ef4444)' }}>
+                          Are you absolutely sure you wish to proceed?
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => { setDeleteStep('mfa'); loadMfaFactors() }}
+                            style={{ background: '#ef4444', color: '#fff', border: 'none' }}
+                          >
+                            Yes, Continue to MFA Verification
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={resetDeleteFlow}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--red, #ef4444)' }}>
+                          MFA Verification Required
+                        </p>
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                          Enter your 6-digit authenticator code to confirm organisation deletion.
+                        </p>
+                        {deleteMfaError && (
+                          <div className="error-banner" style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>
+                            {deleteMfaError}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input
+                            className="input"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            placeholder="000000"
+                            value={deleteMfaCode}
+                            onChange={e => setDeleteMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            onKeyDown={e => { if (e.key === 'Enter') void handleDeleteMfaVerifyAndTeardown() }}
+                            disabled={deletingOrg}
+                            style={{ width: 120, fontFamily: 'var(--font-mono)', fontSize: '1.125rem', textAlign: 'center', letterSpacing: '0.25em' }}
+                          />
+                          <button
+                            className="btn btn-sm"
+                            disabled={deletingOrg || deleteMfaCode.length !== 6}
+                            onClick={() => void handleDeleteMfaVerifyAndTeardown()}
+                            style={{ background: '#ef4444', color: '#fff', border: 'none' }}
+                          >
+                            {deletingOrg ? 'Deleting...' : 'Delete Organisation'}
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            disabled={deletingOrg}
+                            onClick={resetDeleteFlow}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
-                  <button 
+                  <button
                     className="btn btn-sm"
                     onClick={() => setShowDeleteConfirm(true)}
                     style={{ border: '1px solid #ef4444', color: '#ef4444', background: 'transparent' }}

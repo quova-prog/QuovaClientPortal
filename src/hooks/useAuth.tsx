@@ -44,10 +44,12 @@ async function sessionSatisfiesRequiredAal(_session: Session): Promise<boolean> 
   return true
 }
 
-function fireAuditLog(orgId: string, userId: string, email: string, action: string, summary: string) {
-  void supabase.from('audit_logs').insert({
-    org_id: orgId, user_id: userId, user_email: email,
-    action, resource: 'session', summary, metadata: {},
+function fireAuditLog(_orgId: string, _userId: string, _email: string, action: string, summary: string) {
+  void supabase.rpc('write_audit_log', {
+    p_action: action,
+    p_resource: 'session',
+    p_summary: summary,
+    p_metadata: {},
   }).then(() => {}, () => {})
 }
 
