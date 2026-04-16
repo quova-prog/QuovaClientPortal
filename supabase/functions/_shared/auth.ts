@@ -44,9 +44,10 @@ export async function authenticateRequest(req: Request): Promise<{ authenticated
 
   const token = authHeader.replace('Bearer ', '')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const edgeServiceRoleKey = Deno.env.get('EDGE_SERVICE_ROLE_KEY')
 
   // Service role key auth (used by DB triggers via pg_net)
-  if (token === serviceRoleKey) {
+  if (token === serviceRoleKey || (edgeServiceRoleKey && token === edgeServiceRoleKey)) {
     return { authenticated: true, isServiceRole: true }
   }
 
