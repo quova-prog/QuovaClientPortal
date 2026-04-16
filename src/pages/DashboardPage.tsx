@@ -20,6 +20,7 @@ import { formatCurrency, formatPct, formatDate, daysUntil, formatPnl,
 import { toUsd } from '@/lib/fx'
 import { Info, Activity, Shield, TrendingUp, ChevronDown,
          Clock, CheckCircle2, ArrowUpRight, ShoppingCart, Calendar } from 'lucide-react'
+import { CustomerNotificationBanner } from '../components/ui/CustomerNotificationBanner'
 
 // Pie slice colours — one per currency slot
 const PIE_COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4']
@@ -394,6 +395,8 @@ export function DashboardPage() {
       </div>
 
       <div className="page-content">
+
+        <CustomerNotificationBanner />
 
         {/* ── Stat tiles ───────────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
