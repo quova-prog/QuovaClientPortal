@@ -193,7 +193,7 @@ Deno.serve(async (req: Request) => {
   const { data: supportUser } = await admin
     .from('support_users')
     .select('id, is_active')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single()
 
   if (!supportUser?.is_active) {
@@ -251,9 +251,9 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .eq('org_id', org_id)
         .eq('gap_type', gap.type)
-        .gt('created_at', cooldownCutoff)
+        .gt('sent_at', cooldownCutoff)
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (recentNudge) {
         results.push({ gap_type: gap.type, status: 'skipped', error: 'Nudge sent within last 72 hours' })
