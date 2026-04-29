@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import type { CommodityExposure, CommodityHedge } from '@/types'
@@ -9,6 +9,9 @@ export function useCommodityData() {
   const [exposures, setExposures] = useState<CommodityExposure[]>([])
   const [hedges, setHedges] = useState<CommodityHedge[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshCounter, setRefreshCounter] = useState(0)
+
+  const refetch = useCallback(() => setRefreshCounter(c => c + 1), [])
 
   useEffect(() => {
     if (!orgId) return
@@ -30,7 +33,7 @@ export function useCommodityData() {
 
     fetchData()
     return () => { cancelled = true }
-  }, [orgId])
+  }, [orgId, refreshCounter])
 
   // Compute metrics
   const metrics = useMemo(() => {
@@ -67,5 +70,5 @@ export function useCommodityData() {
     }
   }, [exposures, hedges])
 
-  return { exposures, hedges, metrics, loading }
+  return { exposures, hedges, metrics, loading, refetch }
 }

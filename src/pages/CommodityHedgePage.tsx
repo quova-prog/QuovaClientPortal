@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 export function CommodityHedgePage() {
   const { user } = useAuth()
-  const { hedges, loading } = useCommodityData()
+  const { hedges, loading, refetch } = useCommodityData()
 
   const handleAddDemoData = async () => {
     if (!user?.organisation?.id) return
@@ -26,7 +26,7 @@ export function CommodityHedgePage() {
         status: 'active'
       }
     ])
-    window.location.reload()
+    refetch()
   }
 
   return (

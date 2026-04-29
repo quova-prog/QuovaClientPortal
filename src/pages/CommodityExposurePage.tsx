@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 export function CommodityExposurePage() {
   const { user } = useAuth()
-  const { exposures, loading } = useCommodityData()
+  const { exposures, loading, refetch } = useCommodityData()
   const [showForm, setShowForm] = useState(false)
 
   const handleAddDemoData = async () => {
@@ -24,7 +24,7 @@ export function CommodityExposurePage() {
         description: 'Q3 Jet Fuel proxy',
       }
     ])
-    window.location.reload()
+    refetch()
   }
 
   return (
