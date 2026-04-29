@@ -1,7 +1,7 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
-  Upload, Download, Plus, Pencil, Trash2, X, Check,
-  AlertCircle, CheckCircle, Waves, ChevronDown,
+  Plus, Pencil, Trash2, X, Check,
+  AlertCircle, Waves, ChevronDown,
 } from 'lucide-react'
 import { useCashFlows } from '@/hooks/useCashFlows'
 import type { CashFlowEntry } from '@/hooks/useCashFlows'
@@ -356,8 +356,11 @@ function CashFlowsTab({ flows, onAdd, onUpdate, onDelete }: CashFlowsTabProps) {
   const [showModal, setShowModal]           = useState(false)
   const [deleteConfirm, setDeleteConfirm]   = useState<string | null>(null)
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = useMemo(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    return date
+  }, [])
 
   const currencies = useMemo(() => {
     const set = new Set(flows.map(f => f.currency))
@@ -615,8 +618,11 @@ interface AnalysisTabProps {
 function AnalysisTab({ flows }: AnalysisTabProps) {
   const { coverage } = useHedgeCoverage()
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = useMemo(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    return date
+  }, [])
 
   const futureFlows = useMemo(() =>
     flows.filter(f => new Date(f.flow_date + 'T00:00:00') >= today),

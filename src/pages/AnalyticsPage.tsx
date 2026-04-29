@@ -1,11 +1,8 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { lazy, Suspense, useState, useMemo, useEffect, useCallback } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts'
-import { Plus, ChevronDown, ChevronRight, Star, MoreHorizontal, Download, FileText, Filter } from 'lucide-react'
-import { HedgeAccountingExport } from '@/components/analytics/HedgeAccountingExport'
-import { HedgeEffectivenessPanel } from '@/components/analytics/HedgeEffectivenessPanel'
-import { BoardReportPanel } from '@/components/analytics/BoardReportPanel'
+import { Plus, ChevronDown, ChevronRight, Star, Download, FileText, Filter } from 'lucide-react'
 import { useHedgePositions, useExposures, useExposureSummary, useFxRates, useDashboardMetrics, useHedgePolicy } from '@/hooks/useData'
 import { useCombinedCoverage, type CombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useDerivedExposures, type DerivedExposure } from '@/hooks/useDerivedExposures'
@@ -18,6 +15,15 @@ import { formatCurrency } from '@/lib/utils'
 import { toUsd } from '@/lib/fx'
 import type { HedgePosition, FxExposure, ExposureSummary } from '@/types'
 
+const HedgeAccountingExport = lazy(() =>
+  import('@/components/analytics/HedgeAccountingExport').then(m => ({ default: m.HedgeAccountingExport }))
+)
+const HedgeEffectivenessPanel = lazy(() =>
+  import('@/components/analytics/HedgeEffectivenessPanel').then(m => ({ default: m.HedgeEffectivenessPanel }))
+)
+const BoardReportPanel = lazy(() =>
+  import('@/components/analytics/BoardReportPanel').then(m => ({ default: m.BoardReportPanel }))
+)
 
 type TabKey = 'hedgeview' | 'reports' | 'hedge_accounting' | 'effectiveness' | 'board_report'
 type Period = 'yesterday' | 'month_end' | 'ytd' | 'all'
@@ -85,7 +91,6 @@ function filterByPeriod<T extends { trade_date?: string; created_at?: string }>(
 ): T[] {
   if (period === 'all') return items
   const now   = new Date()
-  const today = now.toISOString().split('T')[0]
   const year  = now.getFullYear()
 
   return items.filter(item => {
@@ -237,6 +242,15 @@ const PERIOD_LABELS: Record<Period, string> = {
   month_end: 'Month End',
   ytd:       'YTD',
   all:       'All Time',
+}
+
+function AnalyticsTabFallback() {
+  return (
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: 180 }}>
+      <div className="spinner" style={{ width: 20, height: 20 }} />
+      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Loading analytics module…</div>
+    </div>
+  )
 }
 
 // ── Excel download ────────────────────────────────────────────────────────────
@@ -708,7 +722,7 @@ export function AnalyticsPage() {
     setPeriods(prev => ({ ...prev, [i]: p }))
   }
 
-  async function handleDownload(i: number, format: 'csv') {
+  async function handleDownload(i: number) {
     setDownloading(i)
     setOpenDropdown(null)
 
@@ -986,7 +1000,7 @@ export function AnalyticsPage() {
                                 <button
                                   className="btn btn-ghost btn-sm"
                                   disabled={isDl}
-                                  onClick={() => handleDownload(i, 'csv')}
+                                  onClick={() => handleDownload(i)}
                                   style={{ borderRadius: 0, border: 'none', gap: '0.25rem', paddingRight: '0.5rem', minWidth: 90 }}
                                   title={`Download ${report.name} as CSV`}
                                 >
@@ -1020,7 +1034,7 @@ export function AnalyticsPage() {
                                   minWidth: 160, zIndex: 50, overflow: 'hidden',
                                 }}>
                                   <button
-                                    onClick={() => handleDownload(i, 'csv')}
+                                    onClick={() => handleDownload(i)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.625rem 0.875rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8125rem', textAlign: 'left' }}
                                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-surface)')}
                                     onMouseLeave={e => (e.currentTarget.style.background = 'none')}
@@ -1214,33 +1228,43 @@ export function AnalyticsPage() {
         )}
 
         {/* ── HEDGE ACCOUNTING TAB ────────────────────────────────────── */}
-        {tab === 'hedge_accounting' && <HedgeAccountingExport />}
+        {tab === 'hedge_accounting' && (
+          <Suspense fallback={<AnalyticsTabFallback />}>
+            <HedgeAccountingExport />
+          </Suspense>
+        )}
 
         {/* ── EFFECTIVENESS TESTING TAB ────────────────────────────────── */}
-        {tab === 'effectiveness' && <HedgeEffectivenessPanel positions={positions} />}
+        {tab === 'effectiveness' && (
+          <Suspense fallback={<AnalyticsTabFallback />}>
+            <HedgeEffectivenessPanel positions={positions} />
+          </Suspense>
+        )}
 
         {/* ── BOARD REPORT TAB ─────────────────────────────────────────── */}
         {tab === 'board_report' && (
-          <BoardReportPanel
-            combinedCoverage={combinedCoverage}
-            positions={positions}
-            flows={flows}
-            fxRates={fxRates}
-            policyMinPct={policy?.min_coverage_pct ?? 60}
-            policyMaxPct={policy?.max_coverage_pct ?? 90}
-            baseCurrency={policy?.base_currency ?? 'USD'}
-            totalExposureUsd={metrics?.total_exposure_usd ?? 0}
-            totalHedgedUsd={metrics?.total_hedged_usd ?? 0}
-            overallCoveragePct={metrics?.overall_coverage_pct ?? 0}
-            complianceStatus={
-              metrics?.coverage_status === 'under_hedged' ? 'under_hedged'
-              : metrics?.coverage_status === 'over_hedged' ? 'over_hedged'
-              : 'compliant'
-            }
-            preparedBy={user?.email ?? 'Treasury Team'}
-            orgName={(user?.organisation as any)?.name}
-            ratesAsOf={ratesLastUpdated}
-          />
+          <Suspense fallback={<AnalyticsTabFallback />}>
+            <BoardReportPanel
+              combinedCoverage={combinedCoverage}
+              positions={positions}
+              flows={flows}
+              fxRates={fxRates}
+              policyMinPct={policy?.min_coverage_pct ?? 60}
+              policyMaxPct={policy?.max_coverage_pct ?? 90}
+              baseCurrency={policy?.base_currency ?? 'USD'}
+              totalExposureUsd={metrics?.total_exposure_usd ?? 0}
+              totalHedgedUsd={metrics?.total_hedged_usd ?? 0}
+              overallCoveragePct={metrics?.overall_coverage_pct ?? 0}
+              complianceStatus={
+                metrics?.coverage_status === 'under_hedged' ? 'under_hedged'
+                : metrics?.coverage_status === 'over_hedged' ? 'over_hedged'
+                : 'compliant'
+              }
+              preparedBy={user?.email ?? 'Treasury Team'}
+              orgName={(user?.organisation as any)?.name}
+              ratesAsOf={ratesLastUpdated}
+            />
+          </Suspense>
         )}
 
 

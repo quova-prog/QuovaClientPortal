@@ -38,7 +38,7 @@ export function OnboardingRouter(): React.ReactElement {
     if (here === '/onboarding' || here === '/onboarding/') {
       navigate(STATUS_PATH[session.status] ?? '/onboarding/setup', { replace: true })
     }
-  }, [session?.status, loading, navigate, location.pathname])
+  }, [session, session?.status, loading, navigate, location.pathname])
 
   if (loading) {
     return (

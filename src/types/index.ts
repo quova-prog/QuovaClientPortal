@@ -9,6 +9,7 @@ export interface Organisation {
   name: string
   domain: string | null
   plan: 'exposure' | 'pro' | 'enterprise'
+  modules: Array<'fx' | 'commodity' | 'interest_rate' | 'counterparty'>
   created_at: string
   updated_at: string
 }
@@ -151,6 +152,47 @@ export interface FxRate {
   rate_date: string
   source: string
   created_at: string
+}
+
+// ── Commodity Risk Types ──────────────────────────────────
+
+export interface CommodityExposure {
+  id: string
+  org_id: string
+  entity_id: string | null
+  commodity_type: string
+  unit_of_measure: string
+  direction: 'consume' | 'produce'
+  volume: number
+  price_index_reference: string
+  delivery_start_date: string
+  delivery_end_date: string
+  description: string | null
+  status: 'open' | 'closed' | 'partially_hedged'
+  created_at: string
+  updated_at: string
+}
+
+export interface CommodityHedge {
+  id: string
+  org_id: string
+  entity_id: string | null
+  created_by: string | null
+  instrument_type: 'future' | 'swap' | 'option'
+  commodity_type: string
+  price_index_reference: string
+  unit_of_measure: string
+  direction: 'buy' | 'sell'
+  volume: number
+  contracted_price: number
+  trade_date: string
+  settlement_date: string
+  counterparty_bank: string | null
+  reference_number: string | null
+  status: 'active' | 'expired' | 'cancelled' | 'rolled' | 'closed'
+  notes: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ── View Types ────────────────────────────────────────────

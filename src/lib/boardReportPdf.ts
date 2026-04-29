@@ -338,7 +338,7 @@ function addExposurePolicyPage(doc: jsPDF, data: BoardReportData, pageNum: numbe
   doc.text(splitIntro, 18, 20)
 
   // Coverage table
-  const tableBody = data.coverageByPair.map((row, idx) => {
+  const tableBody = data.coverageByPair.map((row) => {
     const statusText = row.status === 'compliant' ? 'Compliant' : row.status === 'under' ? 'Under-hedged' : row.status === 'over' ? 'Over-hedged' : 'Unhedged'
     const statusFill = row.status === 'compliant'
       ? [209, 250, 229]

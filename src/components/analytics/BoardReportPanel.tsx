@@ -553,15 +553,3 @@ export function BoardReportPanel({
     </div>
   )
 }
-
-// ── Helper (used in render) ───────────────────────────────────────────────────
-
-function relativeTime(d: Date): string {
-  const diffMs = Date.now() - d.getTime()
-  const mins = Math.floor(diffMs / 60000)
-  if (mins < 1) return 'just now'
-  if (mins === 1) return '1 min ago'
-  if (mins < 60) return `${mins} min ago`
-  const hrs = Math.floor(mins / 60)
-  return `${hrs} hr${hrs !== 1 ? 's' : ''} ago`
-}

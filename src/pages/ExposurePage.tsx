@@ -4,12 +4,11 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts'
 import {
-  Shield, TrendingUp, DollarSign, RefreshCw, Upload, FileText,
-  Search, Trash2, X, Info, Plus, ShoppingCart, Users, Building2,
+  Shield, TrendingUp, RefreshCw, Upload, FileText,
+  Search, Trash2, X, Info, ShoppingCart, Users, Building2,
   ArrowLeftRight, Landmark, HardHat, ArrowUpDown, Activity,
-  ChevronDown,
 } from 'lucide-react'
-import { useExposures, useUploadBatches, useFxRates, useHedgePolicy } from '@/hooks/useData'
+import { useExposures, useFxRates, useHedgePolicy } from '@/hooks/useData'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuditLog } from '@/hooks/useAuditLog'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'

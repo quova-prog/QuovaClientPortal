@@ -6,7 +6,7 @@ import { getCoverageStatus } from '@/lib/utils'
 import { fetchLatestRates } from '@/lib/frankfurter'
 import type {
   FxExposure, HedgePosition, HedgePolicy, ExposureSummary,
-  HedgeCoverage, CoverageWithStatus, DashboardMetrics, FxRate, UploadBatch,
+  HedgeCoverage, CoverageWithStatus, DashboardMetrics, UploadBatch,
   BankAccount, BankAccountForm
 } from '@/types'
 
@@ -108,7 +108,7 @@ export function useHedgePolicy() {
 
     setPolicy(resolved)
     setLoading(false)
-  }, [user?.profile?.org_id, currentEntityId])
+  }, [user?.profile?.org_id, currentEntityId, db])
 
   useEffect(() => { load() }, [load])
 
@@ -182,7 +182,7 @@ export function useExposures() {
     if (error) setError(error.message)
     else { setError(null); setExposures(data ?? []) }
     setLoading(false)
-  }, [user?.profile?.org_id, currentEntityId])
+  }, [user?.profile?.org_id, currentEntityId, db])
 
   useEffect(() => { load() }, [load])
 
@@ -216,7 +216,7 @@ export function useExposureSummary() {
       .eq('org_id', user.profile.org_id)
     setSummary(data ?? [])
     setLoading(false)
-  }, [user?.profile?.org_id])
+  }, [user?.profile?.org_id, db])
 
   useEffect(() => { load() }, [load])
   return { summary, loading, refresh: load }
@@ -474,7 +474,7 @@ export function useHedgeCoverage() {
       .eq('org_id', user.profile.org_id)
     setCoverage(data ?? [])
     setLoading(false)
-  }, [user?.profile?.org_id])
+  }, [user?.profile?.org_id, db])
 
   useEffect(() => { load() }, [load])
   return { coverage, loading, refresh: load }
@@ -510,7 +510,7 @@ export function useUploadBatches() {
       .order('created_at', { ascending: false })
       .limit(10)
     setBatches(data ?? [])
-  }, [user?.profile?.org_id])
+  }, [user?.profile?.org_id, db])
 
   useEffect(() => { load() }, [load])
   return { batches, refresh: load }
@@ -599,7 +599,7 @@ export function useBankAccounts() {
     if (error) setError(error.message)
     else { setError(null); setAccounts(data ?? []) }
     setLoading(false)
-  }, [user?.profile?.org_id])
+  }, [user?.profile?.org_id, db])
 
   useEffect(() => { load() }, [load])
 

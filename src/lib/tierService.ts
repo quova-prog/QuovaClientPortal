@@ -94,6 +94,14 @@ export function canAccess(plan: TierPlan, feature: TierFeature): boolean {
   return TIER_FEATURES[plan]?.has(feature) ?? false
 }
 
+export type RiskModule = 'fx' | 'commodity' | 'interest_rate' | 'counterparty'
+
+/** Check if an organisation has access to a specific risk module */
+export function hasModule(modules: RiskModule[] | undefined | null, module: RiskModule): boolean {
+  if (!modules || modules.length === 0) return false
+  return modules.includes(module)
+}
+
 /** Get the next upgrade tier (or null if already top) */
 export function getUpgradeTier(plan: TierPlan): TierPlan | null {
   if (plan === 'exposure') return 'pro'

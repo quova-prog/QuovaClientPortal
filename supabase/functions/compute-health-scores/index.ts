@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Pre-fetch all auth users once (expensive call, do it once)
-  let allAuthUsers: Map<string, { last_sign_in_at: string | null }> = new Map()
+  const allAuthUsers: Map<string, { last_sign_in_at: string | null }> = new Map()
   try {
     const { data: authData } = await admin.auth.admin.listUsers()
     for (const u of authData?.users ?? []) {

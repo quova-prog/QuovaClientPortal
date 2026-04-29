@@ -10,7 +10,6 @@ import type {
   OrganizationProfile,
   OnboardingSession,
   ERPType,
-  OnboardingHumanReviewItem,
 } from '@/types'
 import type { FlatFileSchema } from '@/lib/discoveryService'
 
@@ -86,7 +85,7 @@ export function useDiscoveryPipeline(): DiscoveryPipelineResult {
 
     try {
       if (isErpPath) {
-        await runErpDiscovery(erpType, profile, session, addEvent, setDiscoveryId, setSummary, setGaps, user)
+        await runErpDiscovery(erpType, session, addEvent, setDiscoveryId, setSummary, setGaps, user)
       } else {
         await runFlatFileFlow(schema, profile, session, addEvent, setDiscoveryId, setSummary, setGaps, user)
       }
@@ -171,7 +170,7 @@ async function runFlatFileFlow(
       setDiscoveryId(discId)
       if (discId) {
         try { sessionStorage.setItem('orbit_discovery_id', discId) } catch { /* ignore */ }
-        console.log('[useDiscoveryPipeline] Created discovery record:', discId)
+        if (import.meta.env.DEV) console.log('[useDiscoveryPipeline] Created discovery record:', discId)
       }
     }
   }
@@ -222,7 +221,6 @@ async function runFlatFileFlow(
 
 async function runErpDiscovery(
   erpType: ERPType,
-  profile: OrganizationProfile,
   session: OnboardingSession,
   addEvent: (e: DiscoveryFeedEvent) => void,
   setDiscoveryId: (id: string | null) => void,
@@ -425,7 +423,9 @@ async function persistResults(
       if (mapErr) {
         console.error('[useDiscoveryPipeline] Failed to insert field_mappings:', mapErr.message)
       } else {
-        console.log(`[useDiscoveryPipeline] Inserted ${aiResult.mappings.length} field mappings for discovery ${discId}`)
+        if (import.meta.env.DEV) {
+          console.log(`[useDiscoveryPipeline] Inserted ${aiResult.mappings.length} field mappings for discovery ${discId}`)
+        }
       }
     }
   }
@@ -435,6 +435,8 @@ async function persistResults(
     sessionStorage.setItem('orbit_discovery_mappings', JSON.stringify(aiResult.mappings))
     sessionStorage.setItem('orbit_discovery_gaps', JSON.stringify(aiResult.gaps))
     sessionStorage.setItem('orbit_discovery_summary', JSON.stringify(aiResult.summary))
-    console.log(`[useDiscoveryPipeline] Saved ${aiResult.mappings.length} mappings to sessionStorage`)
+    if (import.meta.env.DEV) {
+      console.log(`[useDiscoveryPipeline] Saved ${aiResult.mappings.length} mappings to sessionStorage`)
+    }
   } catch { /* ignore */ }
 }

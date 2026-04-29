@@ -107,7 +107,7 @@ export function DashboardPage() {
     const t = new Date()
     t.setHours(0, 0, 0, 0)
     return { today: t, in30: new Date(t.getTime() + 30 * 86400000) }
-  }, [now])
+  }, [])
 
   // ── Derived values from combinedCoverage ──────────────────────────────────
   const totalExposure = useMemo(() =>

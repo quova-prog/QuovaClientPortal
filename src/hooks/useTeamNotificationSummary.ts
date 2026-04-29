@@ -36,8 +36,6 @@ export function useTeamNotificationSummary() {
 
     if (!prefs || !profiles) { setLoading(false); return }
 
-    const profileMap = new Map(profiles.map((p: any) => [p.id, p]))
-
     const merged: TeamNotifEntry[] = profiles.map((p: any) => {
       const pref = prefs.find((pr: any) => pr.user_id === p.id)
       return {

@@ -4,22 +4,23 @@ import { useDashboardMetrics, useUploadBatches, useHedgePolicy } from '@/hooks/u
 import { useErpConnections } from '@/hooks/useErpConnections'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useEntity } from '@/context/EntityContext'
+import { useModule } from '@/context/ModuleContext'
 import { RatesTicker } from '@/components/RatesTicker'
 import { useAlerts } from '@/hooks/useAlerts'
 import { UpgradeModal } from '@/components/ui/UpgradeModal'
 import { canAccess, TIER_DISPLAY, FEATURE_MIN_TIER, normalizePlan } from '@/lib/tierService'
-import type { TierPlan, TierFeature } from '@/types'
+import type { TierFeature } from '@/types'
 import {
   LayoutDashboard, Inbox, Upload, TrendingUp, Lightbulb, Brain,
   Shield, ArrowLeftRight, Users, BarChart2, Landmark, Plug,
   Settings, LogOut, Search, X, CheckCircle2, Building2, ChevronDown, Globe, ShieldCheck,
-  Lock,
+  Lock, Box, Activity
 } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
 
 type NavItem = { label: string; path: string; icon: React.FC<any>; feature?: TierFeature } | { section: string }
 
-const NAV_ITEMS: NavItem[] = [
+const FX_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',            path: '/dashboard',      icon: LayoutDashboard },
   { label: 'Inbox',                path: '/inbox',          icon: Inbox },
   { section: 'INSIGHTS' },
@@ -39,31 +40,46 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Audit Log',            path: '/audit-log',      icon: ShieldCheck,     feature: 'audit_trail' },
 ]
 
-// Flat nav labels for searching
-const NAV_SEARCHABLE = NAV_ITEMS.filter((i): i is { label: string; path: string; icon: React.FC<any>; feature?: TierFeature } => 'label' in i)
+const COMMODITY_NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard',            path: '/commodities/dashboard', icon: LayoutDashboard },
+  { label: 'Inbox',                path: '/inbox',                 icon: Inbox },
+  { section: 'COMMODITIES' },
+  { label: 'Exposure',             path: '/commodities/exposure',  icon: TrendingUp },
+  { label: 'Hedges',               path: '/commodities/hedge',     icon: Shield },
+  { label: 'Analytics',            path: '/commodities/analytics', icon: BarChart2 },
+  { section: 'GLOBAL' },
+  { label: 'Bank Accounts',        path: '/bank-accounts',         icon: Landmark },
+  { label: 'Audit Log',            path: '/audit-log',             icon: ShieldCheck },
+]
 
 export function AppLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { currentModule, setCurrentModule, availableModules } = useModule()
   const [search, setSearch] = useState('')
   const [entityOpen, setEntityOpen] = useState(false)
+  const [moduleOpen, setModuleOpen] = useState(false)
   const [upgradeModal, setUpgradeModal] = useState<{ feature: string } | null>(null)
   const orgPlan = normalizePlan(user?.organisation?.plan)
   const tierInfo = TIER_DISPLAY[orgPlan] ?? TIER_DISPLAY.exposure
   const entityDropdownRef = useRef<HTMLDivElement>(null)
+  const moduleDropdownRef = useRef<HTMLDivElement>(null)
 
   const { entities, currentEntityId, setCurrentEntityId, currentEntity, isConsolidated } = useEntity()
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (entityDropdownRef.current && !entityDropdownRef.current.contains(e.target as Node)) {
         setEntityOpen(false)
       }
+      if (moduleDropdownRef.current && !moduleDropdownRef.current.contains(e.target as Node)) {
+        setModuleOpen(false)
+      }
     }
-    if (entityOpen) document.addEventListener('mousedown', handleClick)
+    document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [entityOpen])
+  }, [])
 
   const { unreadCount } = useAlerts()
 
@@ -73,8 +89,11 @@ export function AppLayout() {
   const { policy }      = useHedgePolicy()
   const { connections } = useErpConnections()
 
-  // Live FX rates — fetched once at layout level, available to all pages via Supabase
+  // Live FX rates
   const { rates: liveRates, loading: ratesLoading, error: ratesError, lastUpdated: ratesUpdated, refresh: refreshRates } = useLiveFxRates()
+
+  const NAV_ITEMS = currentModule === 'commodity' ? COMMODITY_NAV_ITEMS : FX_NAV_ITEMS
+  const NAV_SEARCHABLE = NAV_ITEMS.filter((i): i is { label: string; path: string; icon: React.FC<any>; feature?: TierFeature } => 'label' in i)
 
   // ── Onboarding steps ─────────────────────────────────────────────────────
   const steps = useMemo(() => [
@@ -103,10 +122,53 @@ export function AppLayout() {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-app)' }}>
       <nav style={{ width: 220, minWidth: 220, background: 'var(--sidebar-bg)', borderRight: '1px solid var(--sidebar-border)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, overflowY: 'auto' }}>
 
-        {/* Logo */}
-        <div style={{ padding: '1rem 0.875rem 0.625rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-          <QuovaLogo />
-          <span style={{ color: 'var(--sidebar-text-active)', fontWeight: 700, fontSize: '1rem' }}>Quova</span>
+        {/* Logo & Module Switcher */}
+        <div ref={moduleDropdownRef} style={{ padding: '1rem 0.875rem 0.625rem', position: 'relative' }}>
+          <button 
+            onClick={() => setModuleOpen(o => !o)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', 
+              background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 
+            }}
+          >
+            <QuovaLogo />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span style={{ color: 'var(--sidebar-text-active)', fontWeight: 700, fontSize: '1rem' }}>Quova</span>
+              <span style={{ color: 'var(--teal)', fontSize: '0.625rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.125rem' }}>
+                {currentModule === 'commodity' ? 'COMMODITY RISK' : 'FX RISK'} <ChevronDown size={10} style={{ transform: moduleOpen ? 'rotate(180deg)' : 'none' }} />
+              </span>
+            </div>
+          </button>
+          
+          {moduleOpen && (
+            <div style={{
+              position: 'absolute', top: '100%', left: '0.625rem', width: '180px', zIndex: 60,
+              background: 'var(--sidebar-bg)', border: '1px solid var(--sidebar-border)',
+              borderRadius: 'var(--r-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              overflow: 'hidden', padding: '0.25rem'
+            }}>
+              <div style={{ padding: '0.25rem 0.5rem', fontSize: '0.625rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Risk Modules</div>
+              
+              <button onClick={() => { setCurrentModule('fx'); setModuleOpen(false); navigate('/dashboard') }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: currentModule === 'fx' ? 'rgba(0,200,160,0.1)' : 'transparent', border: 'none', borderRadius: 'var(--r-md)', cursor: 'pointer', textAlign: 'left', color: currentModule === 'fx' ? 'var(--teal)' : 'var(--sidebar-text-active)', fontSize: '0.8125rem' }}>
+                <Globe size={14} /> FX Risk
+              </button>
+              
+              <button 
+                onClick={() => { 
+                  if (availableModules.includes('commodity')) { setCurrentModule('commodity'); setModuleOpen(false); navigate('/commodities/dashboard') }
+                }} 
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: currentModule === 'commodity' ? 'rgba(0,200,160,0.1)' : 'transparent', border: 'none', borderRadius: 'var(--r-md)', cursor: availableModules.includes('commodity') ? 'pointer' : 'not-allowed', opacity: availableModules.includes('commodity') ? 1 : 0.5, textAlign: 'left', color: currentModule === 'commodity' ? 'var(--teal)' : 'var(--sidebar-text-active)', fontSize: '0.8125rem' }}
+              >
+                <Box size={14} /> Commodity Risk
+                {!availableModules.includes('commodity') && <Lock size={10} style={{ marginLeft: 'auto' }} />}
+              </button>
+              
+              <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'transparent', border: 'none', borderRadius: 'var(--r-md)', cursor: 'not-allowed', opacity: 0.5, textAlign: 'left', color: 'var(--sidebar-text-active)', fontSize: '0.8125rem' }}>
+                <Activity size={14} /> Interest Rates
+                <Lock size={10} style={{ marginLeft: 'auto' }} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Entity Switcher */}

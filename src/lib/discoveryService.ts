@@ -184,7 +184,9 @@ export async function runFlatFileDiscovery(
 
   if (requiredCovered >= requiredFields.length - 1) {
     // Rules covered most/all required fields — use as-is, bump confidence for exact matches
-    console.log(`[discoveryService] Rule-based mapping covered ${requiredCovered}/${requiredFields.length} required fields — skipping AI`)
+    if (import.meta.env.DEV) {
+      console.log(`[discoveryService] Rule-based mapping covered ${requiredCovered}/${requiredFields.length} required fields — skipping AI`)
+    }
     return {
       ...ruleResult,
       mappings: ruleResult.mappings.map(m => ({
@@ -232,7 +234,9 @@ export async function runFlatFileDiscovery(
       },
     }
   } catch (err) {
-    console.warn('[discoveryService] AI call failed — using rule-based result:', err)
+    if (import.meta.env.DEV) {
+      console.warn('[discoveryService] AI call failed — using rule-based result:', err)
+    }
     return ruleResult
   }
 }

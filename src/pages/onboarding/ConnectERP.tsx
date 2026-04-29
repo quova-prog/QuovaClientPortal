@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight, ExternalLink, CheckCircle2, XCircle, Loader2, Sh
 import { ERPCard }          from '@/components/onboarding/ERPCard'
 import { FlatFileUploader }  from '@/components/onboarding/FlatFileUploader'
 import { ERP_CONNECTORS }   from '@/lib/erpConnectorConfig'
-import type { ERPConnectorConfig } from '@/lib/erpConnectorConfig'
 import { useOnboarding }     from '@/hooks/useOnboarding'
 import { useErpConnections } from '@/hooks/useErpConnections'
 import type { ERPType }      from '@/types'

@@ -14,14 +14,20 @@ export interface NotificationPreferences {
 const ALL_ALERT_TYPES = ['policy_breach', 'maturing_position', 'cash_flow_due', 'unhedged_exposure']
 
 function getDefaultPrefs(role?: string): Omit<NotificationPreferences, 'id'> {
+  // Convert 8 AM local time to UTC hour for the database
+  const tzOffsetMinutes = new Date().getTimezoneOffset()
+  const tzOffsetHours = -tzOffsetMinutes / 60
+  const localToUtc = (localHour: number) => ((localHour + 24 - Math.round(tzOffsetHours)) % 24)
+  const defaultDigestTime = localToUtc(8)
+
   switch (role) {
     case 'admin':
-      return { email_urgent: true, email_digest: true, digest_frequency: 'daily', digest_time: 8, alert_types: ALL_ALERT_TYPES }
+      return { email_urgent: true, email_digest: true, digest_frequency: 'daily', digest_time: defaultDigestTime, alert_types: ALL_ALERT_TYPES }
     case 'editor':
-      return { email_urgent: true, email_digest: false, digest_frequency: 'daily', digest_time: 8, alert_types: ALL_ALERT_TYPES }
+      return { email_urgent: true, email_digest: false, digest_frequency: 'daily', digest_time: defaultDigestTime, alert_types: ALL_ALERT_TYPES }
     case 'viewer':
     default:
-      return { email_urgent: false, email_digest: false, digest_frequency: 'daily', digest_time: 8, alert_types: ['policy_breach'] }
+      return { email_urgent: false, email_digest: false, digest_frequency: 'daily', digest_time: defaultDigestTime, alert_types: ['policy_breach'] }
   }
 }
 

@@ -84,19 +84,6 @@ function LoanTypeBadge({ type }: { type: LoanSchedule['loan_type'] }) {
   )
 }
 
-function PaymentTypeBadge({ type }: { type: LoanSchedule['payment_type'] }) {
-  const styleMap: Record<LoanSchedule['payment_type'], string> = {
-    principal: 'badge-blue',
-    interest:  'badge-amber',
-    both:      'badge-teal',
-  }
-  return (
-    <span className={`badge ${styleMap[type]}`} style={{ fontSize: '0.6875rem', textTransform: 'capitalize' }}>
-      {type}
-    </span>
-  )
-}
-
 // ── Loan Modal ────────────────────────────────────────────────
 
 interface LoanModalProps {
@@ -604,7 +591,6 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
       .sort((a, b) => a.year.localeCompare(b.year))
   }, [loans])
 
-  const maxMaturityBalance = maturityProfile[0]?.balance ?? 1
   const sortedMaturity = [...maturityProfile].sort((a, b) => b.balance - a.balance)
 
   if (loans.length === 0) {

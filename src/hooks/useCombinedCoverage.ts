@@ -59,7 +59,7 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     for (const pair of new Set([...Object.keys(sellByPair), ...Object.keys(buyByPair)])) {
       hedgedByPair[pair] = Math.abs((sellByPair[pair] ?? 0) - (buyByPair[pair] ?? 0))
     }
-    return Object.entries(expByPair).map(([pair, { net, base, quote }]) => {
+    return Object.entries(expByPair).map(([pair, { net }]) => {
       const total_hedged = hedgedByPair[pair] ?? 0
       const abs_net = Math.abs(net)
       return {
@@ -73,7 +73,10 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     })
   }, [isConsolidated, exposures, positions])
 
-  const coverage = isConsolidated ? viewCoverage : (entityCoverage ?? [])
+  const coverage = useMemo(
+    () => (isConsolidated ? viewCoverage : (entityCoverage ?? [])),
+    [isConsolidated, viewCoverage, entityCoverage],
+  )
   const loading = isConsolidated
     ? (covLoading || derLoading)
     : (expLoading || posLoading)

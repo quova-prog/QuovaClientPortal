@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Bell, AlertTriangle, Clock, CheckCircle2, X, ChevronRight, Info, Mail,
+  Bell, AlertTriangle, Clock, X, ChevronRight, Info, Mail,
 } from 'lucide-react'
 import { useAlerts } from '@/hooks/useAlerts'
 import { useAlertGenerator } from '@/hooks/useAlertGenerator'
@@ -48,7 +48,7 @@ export function InboxPage() {
   // Trigger alert generation when Inbox is visited
   useAlertGenerator()
 
-  const { alerts, loading, unreadCount, canWrite, markRead, markAllRead, dismiss, dismissAll } = useAlerts()
+  const { alerts, loading, unreadCount, canWrite, markRead, markAllRead, dismiss } = useAlerts()
   const [filter, setFilter] = useState<FilterKey>('all')
 
   const urgentCount  = alerts.filter(a => a.severity === 'urgent').length

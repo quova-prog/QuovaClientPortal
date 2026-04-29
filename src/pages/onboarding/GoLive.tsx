@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useOnboarding } from '@/hooks/useOnboarding'
 
-const SESSION_SCHEMA_KEY   = 'orbit_onboarding_schema'
 const SESSION_MAPPINGS_KEY = 'orbit_discovery_mappings'
 
 // ── Mapping helpers ───────────────────────────────────────────
@@ -121,16 +120,12 @@ export function GoLive(): React.ReactElement {
         setProgress(20)
         await pause(400)
 
-        if (rawRows.length === 0) {
-          console.warn('[GoLive] No raw rows in sessionStorage — syncing without data import')
-        }
-
         // Step 3: apply confirmed field mappings to remap CSV columns → canonical names
         setCurrentStep(2)
         setProgress(30)
         const columnMap = loadColumnMap()
         const hasMappings = Object.keys(columnMap).length > 0
-        if (hasMappings) {
+        if (hasMappings && import.meta.env.DEV) {
           console.log(`[GoLive] Applying ${Object.keys(columnMap).length} field mappings`)
         }
         const rows: ParsedRow[] = rawRows.map(r => hasMappings ? remapRow(r, columnMap) : r as ParsedRow)
@@ -200,7 +195,7 @@ export function GoLive(): React.ReactElement {
 
           importedCount = inserted
           setImportCount(inserted)
-          console.log(`[GoLive] Imported ${inserted} exposures`)
+          if (import.meta.env.DEV) console.log(`[GoLive] Imported ${inserted} exposures`)
         }
 
         // Step 5: currency pairs

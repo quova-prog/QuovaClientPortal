@@ -108,16 +108,18 @@ export function DiscoveryFeed(): React.ReactElement {
       const stored = sessionStorage.getItem(SESSION_SCHEMA_KEY)
       if (stored) {
         schema = JSON.parse(stored) as FlatFileSchema
-        console.log('[DiscoveryFeed] Loaded schema from sessionStorage:', schema.columns.length, 'columns,', schema.rowCount, 'rows')
+        if (import.meta.env.DEV) {
+          console.log('[DiscoveryFeed] Loaded schema from sessionStorage:', schema.columns.length, 'columns,', schema.rowCount, 'rows')
+        }
       }
     } catch (err) {
-      console.warn('[DiscoveryFeed] Failed to read schema from sessionStorage:', err)
+      if (import.meta.env.DEV) console.warn('[DiscoveryFeed] Failed to read schema from sessionStorage:', err)
     }
 
     if (!schema || schema.columns.length === 0) {
       // For ERP path, schema is built internally by the pipeline — pass a minimal stub
       // For flat file path, use profile-derived fallback
-      console.warn('[DiscoveryFeed] No schema in sessionStorage — using fallback')
+      if (import.meta.env.DEV) console.warn('[DiscoveryFeed] No schema in sessionStorage — using fallback')
       schema = {
         columns: profile.transaction_currencies.map(ccy => ({
           name: ccy, sampleValues: [ccy], dataType: 'currency_code',

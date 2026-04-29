@@ -47,7 +47,7 @@ function parseDate(raw: string): string | null {
     const d = new Date(trimmed + 'T00:00:00')
     if (!isNaN(d.getTime())) return trimmed
   }
-  const mdy = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  const mdy = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
   if (mdy) {
     const [, mm, dd, yyyy] = mdy
     const d = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T00:00:00`)

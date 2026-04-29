@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   Upload, Download, Plus, Pencil, Trash2, X, Check,
-  AlertCircle, CheckCircle, Users,
+  AlertCircle, Users,
 } from 'lucide-react'
 import { usePayroll } from '@/hooks/usePayroll'
 import type { PayrollEntry } from '@/hooks/usePayroll'

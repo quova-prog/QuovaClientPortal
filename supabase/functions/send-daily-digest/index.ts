@@ -82,7 +82,8 @@ Deno.serve(async (req: Request) => {
     let pdfBase64: string
     try {
       const pdfBytes = generateDigestPdf(digestData)
-      pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)))
+      const pdfArray = Array.from(new Uint8Array(pdfBytes))
+      pdfBase64 = btoa(pdfArray.map(b => String.fromCharCode(b)).join(''))
     } catch (err) {
       console.error(`PDF generation failed for org ${org.id}:`, err)
       pdfBase64 = ''
@@ -101,7 +102,14 @@ Deno.serve(async (req: Request) => {
       const emailType = pref.digest_frequency === 'weekly' ? 'weekly_digest' : 'daily_digest'
 
       // Build unsubscribe URL
-      const tokenStr = await signUnsubscribeToken({ user_id: pref.user_id, pref: 'email_digest' }, 7 * 86400000)
+      let tokenStr = ''
+      try {
+        tokenStr = await signUnsubscribeToken({ user_id: pref.user_id, pref: 'email_digest' }, 7 * 86400000)
+      } catch (err) {
+        console.error(`Failed to generate unsubscribe token for user ${pref.user_id}:`, err)
+        orgResult.errors.push(`${authUser.email}: Token generation failed`)
+        continue // Skip sending if we can't attach an unsubscribe token
+      }
       const unsubscribeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe-email?token=${tokenStr}`
 
       const emailContent = dailyDigestEmail({

@@ -4,9 +4,9 @@ import {
   ResponsiveContainer, ComposedChart, Bar, Line, LineChart, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend
 } from 'recharts'
-import { Plus, Info, RefreshCw, ChevronDown, X, Shield, Trash2, Search,
+import { Plus, Info, RefreshCw, X, Shield, Trash2, Search,
          TrendingUp, Calendar, DollarSign } from 'lucide-react'
-import { useHedgePositions, useExposureSummary, useDashboardMetrics, useFxRates } from '@/hooks/useData'
+import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useDerivedExposures } from '@/hooks/useDerivedExposures'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
@@ -102,7 +102,6 @@ function RiskBadge({ level }: { level: string }) {
 
 export function HedgePage() {
   const { positions, loading, addPosition, deletePosition } = useHedgePositions()
-  const { summary } = useExposureSummary()
   const location = useLocation()
   const [showForm, setShowForm] = useState(false)
   const [formStep, setFormStep] = useState<FormStep>('select-strategy')
@@ -114,7 +113,6 @@ export function HedgePage() {
   const [search, setSearch] = useState('')
   const [rateCurrencyTab, setRateCurrencyTab] = useState('USD/CAD')
   const [fee, setFee] = useState(200)
-  const { metrics } = useDashboardMetrics()
   const { ratesMap, rates: liveRates } = useLiveFxRates()
   const { rates: fxRates } = useFxRates()
   const { combinedCoverage } = useCombinedCoverage()
@@ -691,7 +689,6 @@ export function HedgePage() {
               const pairExposure = combinedCoverage.find(c => c.currency_pair === form.currency_pair)
               const exposureUsd = pairExposure ? toUsd(Math.abs(pairExposure.net_exposure), pairExposure.base_currency, ratesMap) : 0
               const exposureDirection = pairExposure ? (pairExposure.net_exposure > 0 ? 'receivables' : 'payables') : 'exposure'
-              const exposureCount = pairExposure ? Math.max(1, Math.round(Math.abs(pairExposure.net_exposure) / 50000)) : 0
               const hedgeTypeLabel = HEDGE_TYPES.find(h => h.id === form.hedge_type)?.title ?? 'Cash Flow Hedge'
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

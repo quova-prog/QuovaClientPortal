@@ -15,8 +15,6 @@ interface MfaPending {
   factorId: string
   pendingToken: string
   pendingRefreshToken: string
-  pendingExpiresIn: number
-  pendingUserId: string
   pendingEmail: string
 }
 
@@ -101,8 +99,6 @@ export function LoginPage() {
           factorId: result.mfaFactorId!,
           pendingToken: result.pendingToken!,
           pendingRefreshToken: result.pendingRefreshToken!,
-          pendingExpiresIn: result.pendingExpiresIn!,
-          pendingUserId: result.pendingUserId!,
           pendingEmail: result.pendingEmail!,
         })
         setTimeout(() => mfaInputRef.current?.focus(), 100)
@@ -133,9 +129,6 @@ export function LoginPage() {
         mfaCode,
         mfaPending.pendingToken,
         mfaPending.pendingRefreshToken,
-        mfaPending.pendingExpiresIn,
-        mfaPending.pendingUserId,
-        mfaPending.pendingEmail,
       )
       if (error) {
         const failures = mfaFailures + 1
@@ -283,4 +276,3 @@ export function LoginPage() {
     </div>
   )
 }
-

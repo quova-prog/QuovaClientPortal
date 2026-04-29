@@ -165,7 +165,7 @@ export function TradePage() {
   const pairGroups = (() => {
     const groups: Record<string, typeof positionsWithMtm> = {}
     for (const p of positionsWithMtm) {
-      ;(groups[p.currency_pair] ??= []).push(p)
+      (groups[p.currency_pair] ??= []).push(p)
     }
     return Object.entries(groups).map(([pair, positions]) => ({
       pair,

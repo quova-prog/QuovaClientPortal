@@ -17,8 +17,6 @@ interface AuthContextType {
     mfaFactorId?: string
     pendingToken?: string
     pendingRefreshToken?: string
-    pendingExpiresIn?: number
-    pendingUserId?: string
     pendingEmail?: string
   }>
   completeMfaSignIn: (
@@ -26,9 +24,6 @@ interface AuthContextType {
     code: string,
     pendingToken?: string,
     pendingRefreshToken?: string,
-    expiresIn?: number,
-    userId?: string,
-    email?: string,
   ) => Promise<{ error: string | null }>
   signUp: (email: string, password: string, orgName: string, fullName: string) => Promise<{ error: string | null; confirmationRequired?: boolean }>
   signOut: () => Promise<void>
@@ -173,8 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           mfaFactorId: verifiedFactor.id,
           pendingToken: data.session.access_token,
           pendingRefreshToken: data.session.refresh_token,
-          pendingExpiresIn: data.session.expires_in,
-          pendingUserId: data.user.id,
           pendingEmail: data.user.email ?? email,
         }
       }
@@ -254,7 +247,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     code: string,
     pendingToken?: string,
     pendingRefreshToken?: string,
-    expiresIn?: number,
   ): Promise<{ error: string | null }> => {
     try {
       // Restore the pending session from signIn so MFA verification has a valid context,

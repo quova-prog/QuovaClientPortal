@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   Upload, Plus, Pencil, Trash2, X, Check,
-  AlertCircle, ShoppingCart, ChevronDown,
+  AlertCircle, ShoppingCart,
 } from 'lucide-react'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import type { PurchaseOrder } from '@/hooks/usePurchaseOrders'
@@ -321,7 +321,6 @@ function OrdersTab({ orders, onAdd, onUpdate, onDelete, onSwitchToUpload }: Orde
   }, [orders])
 
   const filtered = useMemo(() => {
-    const in7 = new Date(today.getTime() + 7 * 86400000)
     const in30 = new Date(today.getTime() + 30 * 86400000)
     return orders.filter(o => {
       if (statusFilter !== 'All' && o.status !== statusFilter) return false

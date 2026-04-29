@@ -72,7 +72,7 @@ export function FlatFileUploader({ onParsed }: FlatFileUploaderProps): React.Rea
               if (samples.every(s => !isNaN(Number(s.replace(/[$,\s]/g, ''))))) dataType = 'numeric'
               else if (samples.every(s =>
                 /^\d{4}-\d{2}-\d{2}/.test(s) ||
-                /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(s)
+                /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(s)
               )) dataType = 'date'
               else if (samples.every(s => ISO_CCY.test(s))) dataType = 'currency_code'
             }

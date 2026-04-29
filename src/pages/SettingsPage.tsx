@@ -77,20 +77,7 @@ export function SettingsPage() {
   }
 
   // ── Notification prefs (DB-backed) ───────────────────────────────────────
-  const { prefs: notifPrefs, loading: notifLoading, saving: savingNotif, error: notifError, isGated: notifGated, update: updateNotifPrefs } = useNotificationPreferences()
-  const [savedNotif, setSavedNotif] = useState(false)
-
-  async function handleSaveNotifications() {
-    if (!notifPrefs) return
-    const ok = await updateNotifPrefs({
-      email_urgent: notifPrefs.email_urgent,
-      email_digest: notifPrefs.email_digest,
-      digest_frequency: notifPrefs.digest_frequency,
-      digest_time: notifPrefs.digest_time,
-      alert_types: notifPrefs.alert_types,
-    })
-    if (ok) { setSavedNotif(true); setTimeout(() => setSavedNotif(false), 3000) }
-  }
+  const { prefs: notifPrefs, loading: notifLoading, error: notifError, isGated: notifGated, update: updateNotifPrefs } = useNotificationPreferences()
 
   // ── Test Email ──────────────────────────────────────────────────────────
   const [testEmailSending, setTestEmailSending] = useState(false)
@@ -721,12 +708,6 @@ export function SettingsPage() {
             {notifError && (
               <div className="error-banner" style={{ padding: '0.625rem 0.875rem', marginTop: '0.75rem' }}>
                 {notifError}
-              </div>
-            )}
-
-            {savedNotif && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--green)', fontSize: '0.875rem', marginTop: '0.75rem' }}>
-                <CheckCircle size={14} /> Preferences saved
               </div>
             )}
 

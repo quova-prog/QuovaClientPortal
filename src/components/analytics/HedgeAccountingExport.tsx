@@ -14,10 +14,10 @@
  *   equals this period's entry minus the prior period's entry for the same position.
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Download, ChevronDown, ChevronUp, Settings2,
-  CheckCircle, AlertTriangle, Info, RefreshCw,
+  CheckCircle, AlertTriangle, Info,
 } from 'lucide-react'
 import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useEntity } from '@/context/EntityContext'
@@ -486,7 +486,9 @@ export function HedgeAccountingExport() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) return { ...DEFAULT_MAP, ...JSON.parse(stored) }
-    } catch {}
+    } catch {
+      // Ignore malformed local state and fall back to defaults.
+    }
     return DEFAULT_MAP
   })
   const [accountSaved, setAccountSaved] = useState(false)

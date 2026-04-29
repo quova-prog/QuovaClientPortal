@@ -73,7 +73,6 @@ export function useMappings(discoveryId: string | null): UseMappingsResult {
     // 1. Always try sessionStorage first — freshest data from current session
     const local = loadFromSessionStorage()
     if (local.length > 0) {
-      console.log(`[useMappings] Loaded ${local.length} mappings from sessionStorage`)
       setMappings(local)
       setIsLocal(true)
       setLoading(false)
@@ -113,7 +112,7 @@ export function useMappings(discoveryId: string | null): UseMappingsResult {
         .from('field_mappings')
         .update({ ...updates, reviewed_at: new Date().toISOString() })
         .eq('id', id)
-      if (err) console.warn('[useMappings] DB update failed:', err.message)
+      if (err && import.meta.env.DEV) console.warn('[useMappings] DB update failed:', err.message)
     }
     setMappings(prev => {
       const updated = prev.map(m =>

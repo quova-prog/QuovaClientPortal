@@ -184,7 +184,7 @@ export function UploadWizard<T extends Record<string, any>>({
       })
       setParsing(false)
     },
-    [parse]
+    [accept, parse]
   )
 
   function handleDrop(e: React.DragEvent) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ShieldCheck, ShieldAlert, AlertTriangle, TrendingUp,
+  ShieldCheck, AlertTriangle, TrendingUp,
   Calendar, ChevronRight, Save, RefreshCw, Info,
   CheckSquare, Square, Clock,
 } from 'lucide-react'
@@ -117,25 +117,24 @@ export function StrategyPage() {
   const { combinedCoverage, loading: covLoading } = useCombinedCoverage()
   const { rates } = useFxRates()
 
-  const [snapshots, setSnapshots]         = useState<MonthlySnapshot[]>([])
-  const [snapshotError, setSnapshotError] = useState<string | null>(null)
-  const [form, setForm]                   = useState<PolicyForm>(defaultForm(null))
-  const [savedOk, setSavedOk]             = useState(false)
-  const [saveError, setSaveError]         = useState<string | null>(null)
+  const [snapshots, setSnapshots] = useState<MonthlySnapshot[]>([])
+  const [form, setForm] = useState<PolicyForm>(defaultForm(null))
+  const [savedOk, setSavedOk] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Load historical snapshots once (2-year window, same as Advisor)
   useEffect(() => {
     const end   = new Date().toISOString().slice(0, 10)
     const start = new Date(Date.now() - 2 * 365 * 86_400_000).toISOString().slice(0, 10)
     fetchHistoricalTimeseries(start, end)
-      .then(data => { setSnapshots(data); setSnapshotError(null) })
-      .catch(() => { setSnapshotError('Failed to load historical data') })
+      .then(setSnapshots)
+      .catch(() => {})
   }, [])
 
   // Sync form when policy loads or entity changes
   useEffect(() => {
     setForm(defaultForm(policy))
-  }, [policy?.id, currentEntityId])
+  }, [policy, currentEntityId])
 
   const riskMetrics = useMemo(() => {
     if (!combinedCoverage.length && !positions.length) return null
@@ -150,7 +149,6 @@ export function StrategyPage() {
   const topStrategy = strategies[0] ?? null
 
   // Upcoming maturities
-  const today = Date.now()
   const maturing = useMemo(() => {
     const buckets = { d30: [] as typeof positions, d60: [] as typeof positions, d90: [] as typeof positions }
     for (const p of positions) {
@@ -161,7 +159,7 @@ export function StrategyPage() {
       else if (d <= 90) buckets.d90.push(p)
     }
     return buckets
-  }, [positions, today])
+  }, [positions])
 
   const totalMaturingUsd = useMemo(() => {
     const all = [...maturing.d30, ...maturing.d60, ...maturing.d90]
@@ -691,4 +689,3 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: '0.05em',
   marginBottom: 6,
 }
-
