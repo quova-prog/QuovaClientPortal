@@ -123,12 +123,12 @@ export function SignupPage() {
           <div style={{ display: 'grid', gridTemplateColumns: inviteId ? '1fr' : '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label className="label">Your name</label>
-              <input className="input" type="text" value={form.fullName} onChange={set('fullName')} placeholder="Jane Smith" required />
+              <input className="input" type="text" value={form.fullName} onChange={set('fullName')} required />
             </div>
             {!inviteId && (
               <div>
                 <label className="label">Organisation</label>
-                <input className="input" type="text" value={form.orgName} onChange={set('orgName')} placeholder="Celonis" required />
+                <input className="input" type="text" value={form.orgName} onChange={set('orgName')} required />
               </div>
             )}
           </div>
