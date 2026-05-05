@@ -241,7 +241,7 @@ export function SetupWizard(): React.ReactElement {
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ margin: '0 0 4px' }}>Company Setup</h2>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Tell us about your organisation so Quova can tailor your FX risk profile.
+          Tell us about your organization so Orbit can tailor your FX risk profile.
         </p>
       </div>
 

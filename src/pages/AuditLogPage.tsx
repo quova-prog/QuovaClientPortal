@@ -125,7 +125,7 @@ export function AuditLogPage() {
             Audit Log
           </h1>
           <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary, #94a3b8)' }}>
-            Immutable record of all actions in your organisation
+            Immutable record of all actions in your organization
           </p>
         </div>
       </div>

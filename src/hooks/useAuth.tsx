@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string, orgName: string, fullName: string, inviteId?: string | null) => {
     try {
-      if (!inviteId && !orgName.trim()) return { error: 'Organisation name is required' }
+      if (!inviteId && !orgName.trim()) return { error: 'Organization name is required' }
 
       const { data, error } = await supabase.auth.signUp({
         email,

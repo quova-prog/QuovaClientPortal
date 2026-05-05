@@ -114,7 +114,7 @@ export const ERP_CONNECTORS: ERPConnectorConfig[] = [
       { key: 'tenant_id',     label: 'Azure Tenant ID',                 type: 'text',     required: true },
       { key: 'client_id',     label: 'App Registration Client ID',      type: 'text',     required: true },
       { key: 'client_secret', label: 'Client Secret',                   type: 'password', required: true },
-      { key: 'org_url',       label: 'Dynamics 365 Organisation URL',   type: 'url',      required: true },
+      { key: 'org_url',       label: 'Dynamics 365 Organization URL',   type: 'url',      required: true },
     ],
     modules_to_validate: ['accounts_payable', 'accounts_receivable'],
     help_doc_url: '/docs/connect/dynamics-365',

@@ -84,13 +84,13 @@ export function useTeamMembers() {
 
     // Check for existing member with same email
     const existingMember = members.find(m => m.email.toLowerCase() === trimmed)
-    if (existingMember) return { error: 'This user is already a member of your organisation' }
+    if (existingMember) return { error: 'This user is already a member of your organization' }
 
     // Check for existing pending invite
     const existingInvite = invites.find(i => i.email.toLowerCase() === trimmed)
     if (existingInvite) return { error: 'An invite has already been sent to this email' }
 
-    const { error: insertErr } = await db
+    const { data: newInvite, error: insertErr } = await db
       .from('invites')
       .insert({
         org_id: orgId,
@@ -98,12 +98,23 @@ export function useTeamMembers() {
         role,
         invited_by: user!.id,
       })
+      .select('id')
+      .single()
 
     if (insertErr) {
       if (insertErr.message.includes('duplicate')) {
         return { error: 'An invite already exists for this email' }
       }
       return { error: insertErr.message }
+    }
+
+    const { data: emailResult, error: emailErr } = await db.functions.invoke('send-team-invite', {
+      body: { invite_id: newInvite.id },
+    })
+
+    if (emailErr || emailResult?.error) {
+      await db.from('invites').delete().eq('id', newInvite.id)
+      return { error: emailErr?.message ?? emailResult?.error ?? 'Invite email could not be sent' }
     }
 
     await load()

@@ -990,7 +990,7 @@ export function CashFlowPage() {
             Treasury Cash Flow Projections
           </h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
-            Track, analyse, and forecast your organisation's cash flows across currencies and entities.
+            Track, analyse, and forecast your organization's cash flows across currencies and entities.
           </p>
         </div>
       </div>

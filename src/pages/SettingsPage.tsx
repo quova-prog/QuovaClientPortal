@@ -16,7 +16,7 @@ type TabKey = 'profile' | 'notifications' | 'organisation' | 'entities' | 'secur
 const TABS: { key: TabKey; label: string; icon: React.FC<any> }[] = [
   { key: 'profile',       label: 'Profile',          icon: User        },
   { key: 'notifications', label: 'Notifications',    icon: Bell        },
-  { key: 'organisation',  label: 'Organisation',     icon: Building2   },
+  { key: 'organisation',  label: 'Organization',     icon: Building2   },
   { key: 'entities',      label: 'Entities',         icon: Globe       },
   { key: 'security',      label: 'Security',         icon: ShieldCheck },
 ]
@@ -372,7 +372,7 @@ export function SettingsPage() {
     // MFA verified — execute teardown
     const { error } = await db.rpc('delete_organisation')
     if (error) {
-      setDeleteMfaError(`Failed to delete organisation: ${error.message}`)
+      setDeleteMfaError(`Failed to delete organization: ${error.message}`)
       setDeletingOrg(false)
       return
     }
@@ -837,6 +837,7 @@ export function SettingsPage() {
                     <option value="urgent_alert">Urgent Alerts</option>
                     <option value="daily_digest">Daily Digest</option>
                     <option value="weekly_digest">Weekly Digest</option>
+                    <option value="team_invite">Team Invites</option>
                   </select>
                 </div>
 
@@ -876,10 +877,12 @@ export function SettingsPage() {
                             <td>
                               <span className={`badge ${
                                 log.email_type === 'urgent_alert' ? 'badge-red' :
-                                log.email_type === 'daily_digest' ? 'badge-teal' : 'badge-blue'
+                                log.email_type === 'daily_digest' ? 'badge-teal' :
+                                log.email_type === 'team_invite' ? 'badge-purple' : 'badge-blue'
                               }`} style={{ fontSize: '0.6875rem' }}>
                                 {log.email_type === 'urgent_alert' ? 'Urgent' :
-                                 log.email_type === 'daily_digest' ? 'Daily' : 'Weekly'}
+                                 log.email_type === 'daily_digest' ? 'Daily' :
+                                 log.email_type === 'team_invite' ? 'Invite' : 'Weekly'}
                               </span>
                             </td>
                             <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1144,11 +1147,11 @@ export function SettingsPage() {
             <div className="card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
                 <Building2 size={16} color="var(--teal)" />
-                <h3 style={{ fontWeight: 600 }}>Organisation Details</h3>
+                <h3 style={{ fontWeight: 600 }}>Organization Details</h3>
               </div>
               <div style={{ fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-dim)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Organisation Name</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Organization Name</span>
                   <span style={{ fontWeight: 500 }}>{user?.organisation?.name ?? '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-dim)' }}>
@@ -1403,7 +1406,7 @@ export function SettingsPage() {
                   <h3 style={{ fontWeight: 600, color: 'var(--red, #ef4444)' }}>Danger Zone</h3>
                 </div>
                 <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-                  Deleting your organisation will immediately and completely erase all data, configurations, API keys, 
+                  Deleting your organization will immediately and completely erase all data, configurations, API keys,
                   and user records associated with {user?.organisation?.name ?? 'your account'}. This action is irreversible.
                 </div>
                 {showDeleteConfirm ? (
@@ -1435,7 +1438,7 @@ export function SettingsPage() {
                           MFA Verification Required
                         </p>
                         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-                          Enter your 6-digit authenticator code to confirm organisation deletion.
+                          Enter your 6-digit authenticator code to confirm organization deletion.
                         </p>
                         {deleteMfaError && (
                           <div className="error-banner" style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>
@@ -1462,7 +1465,7 @@ export function SettingsPage() {
                             onClick={() => void handleDeleteMfaVerifyAndTeardown()}
                             style={{ background: '#ef4444', color: '#fff', border: 'none' }}
                           >
-                            {deletingOrg ? 'Deleting...' : 'Delete Organisation'}
+                            {deletingOrg ? 'Deleting...' : 'Delete Organization'}
                           </button>
                           <button
                             className="btn btn-ghost btn-sm"
@@ -1481,7 +1484,7 @@ export function SettingsPage() {
                     onClick={() => setShowDeleteConfirm(true)}
                     style={{ border: '1px solid #ef4444', color: '#ef4444', background: 'transparent' }}
                   >
-                    Delete Organisation
+                    Delete Organization
                   </button>
                 )}
               </div>

@@ -93,7 +93,7 @@ export function SignupPage() {
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
             We sent a confirmation link to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>.
-            Click it to activate your account — {inviteId ? 'your team access' : 'your organisation'} will be set up automatically.
+            Click it to activate your account — {inviteId ? 'your team access' : 'your organization'} will be set up automatically.
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
             Already confirmed? <Link to="/login">Sign in</Link>
@@ -115,7 +115,7 @@ export function SignupPage() {
             {inviteId ? 'Join your team' : 'Create your account'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            {inviteId ? 'Create your Orbit account to accept the invite' : 'Set up Orbit for your organisation'}
+            {inviteId ? 'Create your Orbit account to accept the invite' : 'Set up Orbit for your organization'}
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export function SignupPage() {
             </div>
             {!inviteId && (
               <div>
-                <label className="label">Organisation</label>
+                <label className="label">Organization</label>
                 <input className="input" type="text" value={form.orgName} onChange={set('orgName')} required />
               </div>
             )}
