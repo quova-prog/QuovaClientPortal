@@ -128,9 +128,11 @@ export function ExposurePage() {
     if (exposures.length > 0) {
       stats['manual'] = { count: exposures.length, totalUsd: 0, currencies: new Set() }
       for (const e of exposures) {
-        const [base = 'USD'] = e.currency_pair.split('/')
-        stats['manual'].totalUsd += toUsd(Math.abs((e as any).net_exposure ?? (e as any).amount ?? 0), base, effectiveFxRates)
-        stats['manual'].currencies.add(base)
+        // fx_exposures.notional_base is the canonical amount; older code
+        // referenced non-existent `net_exposure` / `amount` fields here
+        // (the schema never had them), which silently zeroed the stat.
+        stats['manual'].totalUsd += toUsd(e.notional_base, e.base_currency, effectiveFxRates)
+        stats['manual'].currencies.add(e.base_currency)
       }
     }
     return stats
@@ -177,18 +179,22 @@ export function ExposurePage() {
       is_manual: false,
     }))
     const manual = exposures.map(e => {
-      const [base = 'USD'] = e.currency_pair.split('/')
+      // Read the real columns on fx_exposures rather than the legacy
+      // `net_exposure` / `amount` keys that don't exist on the schema.
+      // (Old code's `?? 0` fallback was masking a column-name typo and
+      // rendering every imported exposure as zero in the ledger.)
+      const notionalBase = e.notional_base
       return {
         id: e.id,
         source_key: 'manual',
         source_label: 'Manual',
-        description: (e as any).entity || (e as any).description || '',
+        description: e.entity || e.description || '',
         currency_pair: e.currency_pair,
-        base_currency: base,
-        direction: (e as any).direction as 'receivable' | 'payable',
-        notional_base: Math.abs((e as any).net_exposure ?? (e as any).amount ?? 0),
-        notional_usd: toUsd(Math.abs((e as any).net_exposure ?? (e as any).amount ?? 0), base, effectiveFxRates),
-        settlement_date: (e as any).settlement_date || '',
+        base_currency: e.base_currency,
+        direction: e.direction,
+        notional_base: notionalBase,
+        notional_usd: e.notional_usd ?? toUsd(notionalBase, e.base_currency, effectiveFxRates),
+        settlement_date: e.settlement_date || '',
         is_manual: true,
       }
     })
