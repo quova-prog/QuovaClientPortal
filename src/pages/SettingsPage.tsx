@@ -838,6 +838,7 @@ export function SettingsPage() {
                     <option value="daily_digest">Daily Digest</option>
                     <option value="weekly_digest">Weekly Digest</option>
                     <option value="team_invite">Team Invites</option>
+                    <option value="nudge">Nudges</option>
                   </select>
                 </div>
 
@@ -884,12 +885,14 @@ export function SettingsPage() {
                                   daily_digest:  'badge-teal',
                                   weekly_digest: 'badge-blue',
                                   team_invite:   'badge-purple',
+                                  nudge:         'badge-amber',
                                 }[log.email_type]
                                 const badgeLabel = {
                                   urgent_alert:  'Urgent',
                                   daily_digest:  'Daily',
                                   weekly_digest: 'Weekly',
                                   team_invite:   'Invite',
+                                  nudge:         'Nudge',
                                 }[log.email_type]
                                 return (
                                   <span className={`badge ${badgeClass}`} style={{ fontSize: '0.6875rem' }}>

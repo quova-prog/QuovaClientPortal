@@ -182,7 +182,12 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { org_id, gaps, custom_message } = body
+  // The client (useNudges hook) historically sent `message`, while this
+  // function read `custom_message`. Accept either to avoid silently
+  // dropping the support agent's typed override.
+  const { org_id, gaps } = body
+  const custom_message = (body as { custom_message?: string; message?: string }).custom_message
+    ?? (body as { custom_message?: string; message?: string }).message
   if (!org_id || !Array.isArray(gaps) || gaps.length === 0) {
     return jsonResponse({ error: 'Missing org_id or gaps array' }, 400)
   }
@@ -225,13 +230,28 @@ Deno.serve(async (req: Request) => {
   const orgName = org?.name ?? 'your organisation'
 
   // ── Fetch admin/editor profiles for email ──────────────────
+  // profiles.email is currently never populated by any signup or invite
+  // flow (column added in 20260403_profile_contact_fields.sql but never
+  // written to). Fall back to auth.users.email — the address the user
+  // actually signed up with — when profiles.email is null. The admin
+  // (service_role) client bypasses RLS to read auth.users.
   const { data: profiles } = await admin
     .from('profiles')
     .select('id, email, role')
     .eq('org_id', org_id)
     .in('role', ['admin', 'editor'])
 
-  const emailRecipients = (profiles ?? []).filter((p: any) => p.email)
+  type Recipient = { id: string; email: string }
+  const emailRecipients: Recipient[] = []
+
+  for (const p of (profiles ?? []) as Array<{ id: string; email: string | null; role: string }>) {
+    let email = p.email ?? null
+    if (!email) {
+      const { data: { user } } = await admin.auth.admin.getUserById(p.id)
+      email = user?.email ?? null
+    }
+    if (email) emailRecipients.push({ id: p.id, email })
+  }
 
   // ── Process each gap ───────────────────────────────────────
   const results: GapResult[] = []

@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 
 export interface EmailLog {
   id: string
-  email_type: 'urgent_alert' | 'daily_digest' | 'weekly_digest'
+  email_type: 'urgent_alert' | 'daily_digest' | 'weekly_digest' | 'team_invite' | 'nudge'
   recipient: string
   subject: string
   status: 'sent' | 'failed' | 'bounced'
