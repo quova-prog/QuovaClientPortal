@@ -1,20 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { authenticateRequest, corsHeaders, jsonResponse } from '../_shared/auth.ts'
 
 const ALLOWED_MODELS = ['claude-haiku-4-5', 'claude-sonnet-4-20250514']
 const MAX_TOKENS_CEILING = 16384
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
-
-function jsonResponse(body: Record<string, unknown>, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'content-type': 'application/json' },
-  })
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -25,23 +13,29 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
-  // Authenticate caller via Supabase JWT
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return jsonResponse({ error: 'Missing or invalid Authorization header' }, 401)
+  // Centralised auth: validates the JWT signature AND enforces AAL2.
+  // Service-role callers (DB triggers via pg_net) are not expected here
+  // and would only receive AI access if they passed their own key,
+  // which they don't and shouldn't.
+  const auth = await authenticateRequest(req)
+  if (!auth.authenticated || !auth.user) {
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+  }
+  if (auth.isServiceRole) {
+    // Service role hitting the AI proxy would charge against no specific
+    // user's quota and bypass the per-user rate limit. Block explicitly.
+    return jsonResponse({ error: 'Service-role calls not permitted on this endpoint' }, 403)
   }
 
-  const jwt = authHeader.replace('Bearer ', '')
+  // We need the user-scoped Supabase client below for the rate-limit
+  // RPC call, since check_and_log_ai_usage relies on auth.uid() inside
+  // the function. Re-construct it from the same bearer token.
+  const jwt = req.headers.get('Authorization')!.replace('Bearer ', '')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
   })
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
-  if (authError || !user) {
-    return jsonResponse({ error: 'Unauthorized' }, 401)
-  }
 
   // Parse and validate request body
   let body: Record<string, unknown>

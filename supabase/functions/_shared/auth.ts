@@ -62,10 +62,14 @@ export async function authenticateRequest(req: Request): Promise<{ authenticated
     return { authenticated: false, error: 'Invalid token' }
   }
 
-  // Enforce AAL2 (MFA)
+  // Enforce AAL2 (MFA). JWT payloads are base64url-encoded, not
+  // standard base64 — convert before atob() so payloads containing
+  // '-' or '_' aren't falsely rejected with InvalidCharacterError.
   try {
-    const payloadB64 = token.split('.')[1]
-    const payloadStr = atob(payloadB64)
+    const payloadB64Url = token.split('.')[1] ?? ''
+    const payloadB64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = payloadB64 + '='.repeat((4 - payloadB64.length % 4) % 4)
+    const payloadStr = atob(padded)
     const payload = JSON.parse(payloadStr)
     if (payload.aal !== 'aal2') {
       return { authenticated: false, error: 'MFA required (AAL2)' }
