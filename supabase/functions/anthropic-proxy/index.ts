@@ -66,25 +66,22 @@ Deno.serve(async (req: Request) => {
   }
 
   // Rate Limiting (Financial DoS Protection)
-  // Fetch the user's org to link the quota deduction
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('org_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !profile.org_id) {
-    return jsonResponse({ error: 'User does not belong to any organisation' }, 403)
-  }
-
+  // The RPC binds user_id and org_id from auth.uid() / profiles
+  // internally — the caller cannot forge identities. We pass only
+  // the model. The function raises 'Authentication required' or
+  // 'User does not belong to an organization' when those preconditions
+  // fail; both surface here as rpcError.
   const { data: allowed, error: rpcError } = await supabase.rpc('check_and_log_ai_usage', {
-    p_user_id: user.id,
-    p_org_id: profile.org_id,
-    p_model: model as string
+    p_model: model as string,
   })
 
   if (rpcError) {
     console.error('Rate limit RPC failed:', rpcError)
+    // Map the RPC's own org-membership error to a 403 so the client
+    // sees a meaningful response instead of a generic 500.
+    if (rpcError.message?.includes('does not belong to an organization')) {
+      return jsonResponse({ error: 'User does not belong to an organization' }, 403)
+    }
     return jsonResponse({ error: 'Failed to enforce rate limit' }, 500)
   }
 
