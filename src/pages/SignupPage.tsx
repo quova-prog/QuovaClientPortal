@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { QuovaMark } from '@/components/ui/QuovaMark'
+import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
   const { signUp } = useAuth()
+  const navigate = useNavigate()
+  const inviteId = new URLSearchParams(window.location.search).get('invite')?.trim() || null
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -45,9 +47,23 @@ export function SignupPage() {
     setError('')
     setLoading(true)
     try {
-      const { error, confirmationRequired } = await signUp(form.email, form.password, form.orgName, form.fullName)
-      if (error) setError(error)
+      const { error, confirmationRequired } = await signUp(form.email, form.password, form.orgName, form.fullName, inviteId)
+      if (error) {
+        if (inviteId && error.toLowerCase().includes('user already')) {
+          setError('That email already has an Orbit account. Sign in to accept this invite.')
+        } else {
+          setError(error)
+        }
+      }
       else if (confirmationRequired) setConfirmationSent(true)
+      else {
+        // Signup succeeded with an active session; user is at AAL1 and must
+        // enrol MFA before any AAL2-gated data is reachable. buildAuthUser
+        // returns null at AAL1, so the AuthContext stays empty and the
+        // PublicRoute would just keep rendering this form. Mirror the
+        // LoginPage mfaEnforcedSetupRequired path explicitly.
+        navigate(inviteId ? `/mfa-setup?invite=${encodeURIComponent(inviteId)}` : '/mfa-setup')
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -77,7 +93,7 @@ export function SignupPage() {
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
             We sent a confirmation link to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>.
-            Click it to activate your account — your organisation will be set up automatically.
+            Click it to activate your account — {inviteId ? 'your team access' : 'your organisation'} will be set up automatically.
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
             Already confirmed? <Link to="/login">Sign in</Link>
@@ -94,25 +110,27 @@ export function SignupPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <QuovaMark />
+          <OrbitMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
-            Create your account
+            {inviteId ? 'Join your team' : 'Create your account'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Set up Quova for your organisation
+            {inviteId ? 'Create your Orbit account to accept the invite' : 'Set up Orbit for your organisation'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: inviteId ? '1fr' : '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label className="label">Your name</label>
               <input className="input" type="text" value={form.fullName} onChange={set('fullName')} placeholder="Jane Smith" required />
             </div>
-            <div>
-              <label className="label">Organisation</label>
-              <input className="input" type="text" value={form.orgName} onChange={set('orgName')} placeholder="Celonis" required />
-            </div>
+            {!inviteId && (
+              <div>
+                <label className="label">Organisation</label>
+                <input className="input" type="text" value={form.orgName} onChange={set('orgName')} placeholder="Celonis" required />
+              </div>
+            )}
           </div>
           <div>
             <label className="label">Work email</label>
@@ -130,6 +148,11 @@ export function SignupPage() {
           {error && (
             <div className="error-banner">
               {error}
+              {inviteId && error.includes('Sign in to accept') && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <Link to={`/login?invite=${encodeURIComponent(inviteId)}`}>Sign in to accept invite</Link>
+                </div>
+              )}
             </div>
           )}
           <button className="btn btn-primary" type="submit" disabled={loading || cooldownLeft > 0} style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}>
