@@ -875,15 +875,28 @@ export function SettingsPage() {
                             </td>
                             <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.recipient}</td>
                             <td>
-                              <span className={`badge ${
-                                log.email_type === 'urgent_alert' ? 'badge-red' :
-                                log.email_type === 'daily_digest' ? 'badge-teal' :
-                                log.email_type === 'team_invite' ? 'badge-purple' : 'badge-blue'
-                              }`} style={{ fontSize: '0.6875rem' }}>
-                                {log.email_type === 'urgent_alert' ? 'Urgent' :
-                                 log.email_type === 'daily_digest' ? 'Daily' :
-                                 log.email_type === 'team_invite' ? 'Invite' : 'Weekly'}
-                              </span>
+                              {(() => {
+                                // Keyed lookups instead of a ternary chain so flow
+                                // narrowing across the email_type union can't trip
+                                // strict-mode tsc on incremental builds.
+                                const badgeClass = {
+                                  urgent_alert:  'badge-red',
+                                  daily_digest:  'badge-teal',
+                                  weekly_digest: 'badge-blue',
+                                  team_invite:   'badge-purple',
+                                }[log.email_type]
+                                const badgeLabel = {
+                                  urgent_alert:  'Urgent',
+                                  daily_digest:  'Daily',
+                                  weekly_digest: 'Weekly',
+                                  team_invite:   'Invite',
+                                }[log.email_type]
+                                return (
+                                  <span className={`badge ${badgeClass}`} style={{ fontSize: '0.6875rem' }}>
+                                    {badgeLabel}
+                                  </span>
+                                )
+                              })()}
                             </td>
                             <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {log.subject}
