@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { ShieldCheck } from 'lucide-react'
-import { QuovaMark } from '@/components/ui/QuovaMark'
+import { OrbitMark } from '@/components/ui/OrbitMark'
 
 // ── Rate limiting constants ────────────────────────────────────────────────────
 const LOGIN_MAX_ATTEMPTS  = 3
@@ -21,6 +21,7 @@ interface MfaPending {
 export function LoginPage() {
   const navigate = useNavigate()
   const { signIn, completeMfaSignIn } = useAuth()
+  const inviteId = new URLSearchParams(window.location.search).get('invite')?.trim() || null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -92,7 +93,7 @@ export function LoginPage() {
         }
       } else if (result.mfaEnforcedSetupRequired) {
         setLoginFailures(0)
-        navigate('/mfa-setup')
+        navigate(inviteId ? `/mfa-setup?invite=${encodeURIComponent(inviteId)}` : '/mfa-setup')
       } else if (result.mfaRequired) {
         setLoginFailures(0)
         setMfaPending({
@@ -104,6 +105,7 @@ export function LoginPage() {
         setTimeout(() => mfaInputRef.current?.focus(), 100)
       } else {
         setLoginFailures(0)
+        if (inviteId) navigate(`/accept-invite?invite=${encodeURIComponent(inviteId)}`)
       }
     } catch (err: unknown) {
       void reportException(err, {
@@ -154,6 +156,7 @@ export function LoginPage() {
         }
       } else {
         setMfaFailures(0)
+        if (inviteId) navigate(`/accept-invite?invite=${encodeURIComponent(inviteId)}`)
       }
     } catch (err: unknown) {
       void reportException(err, {
@@ -175,12 +178,12 @@ export function LoginPage() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <QuovaMark />
+          <OrbitMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
-            {mfaPending ? 'Two-Factor Verification' : 'Sign in to Quova'}
+            {mfaPending ? 'Two-Factor Verification' : 'Sign in to Orbit'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            {mfaPending ? 'Enter the 6-digit code from your authenticator app' : 'The Financial Risk OS'}
+            {mfaPending ? 'Enter the 6-digit code from your authenticator app' : inviteId ? 'Sign in to accept your invite' : 'The Financial Risk OS'}
           </p>
         </div>
 
@@ -236,7 +239,7 @@ export function LoginPage() {
             <div>
               <label className="label">Email</label>
               <input className="input" type="email" value={email}
-                onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required />
+                onChange={e => setEmail(e.target.value)} required />
             </div>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.375rem' }}>
@@ -269,7 +272,7 @@ export function LoginPage() {
         {!mfaPending && (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '1.25rem' }}>
             Don't have an account?{' '}
-            <Link to="/signup">Create one</Link>
+            <Link to={inviteId ? `/signup?invite=${encodeURIComponent(inviteId)}` : '/signup'}>Create one</Link>
           </p>
         )}
       </div>

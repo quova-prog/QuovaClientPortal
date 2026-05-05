@@ -134,7 +134,7 @@ export function SignupPage() {
           </div>
           <div>
             <label className="label">Work email</label>
-            <input className="input" type="email" value={form.email} onChange={set('email')} placeholder="jane@celonis.com" required />
+            <input className="input" type="email" value={form.email} onChange={set('email')} required />
           </div>
           <div>
             <label className="label">Password</label>

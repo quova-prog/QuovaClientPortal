@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { CheckCircle, ArrowLeft } from 'lucide-react'
+import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -34,7 +35,7 @@ export function ForgotPasswordPage() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <QuovaMark />
+          <OrbitMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Reset your password
           </h1>
@@ -75,7 +76,6 @@ export function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@company.com"
                 required
                 autoFocus
               />
@@ -108,17 +108,5 @@ export function ForgotPasswordPage() {
         </p>
       </div>
     </div>
-  )
-}
-
-function QuovaMark() {
-  return (
-    <img
-      src="/quova-icon.png"
-      alt="Quova"
-      width={44}
-      height={44}
-      style={{ margin: '0 auto', display: 'block', objectFit: 'contain' }}
-    />
   )
 }
