@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { CheckCircle, Eye, EyeOff } from 'lucide-react'
-import { QuovaMark } from '@/components/ui/QuovaMark'
+import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -14,6 +14,12 @@ export function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [validSession, setValidSession] = useState(false)
   const [checking, setChecking] = useState(true)
+  // If the account has MFA enrolled, Supabase requires an AAL2 session
+  // before updateUser({ password }) is allowed. Recovery links land at
+  // AAL1, so we collect a TOTP code and elevate via challengeAndVerify
+  // before submitting the password.
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -31,20 +37,35 @@ export function ResetPasswordPage() {
       const refreshToken = params.get('refresh_token')
 
       try {
+        let sessionEstablished = false
+
         if (type === 'recovery' && accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           })
-          if (!error && !cancelled) {
-            setValidSession(true)
+          if (!error) {
+            sessionEstablished = true
             window.history.replaceState({}, document.title, window.location.pathname)
-            return
           }
         }
 
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!cancelled) setValidSession(!!session)
+        if (!sessionEstablished) {
+          const { data: { session } } = await supabase.auth.getSession()
+          sessionEstablished = !!session
+        }
+
+        if (cancelled) return
+        setValidSession(sessionEstablished)
+
+        if (sessionEstablished) {
+          // Look for a verified TOTP factor; if present, we'll prompt for
+          // an MFA code on the form and elevate to AAL2 before updateUser.
+          const { data: factors } = await supabase.auth.mfa.listFactors()
+          const verifiedTotp = factors?.totp?.find(f => f.status === 'verified')
+            ?? factors?.all?.find(f => f.status === 'verified' && f.factor_type === 'totp')
+          if (!cancelled && verifiedTotp) setMfaFactorId(verifiedTotp.id)
+        }
       } finally {
         if (!cancelled) setChecking(false)
       }
@@ -66,8 +87,27 @@ export function ResetPasswordPage() {
       setError('Passwords do not match')
       return
     }
+    if (mfaFactorId && mfaCode.length !== 6) {
+      setError('Enter the 6-digit code from your authenticator app')
+      return
+    }
 
     setLoading(true)
+
+    if (mfaFactorId) {
+      const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: mfaFactorId,
+        code: mfaCode,
+      })
+      if (mfaError) {
+        setLoading(false)
+        setError(mfaError.message.includes('Invalid')
+          ? 'That code is not valid. Try again.'
+          : mfaError.message)
+        return
+      }
+    }
+
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
 
@@ -112,7 +152,7 @@ export function ResetPasswordPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <QuovaMark />
+          <OrbitMark />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.75rem', letterSpacing: '-0.02em' }}>
             Set new password
           </h1>
@@ -209,6 +249,29 @@ export function ResetPasswordPage() {
               )}
             </div>
 
+            {mfaFactorId && (
+              <div>
+                <label className="label">Authenticator code</label>
+                <input
+                  className="input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  required
+                  autoComplete="one-time-code"
+                  style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.4em', fontFamily: 'var(--font-mono)' }}
+                />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+                  Your account has MFA enabled. Enter the 6-digit code from your
+                  authenticator app to confirm this password change.
+                </p>
+              </div>
+            )}
+
             {error && (
               <div className="error-banner">
                 {error}
@@ -218,7 +281,12 @@ export function ResetPasswordPage() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={loading || !password || password !== confirm}
+              disabled={
+                loading
+                || !password
+                || password !== confirm
+                || (mfaFactorId !== null && mfaCode.length !== 6)
+              }
               style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}
             >
               {loading
