@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { useMfa } from '@/hooks/useMfa'
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -28,6 +29,7 @@ export function ForceMfaSetupPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [mfaVerifying, setMfaVerifying] = useState(false)
   const [mfaError, setMfaError] = useState<string | null>(null)
+  const [showManualKey, setShowManualKey] = useState(false)
 
   const codeInputRef = useRef<HTMLInputElement>(null)
 
@@ -122,19 +124,48 @@ export function ForceMfaSetupPage() {
 
           {!mfaEnrolling && mfaTotpUri && (
              <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-               <div style={{ background: 'var(--sidebar-hover)', padding: '1rem', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
-                 <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                   Setup Key
+               <div style={{ background: 'var(--sidebar-hover)', padding: '1.25rem', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
+                 <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                   Scan with your authenticator app
                  </div>
-                 <div style={{ 
-                   fontFamily: 'var(--font-mono)', fontSize: '1.125rem', letterSpacing: '0.1em', 
-                   color: 'var(--teal)', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: 'var(--r-sm)' 
+                 <div style={{
+                   display: 'inline-flex', padding: '0.75rem', background: '#ffffff',
+                   borderRadius: 'var(--r-sm)',
                  }}>
-                   {parsedTotp.secret}
+                   <QRCodeSVG
+                     value={mfaTotpUri}
+                     size={180}
+                     level="M"
+                     marginSize={0}
+                     fgColor="#0A0F1E"
+                     bgColor="#ffffff"
+                   />
                  </div>
                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
-                   Enter this code into your authenticator app (like Google Authenticator or Authy).
+                   Open Google Authenticator, Authy, 1Password, or any TOTP app and scan this code.
                  </p>
+                 <button
+                   type="button"
+                   onClick={() => setShowManualKey(v => !v)}
+                   style={{
+                     background: 'transparent', border: 'none', color: 'var(--teal)',
+                     fontSize: '0.8125rem', cursor: 'pointer', marginTop: '0.75rem',
+                     textDecoration: 'underline',
+                   }}
+                 >
+                   {showManualKey ? 'Hide setup key' : "Can't scan? Enter setup key manually"}
+                 </button>
+                 {showManualKey && (
+                   <div style={{
+                     fontFamily: 'var(--font-mono)', fontSize: '0.9375rem', letterSpacing: '0.05em',
+                     color: 'var(--teal)', padding: '0.75rem', background: 'var(--bg-app)',
+                     borderRadius: 'var(--r-sm)', marginTop: '0.75rem',
+                     wordBreak: 'break-all', overflowWrap: 'anywhere', textAlign: 'left',
+                     userSelect: 'all',
+                   }}>
+                     {parsedTotp.secret}
+                   </div>
+                 )}
                </div>
 
                <div>
