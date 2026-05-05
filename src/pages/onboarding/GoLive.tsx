@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useOnboarding } from '@/hooks/useOnboarding'
 
 const SESSION_MAPPINGS_KEY = 'orbit_discovery_mappings'
+const SESSION_ROWS_KEY     = 'orbit_onboarding_rows'
 
 // ── Mapping helpers ───────────────────────────────────────────
 
@@ -113,8 +114,17 @@ export function GoLive(): React.ReactElement {
         setProgress(10)
         await pause(400)
 
-        // Raw rows no longer stored in sessionStorage for security — data stays in React state
-        const rawRows: Record<string, string | undefined>[] = []
+        // ConnectERP persists the parsed CSV rows here under SESSION_ROWS_KEY.
+        // Read them now and free the slot once we're done — sessionStorage is
+        // tab-scoped and cleared on tab close, but no point holding raw rows
+        // any longer than necessary.
+        let rawRows: Record<string, string | undefined>[] = []
+        try {
+          const stored = sessionStorage.getItem(SESSION_ROWS_KEY)
+          if (stored) rawRows = JSON.parse(stored) as Record<string, string | undefined>[]
+        } catch (err) {
+          if (import.meta.env.DEV) console.warn('[GoLive] Failed to read staged rows:', err)
+        }
 
         setCurrentStep(1)
         setProgress(20)
@@ -218,10 +228,14 @@ export function GoLive(): React.ReactElement {
           await advanceStatus('live', `Initial import: ${importedCount} exposures`)
         }
 
+        // Free the staged rows once the import is committed.
+        try { sessionStorage.removeItem(SESSION_ROWS_KEY) } catch { /* ignore */ }
+
         setSynced(true)
       } catch (err) {
         console.error('[GoLive] Import failed:', err)
         setError(err instanceof Error ? err.message : 'Import failed')
+        // Don't clear staged rows on error — a retry path should still see them.
         setSynced(true) // still show celebration, just without data
       }
     })()

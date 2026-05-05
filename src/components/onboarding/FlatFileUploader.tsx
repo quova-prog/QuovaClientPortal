@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, FileText, X, Download, AlertTriangle, CheckCircle } from 'lucide-react'
 import Papa from 'papaparse'
-import { prepareForAI, stripPIIString } from '@/lib/piiStripper'
+import { stripPIIString } from '@/lib/piiStripper'
 import type { FlatFileSchema } from '@/lib/discoveryService'
 
 const TEMPLATE_HEADERS = [
@@ -17,7 +17,11 @@ const TEMPLATE_EXAMPLE = [
 ]
 
 interface FlatFileUploaderProps {
-  onParsed: (schema: FlatFileSchema, strippedRows: Record<string, string>[]) => void
+  // rawRows are the parsed CSV rows verbatim (no PII stripping). They flow
+  // through the wizard via sessionStorage and get inserted into fx_exposures
+  // in the GoLive step. Sample values exposed to the AI mapper are
+  // separately PII-stripped on the schema (schema.columns[].sampleValues).
+  onParsed: (schema: FlatFileSchema, rawRows: Record<string, string>[]) => void
 }
 
 export function FlatFileUploader({ onParsed }: FlatFileUploaderProps): React.ReactElement {
@@ -82,16 +86,15 @@ export function FlatFileUploader({ onParsed }: FlatFileUploaderProps): React.Rea
           fileName: f.name,
         }
 
-        const strippedRows = prepareForAI(
-          rows as unknown as Record<string, unknown>[],
-        ) as Record<string, string>[]
-
         setPreview({ rowCount: rows.length, columns, currencies: [...currencies] })
         setParsing(false)
 
         if (errs.length === 0) {
-          // Raw rows kept in React state only — never persisted to sessionStorage (security)
-          onParsed(schema, strippedRows)
+          // Pass raw rows to the parent so they can be persisted for the
+          // GoLive insert into fx_exposures. The AI mapper sees only the
+          // PII-stripped sampleValues already on the schema, so passing
+          // raw rows here doesn't widen exposure to the AI service.
+          onParsed(schema, rows)
         } else {
           setErrors(errs)
         }

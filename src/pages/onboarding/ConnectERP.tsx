@@ -10,6 +10,7 @@ import type { ERPType }      from '@/types'
 import type { FlatFileSchema } from '@/lib/discoveryService'
 
 const SESSION_SCHEMA_KEY = 'orbit_onboarding_schema'
+const SESSION_ROWS_KEY   = 'orbit_onboarding_rows'
 
 // ── Module validation result ────────────────────────────────
 
@@ -121,13 +122,19 @@ export function ConnectERP(): React.ReactElement {
 
   const handleFileParsed = useCallback((
     schema: FlatFileSchema,
-    // strippedRows not needed here — schema.columns[].sampleValues are already PII-stripped
-    // at construction time in FlatFileUploader. Raw rows for GoLive import are in sessionStorage.
-    _strippedRows: Record<string, string>[],
+    rawRows: Record<string, string>[],
   ) => {
     try {
       sessionStorage.setItem(SESSION_SCHEMA_KEY, JSON.stringify(schema))
-    } catch { /* best effort */ }
+      // Persist raw rows so the GoLive step can insert them into fx_exposures.
+      // sessionStorage scope: tab + origin only, cleared on tab close.
+      sessionStorage.setItem(SESSION_ROWS_KEY, JSON.stringify(rawRows))
+    } catch (err) {
+      // Most likely cause: quota exceeded for very large CSVs. Surface so the
+      // user knows the file won't be importable instead of silently failing.
+      if (import.meta.env.DEV) console.warn('[ConnectERP] Failed to persist rows:', err)
+      setError('Could not stage the file for import (browser storage limit). Try a smaller CSV (<5MB).')
+    }
     setFileReady(true)
   }, [])
 
