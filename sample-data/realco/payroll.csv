@@ -1,0 +1,20 @@
+pay_date,currency,gross_amount,net_amount,employee_count,entity,department,pay_period,description
+2026-05-25,USD,2150000,1612500,48,RealCo Inc,All Departments,May 2026,US monthly payroll — all staff
+2026-05-25,EUR,1280000,896000,32,RealCo Europe GmbH,All Departments,May 2026,Germany monthly payroll — all staff
+2026-05-25,GBP,825000,618750,22,RealCo UK Ltd,All Departments,May 2026,UK monthly payroll — all staff
+2026-05-25,JPY,165000000,132000000,28,RealCo Japan KK,All Departments,May 2026,Japan monthly payroll — all staff
+2026-05-25,CAD,420000,315000,11,RealCo Canada Ltd,All Departments,May 2026,Canada monthly payroll — all staff
+2026-05-25,MXN,5200000,4160000,18,RealCo Mexico SA de CV,All Departments,May 2026,Mexico monthly payroll — all staff
+2026-06-25,USD,2200000,1650000,49,RealCo Inc,All Departments,June 2026,US monthly payroll — incl Q2 commissions
+2026-06-25,EUR,1280000,896000,32,RealCo Europe GmbH,All Departments,June 2026,Germany monthly payroll — all staff
+2026-06-25,GBP,825000,618750,22,RealCo UK Ltd,All Departments,June 2026,UK monthly payroll — all staff
+2026-07-25,USD,2150000,1612500,49,RealCo Inc,All Departments,July 2026,US monthly payroll — all staff
+2026-07-25,EUR,1295000,906500,33,RealCo Europe GmbH,All Departments,July 2026,Germany monthly payroll — incl 1 new hire
+2026-07-25,GBP,825000,618750,22,RealCo UK Ltd,All Departments,July 2026,UK monthly payroll — all staff
+2026-08-25,USD,2150000,1612500,49,RealCo Inc,All Departments,August 2026,US monthly payroll — all staff
+2026-08-25,EUR,1295000,906500,33,RealCo Europe GmbH,All Departments,August 2026,Germany monthly payroll — all staff
+2026-09-25,USD,2200000,1650000,50,RealCo Inc,All Departments,September 2026,US monthly payroll — incl 1 new hire
+2026-10-25,USD,2200000,1650000,50,RealCo Inc,All Departments,October 2026,US monthly payroll — all staff
+2026-11-25,USD,2350000,1762500,50,RealCo Inc,All Departments,November 2026,US monthly payroll — incl Q4 commissions
+2026-12-25,USD,2580000,1935000,50,RealCo Inc,All Departments,December 2026,US monthly payroll — incl year-end bonuses
+2026-12-25,EUR,1480000,1036000,33,RealCo Europe GmbH,All Departments,December 2026,Germany monthly payroll — incl Christmas allowance

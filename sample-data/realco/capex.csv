@@ -1,0 +1,13 @@
+project_name,currency,budget_amount,committed_amount,payment_date,category,entity,status,description
+Frankfurt Data Centre Phase 2,EUR,3800000,3800000,2026-06-30,Infrastructure,RealCo Europe GmbH,committed,Primary DC hardware refresh and capacity expansion
+London HQ Fit-Out,GBP,2400000,2160000,2026-07-15,Facilities,RealCo UK Ltd,committed,Canary Wharf 3 new floors expansion
+Tokyo R&D Lab,JPY,420000000,420000000,2026-08-30,R&D,RealCo Japan KK,committed,New Tokyo R&D facility — robotics & AI labs
+US Manufacturing Line,USD,5500000,4950000,2026-09-15,Equipment,RealCo Inc,committed,Phase 2 manufacturing automation upgrade
+Mexico City Facility,MXN,68000000,40800000,2026-10-30,Facilities,RealCo Mexico SA de CV,approved,New 25k sqm production facility — Phase 1
+Toronto Office Renovation,CAD,1850000,1110000,2026-11-15,Facilities,RealCo Canada Ltd,approved,Toronto HQ renovation and expansion
+Frankfurt Cooling Upgrade,EUR,1450000,580000,2026-12-15,Infrastructure,RealCo Europe GmbH,approved,Data centre cooling efficiency upgrade
+US Server Refresh,USD,3200000,1280000,2027-01-30,Equipment,RealCo Inc,planned,Annual server hardware refresh — DR site
+Tokyo HVAC Replacement,JPY,180000000,72000000,2027-02-15,Infrastructure,RealCo Japan KK,planned,Tokyo office HVAC system replacement
+London Office Phase 2,GBP,1100000,330000,2027-03-30,Facilities,RealCo UK Ltd,planned,Additional 1 floor expansion — projected
+Mexico Equipment Phase 2,MXN,42000000,0,2027-04-30,Equipment,RealCo Mexico SA de CV,planned,Production equipment for Mexico facility — Phase 2
+Frankfurt Solar Install,EUR,850000,0,2027-05-15,Infrastructure,RealCo Europe GmbH,planned,Rooftop solar PV installation

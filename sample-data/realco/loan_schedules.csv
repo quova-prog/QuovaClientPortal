@@ -1,0 +1,11 @@
+loan_id,lender,currency,principal,outstanding_balance,interest_rate,payment_date,maturity_date,payment_type,payment_amount,loan_type,description
+LOAN-RC-001,Goldman Sachs,USD,25000000,21250000,5.25,2026-05-30,2028-12-31,principal_and_interest,985000,term_loan,Senior secured term loan — HQ expansion
+LOAN-RC-002,JPMorgan Chase,USD,15000000,12000000,4.85,2026-05-30,2027-09-30,principal_and_interest,720000,revolving_credit,US working capital revolving credit facility
+LOAN-RC-003,Barclays Corporate,GBP,8000000,6800000,5.40,2026-06-15,2027-12-31,principal_and_interest,310000,revolving_credit,UK working capital revolving credit facility
+LOAN-RC-004,Deutsche Bank AG,EUR,12000000,10800000,4.20,2026-06-30,2028-06-30,principal_and_interest,485000,term_loan,Frankfurt facility expansion loan
+LOAN-RC-005,MUFG Bank,JPY,950000000,820000000,1.85,2026-06-30,2029-03-31,principal_and_interest,28000000,term_loan,Tokyo office and equipment financing
+LOAN-RC-006,Royal Bank of Canada,CAD,4500000,3825000,5.10,2026-07-15,2027-12-31,principal_and_interest,180000,term_loan,Toronto operations facility — equipment lease buyout
+LOAN-RC-007,BBVA Mexico,MXN,85000000,76500000,9.75,2026-07-30,2028-09-30,principal_and_interest,3850000,term_loan,Mexico City facility build-out financing
+LOAN-RC-008,HSBC Holdings,GBP,3500000,3150000,5.85,2026-08-15,2027-08-15,interest_only,18000,bridge_loan,UK working capital bridge — quarterly interest only
+LOAN-RC-009,BNP Paribas,EUR,6000000,5400000,4.50,2026-08-30,2028-12-31,principal_and_interest,255000,term_loan,Paris office acquisition financing
+LOAN-RC-010,Citibank,USD,10000000,8500000,5.10,2026-09-15,2028-03-31,principal_and_interest,415000,term_loan,Latin America expansion working capital

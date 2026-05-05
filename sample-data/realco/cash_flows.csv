@@ -1,0 +1,19 @@
+flow_date,currency,amount,flow_type,category,entity,account,counterparty,description,confidence
+2026-05-15,EUR,4250000,inflow,Operations,RealCo Europe GmbH,EUR-OPS-001,Volkswagen Group,Q2 platform licence receipts,confirmed
+2026-05-22,GBP,1850000,inflow,Operations,RealCo UK Ltd,GBP-OPS-001,HSBC Holdings,UK enterprise services May tranche,confirmed
+2026-05-30,USD,-1200000,outflow,Operations,RealCo Inc,USD-HQ-001,Cloudflare Inc,May AWS + Cloudflare infrastructure,confirmed
+2026-06-01,JPY,560000000,inflow,Operations,RealCo Japan KK,JPY-TKO-001,Sony Group,Japan enterprise contract Q2 milestone,forecast
+2026-06-15,CAD,920000,inflow,Operations,RealCo Canada Ltd,CAD-TOR-001,Royal Bank of Canada,Canadian financial services contract,forecast
+2026-06-25,EUR,-685000,outflow,Operations,RealCo Europe GmbH,EUR-OPS-001,SAP SE,SAP S/4HANA quarterly licence,confirmed
+2026-06-30,USD,-2400000,outflow,FX Settlement,RealCo Inc,USD-HQ-001,JPMorgan Chase,Forward contract settlement Q2 EURUSD,confirmed
+2026-07-15,EUR,4400000,inflow,Operations,RealCo Europe GmbH,EUR-OPS-001,Mercedes-Benz Group,Q3 platform licence receipts,forecast
+2026-07-25,MXN,18500000,inflow,Operations,RealCo Mexico SA de CV,MXN-MEX-001,Grupo Bimbo,Mexico enterprise services Q3,forecast
+2026-08-01,GBP,-450000,outflow,Operations,RealCo UK Ltd,GBP-OPS-001,Tesco Plc,Refund settlement — disputed Q1 invoice,forecast
+2026-08-15,EUR,4500000,inflow,Operations,RealCo Europe GmbH,EUR-OPS-001,BNP Paribas SA,Banking services contract August,forecast
+2026-09-01,USD,-3800000,outflow,FX Settlement,RealCo Inc,USD-HQ-001,Goldman Sachs,Forward contract settlement Q3 GBPUSD,forecast
+2026-09-15,JPY,420000000,inflow,Operations,RealCo Japan KK,JPY-TKO-001,Mitsubishi Corporation,Japan industrial contract Q3,forecast
+2026-10-15,EUR,4750000,inflow,Operations,RealCo Europe GmbH,EUR-OPS-001,Deutsche Bank AG,Q4 platform licence receipts,forecast
+2026-11-01,GBP,2100000,inflow,Operations,RealCo UK Ltd,GBP-OPS-001,Lloyds Banking Group,UK enterprise services November,forecast
+2026-12-15,EUR,5100000,inflow,Operations,RealCo Europe GmbH,EUR-OPS-001,Allianz SE,Year-end enterprise platform settlement,forecast
+2027-01-15,USD,-2200000,outflow,Operations,RealCo Inc,USD-HQ-001,ADP Inc,Annual payroll services renewal,forecast
+2027-02-15,CAD,1050000,inflow,Operations,RealCo Canada Ltd,CAD-TOR-001,Manulife Financial,Q1 2027 financial services contract,forecast

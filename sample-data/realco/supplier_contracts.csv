@@ -1,0 +1,16 @@
+supplier_name,currency,contract_value,start_date,end_date,payment_frequency,next_payment_date,payment_amount,category,status,description
+Siemens AG,EUR,1940000,2025-01-01,2027-12-31,quarterly,2026-07-01,485000,Equipment,active,Industrial automation supply agreement — 3 year
+BASF SE,EUR,660000,2025-07-01,2027-06-30,quarterly,2026-07-01,165000,Raw Materials,active,Speciality chemicals supply contract
+Toyota Tsusho,JPY,272000000,2025-04-01,2027-03-31,quarterly,2026-07-15,68000000,Raw Materials,active,Steel and aluminium long-term agreement
+SAP SE,EUR,2740000,2025-01-01,2028-12-31,quarterly,2026-06-30,685000,Software,active,SAP S/4HANA enterprise platform — 4 year
+Foxconn Technology,USD,7400000,2026-01-01,2028-12-31,quarterly,2026-07-31,1850000,Equipment,active,Manufacturing line supplier framework
+Cloudflare Inc,USD,4800000,2026-01-01,2028-12-31,monthly,2026-06-30,400000,Software,active,Network and security infrastructure
+Daikin Industries,JPY,128000000,2025-09-01,2028-08-31,quarterly,2026-08-30,32000000,Equipment,active,Industrial cooling supply agreement
+LG Chem,KRW,1680000000,2025-12-01,2027-11-30,quarterly,2026-08-30,420000000,Raw Materials,active,Battery component supply contract
+Schneider Electric,EUR,1540000,2026-02-01,2029-01-31,quarterly,2026-08-15,385000,Equipment,active,Power management infrastructure agreement
+Bombardier Inc,CAD,9600000,2026-04-01,2029-03-31,quarterly,2026-09-15,2400000,Equipment,active,Transportation equipment supply — Toronto facility
+Mitsubishi Electric,JPY,116000000,2025-04-01,2028-03-31,quarterly,2026-09-30,29000000,Equipment,active,Industrial systems supply contract
+Hitachi Ltd,JPY,152000000,2025-09-01,2028-08-31,quarterly,2026-10-15,38000000,Equipment,active,Power systems and controls supply
+Bosch GmbH,EUR,1100000,2025-06-01,2028-05-31,quarterly,2026-09-30,275000,Equipment,active,Sensor and actuator components agreement
+Acer Inc,USD,1940000,2026-03-01,2028-02-28,quarterly,2026-08-31,485000,Equipment,active,Workstation and end-user device supplier
+Komatsu Ltd,JPY,208000000,2026-01-01,2028-12-31,quarterly,2026-09-30,52000000,Equipment,active,Heavy machinery long-term supply agreement

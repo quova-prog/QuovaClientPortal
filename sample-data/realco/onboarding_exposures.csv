@@ -1,0 +1,26 @@
+transaction_id,transaction_type,transaction_currency,notional_amount,settlement_date,counterparty,entity,posting_date,functional_amount,cost_center,description,status
+AR-2026-0518,ar_invoice,EUR,4250000.00,2026-05-15,Volkswagen Group,RealCo Europe GmbH,2026-04-15,4612500.00,Sales,Q2 platform licence — VW Group,open
+AR-2026-0519,ar_invoice,GBP,1850000.00,2026-05-22,HSBC Holdings,RealCo UK Ltd,2026-04-22,2358750.00,Sales,UK enterprise services — HSBC,open
+AR-2026-0520,ar_invoice,JPY,560000000.00,2026-06-01,Sony Group,RealCo Japan KK,2026-05-01,3808000.00,Sales,Q2 milestone — Sony Group,open
+AP-2026-0231,ap_invoice,EUR,685000.00,2026-06-25,SAP SE,RealCo Inc,2026-05-25,743225.00,IT,SAP S/4HANA quarterly licence,open
+AR-2026-0521,ar_invoice,CAD,920000.00,2026-06-15,Royal Bank of Canada,RealCo Canada Ltd,2026-05-15,676200.00,Sales,RBC financial services contract,open
+AP-2026-0232,ap_invoice,JPY,68000000.00,2026-07-15,Toyota Tsusho,RealCo Inc,2026-04-28,462400.00,Manufacturing,Steel and aluminium stock Q2,open
+AR-2026-0522,ar_invoice,EUR,4400000.00,2026-07-15,Mercedes-Benz Group,RealCo Europe GmbH,2026-06-15,4774000.00,Sales,Q3 manufacturing analytics suite,open
+AP-2026-0233,ap_invoice,JPY,42000000.00,2026-08-30,Honda Motor Co,RealCo Inc,2026-05-10,285600.00,Manufacturing,Industrial robotics — Tokyo facility,open
+AR-2026-0523,ar_invoice,MXN,18500000.00,2026-07-25,Grupo Bimbo,RealCo Mexico SA de CV,2026-06-25,1087800.00,Sales,Mexico enterprise services Q3,open
+AR-2026-0524,ar_invoice,EUR,4500000.00,2026-08-15,BNP Paribas SA,RealCo Europe GmbH,2026-07-15,4882500.00,Sales,Pan-European banking services — Q3,open
+AP-2026-0234,ap_invoice,JPY,38000000.00,2026-09-15,Hitachi Ltd,RealCo Japan KK,2026-05-15,258400.00,IT,Power systems for Tokyo data centre,open
+AR-2026-0525,ar_invoice,JPY,420000000.00,2026-09-15,Mitsubishi Corporation,RealCo Japan KK,2026-08-15,2856000.00,Sales,Industrial enterprise contract Q3,open
+AP-2026-0235,ap_invoice,JPY,52000000.00,2026-09-30,Komatsu Ltd,RealCo Inc,2026-05-20,353600.00,Manufacturing,Heavy machinery — Mexico facility,open
+AR-2026-0526,ar_invoice,EUR,4750000.00,2026-10-15,Deutsche Bank AG,RealCo Europe GmbH,2026-09-15,5153750.00,Sales,Q4 banking analytics platform,open
+AP-2026-0236,ap_invoice,JPY,29000000.00,2026-10-15,Mitsubishi Electric,RealCo Inc,2026-05-25,197200.00,Engineering,HVAC systems — Frankfurt expansion,pending
+AR-2026-0527,ar_invoice,GBP,2100000.00,2026-11-01,Lloyds Banking Group,RealCo UK Ltd,2026-10-01,2677500.00,Sales,UK banking analytics suite Q4,open
+AP-2026-0237,ap_invoice,KRW,420000000.00,2026-10-30,LG Chem,RealCo Inc,2026-06-01,308700.00,Manufacturing,Lithium battery components,pending
+AR-2026-0528,ar_invoice,EUR,5100000.00,2026-12-15,Allianz SE,RealCo Europe GmbH,2026-11-15,5533500.00,Sales,Year-end insurance platform settlement,open
+AP-2026-0238,ap_invoice,CAD,2400000.00,2026-11-15,Bombardier Inc,RealCo Canada Ltd,2026-06-15,1764000.00,Manufacturing,Transportation equipment Toronto,pending
+AP-2026-0239,ap_invoice,JPY,32000000.00,2026-11-30,Daikin Industries,RealCo Inc,2026-07-15,217600.00,Engineering,Industrial cooling — Mexico City,pending
+AR-2026-0529,ar_invoice,JPY,720000000.00,2026-12-31,RealCo Inc (intercompany),RealCo Japan KK,2026-12-15,4896000.00,Treasury,Q4 Japan dividend repatriation,open
+AP-2026-0240,ap_invoice,EUR,485000.00,2026-06-15,Siemens AG,RealCo Inc,2026-04-20,526625.00,Engineering,Q2 industrial automation components,open
+AP-2026-0241,ap_invoice,EUR,275000.00,2026-06-30,Bosch GmbH,RealCo Inc,2026-04-25,298625.00,Engineering,Sensor modules and actuators,open
+AP-2026-0242,ap_invoice,EUR,165000.00,2026-07-30,BASF SE,RealCo Inc,2026-05-12,179025.00,Manufacturing,Speciality chemicals supply Q3 first tranche,open
+AP-2026-0243,ap_invoice,EUR,385000.00,2026-12-15,Schneider Electric,RealCo Inc,2026-08-01,417725.00,Engineering,Power management infrastructure,pending

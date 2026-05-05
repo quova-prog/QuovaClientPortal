@@ -1,0 +1,26 @@
+entity,currency_pair,direction,notional,settlement_date,description
+RealCo Europe GmbH,EUR/USD,receivable,4250000,2026-05-15,Q2 platform licence — Volkswagen Group
+RealCo UK Ltd,GBP/USD,receivable,1850000,2026-05-22,UK enterprise services — HSBC Holdings
+RealCo Japan KK,JPY/USD,receivable,560000000,2026-06-01,Q2 milestone — Sony Group
+RealCo Europe GmbH,EUR/USD,payable,685000,2026-06-25,SAP S/4HANA quarterly licence
+RealCo Canada Ltd,CAD/USD,receivable,920000,2026-06-15,RBC financial services contract
+RealCo Inc,JPY/USD,payable,68000000,2026-07-15,Toyota Tsusho steel & aluminium PO
+RealCo Europe GmbH,EUR/USD,receivable,4400000,2026-07-15,Q3 Mercedes-Benz licence
+RealCo Inc,JPY/USD,payable,42000000,2026-08-30,Honda Motor industrial robotics PO
+RealCo Mexico SA de CV,MXN/USD,receivable,18500000,2026-07-25,Mexico Grupo Bimbo enterprise services
+RealCo Europe GmbH,EUR/USD,receivable,4500000,2026-08-15,BNP Paribas banking services
+RealCo Inc,JPY/USD,payable,38000000,2026-09-15,Hitachi power systems PO
+RealCo Japan KK,JPY/USD,receivable,420000000,2026-09-15,Mitsubishi Q3 industrial contract
+RealCo Inc,JPY/USD,payable,52000000,2026-09-30,Komatsu heavy machinery PO
+RealCo Europe GmbH,EUR/USD,receivable,4750000,2026-10-15,Q4 Deutsche Bank licence
+RealCo Inc,JPY/USD,payable,29000000,2026-10-15,Mitsubishi HVAC systems PO
+RealCo UK Ltd,GBP/USD,receivable,2100000,2026-11-01,Lloyds UK enterprise services
+RealCo Inc,KRW/USD,payable,420000000,2026-10-30,LG Chem battery components
+RealCo Europe GmbH,EUR/USD,receivable,5100000,2026-12-15,Allianz year-end settlement
+RealCo Canada Ltd,CAD/USD,payable,2400000,2026-11-15,Bombardier transportation equipment
+RealCo Inc,JPY/USD,payable,32000000,2026-11-30,Daikin industrial cooling — Mexico
+RealCo Mexico SA de CV,MXN/USD,payable,40800000,2026-10-30,Mexico City facility Phase 1
+RealCo Inc,EUR/USD,payable,485000,2026-06-15,Siemens Q2 automation components
+RealCo Inc,EUR/USD,payable,275000,2026-06-30,Bosch sensor modules
+RealCo Inc,EUR/USD,payable,165000,2026-07-30,BASF Q3 chemicals
+RealCo Inc,EUR/USD,payable,385000,2026-12-15,Schneider Electric power management

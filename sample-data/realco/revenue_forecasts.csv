@@ -1,0 +1,19 @@
+currency,amount,period,fiscal_year,segment,region,description
+EUR,12750000,Q2,2026,Enterprise,EMEA,Enterprise platform licences Q2 — Germany / France
+GBP,5500000,Q2,2026,Enterprise,EMEA,UK enterprise services Q2
+JPY,1280000000,Q2,2026,Enterprise,APAC,Japan enterprise platform Q2
+CAD,2750000,Q2,2026,Enterprise,Americas,Canadian financial services Q2
+MXN,52000000,Q2,2026,SMB,Americas,Mexico mid-market services Q2
+EUR,13500000,Q3,2026,Enterprise,EMEA,Enterprise platform licences Q3 — Germany / France
+GBP,5800000,Q3,2026,Enterprise,EMEA,UK enterprise services Q3
+JPY,1350000000,Q3,2026,Enterprise,APAC,Japan enterprise platform Q3
+CAD,2900000,Q3,2026,Enterprise,Americas,Canadian financial services Q3
+EUR,14200000,Q4,2026,Enterprise,EMEA,Enterprise platform licences Q4 — incl year-end add-ons
+GBP,6100000,Q4,2026,Enterprise,EMEA,UK enterprise services Q4
+JPY,1450000000,Q4,2026,Enterprise,APAC,Japan enterprise platform Q4
+CAD,3050000,Q4,2026,Enterprise,Americas,Canadian financial services Q4
+MXN,58000000,Q4,2026,SMB,Americas,Mexico mid-market services Q4
+EUR,14800000,Q1,2027,Enterprise,EMEA,Enterprise platform licences Q1 — annual renewal cycle
+GBP,6300000,Q1,2027,Enterprise,EMEA,UK enterprise services Q1
+JPY,1500000000,Q1,2027,Enterprise,APAC,Japan enterprise platform Q1
+EUR,15400000,Q2,2027,Enterprise,EMEA,Enterprise platform licences Q2 — projected growth

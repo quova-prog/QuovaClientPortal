@@ -1,0 +1,16 @@
+customer_name,currency,contract_value,start_date,end_date,payment_frequency,next_payment_date,payment_amount,segment,region,status,description
+Volkswagen Group,EUR,17000000,2025-04-01,2028-03-31,quarterly,2026-07-01,4250000,Enterprise,EMEA,active,Enterprise platform licence — 3 year
+Mercedes-Benz Group,EUR,15400000,2025-07-01,2028-06-30,quarterly,2026-07-15,3850000,Enterprise,EMEA,active,Manufacturing analytics suite — multi-year
+HSBC Holdings,GBP,7400000,2025-01-01,2027-12-31,quarterly,2026-05-22,1850000,Enterprise,EMEA,active,Financial services analytics — 3 year
+Deutsche Bank AG,EUR,8800000,2025-01-01,2027-12-31,quarterly,2026-10-15,2200000,Enterprise,EMEA,active,Banking services contract — annual renewals
+Sony Group,JPY,2240000000,2025-06-01,2028-05-31,quarterly,2026-06-01,560000000,Enterprise,APAC,active,Japan enterprise platform contract
+Mitsubishi Corporation,JPY,1680000000,2025-09-01,2028-08-31,quarterly,2026-09-15,420000000,Enterprise,APAC,active,Industrial enterprise contract
+Royal Bank of Canada,CAD,3680000,2026-01-01,2028-12-31,quarterly,2026-06-15,920000,Enterprise,Americas,active,Canadian financial services contract
+BNP Paribas SA,EUR,18000000,2026-04-01,2029-03-31,quarterly,2026-08-15,1500000,Enterprise,EMEA,active,Pan-European banking services — 3 year
+Lloyds Banking Group,GBP,8400000,2026-01-01,2028-12-31,quarterly,2026-11-01,2100000,Enterprise,EMEA,active,UK banking analytics suite
+Manulife Financial,CAD,4200000,2026-04-01,2028-03-31,quarterly,2027-02-15,1050000,Enterprise,Americas,active,Insurance analytics platform
+Allianz SE,EUR,20400000,2025-10-01,2028-09-30,quarterly,2026-12-15,5100000,Enterprise,EMEA,active,Insurance analytics multi-year contract
+Grupo Bimbo,MXN,74000000,2026-01-01,2027-12-31,quarterly,2026-07-25,18500000,Enterprise,Americas,active,Mexico enterprise services
+BMW Group,EUR,12200000,2025-04-01,2028-03-31,quarterly,2026-07-01,3050000,Enterprise,EMEA,active,Automotive analytics platform
+Honda Motor Co,JPY,1680000000,2026-04-01,2029-03-31,quarterly,2026-09-15,420000000,Enterprise,APAC,active,Industrial enterprise contract Japan
+Tesco Plc,GBP,3000000,2026-01-01,2027-12-31,quarterly,2026-08-01,750000,Enterprise,EMEA,disputed,UK retail analytics — under contract dispute

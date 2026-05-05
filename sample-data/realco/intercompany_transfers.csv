@@ -1,0 +1,16 @@
+transfer_date,from_entity,to_entity,currency,amount,transfer_type,status,reference,description
+2026-04-01,RealCo Inc,RealCo Europe GmbH,USD,1500000,funding,completed,ICT-2026-Q2-001,Q2 operational funding transfer to Germany entity
+2026-04-01,RealCo Inc,RealCo UK Ltd,USD,950000,funding,completed,ICT-2026-Q2-002,Q2 operational funding transfer to UK entity
+2026-04-01,RealCo Inc,RealCo Japan KK,USD,2200000,funding,completed,ICT-2026-Q2-003,Q2 operational funding transfer to Japan entity
+2026-04-15,RealCo Europe GmbH,RealCo Inc,EUR,3850000,dividend,completed,ICT-2026-Q1-DIV-001,Q1 European entity dividend repatriation
+2026-04-15,RealCo UK Ltd,RealCo Inc,GBP,1850000,dividend,completed,ICT-2026-Q1-DIV-002,Q1 UK entity dividend repatriation
+2026-05-15,RealCo Inc,RealCo Mexico SA de CV,USD,1100000,funding,completed,ICT-2026-Q2-004,Mexico facility build-out advance
+2026-06-30,RealCo Inc,RealCo Europe GmbH,USD,1450000,funding,pending,ICT-2026-Q2-005,Q3 advance funding — Frankfurt expansion
+2026-07-01,RealCo Inc,RealCo Canada Ltd,USD,720000,funding,pending,ICT-2026-Q3-001,Q3 operational funding — Toronto operations
+2026-07-15,RealCo Japan KK,RealCo Inc,JPY,580000000,royalty,pending,ICT-2026-Q2-RTY-001,Q2 royalty payment — IP licensing
+2026-07-15,RealCo Europe GmbH,RealCo Inc,EUR,1240000,royalty,pending,ICT-2026-Q2-RTY-002,Q2 royalty payment — IP licensing
+2026-07-30,RealCo UK Ltd,RealCo Inc,GBP,580000,royalty,pending,ICT-2026-Q2-RTY-003,Q2 royalty payment — IP licensing
+2026-09-30,RealCo Inc,RealCo Mexico SA de CV,USD,2400000,funding,pending,ICT-2026-Q3-002,Mexico Phase 2 capex advance
+2026-10-01,RealCo Inc,RealCo Japan KK,USD,2300000,funding,pending,ICT-2026-Q4-001,Q4 operational funding to Japan
+2026-10-15,RealCo Europe GmbH,RealCo Inc,EUR,4250000,dividend,pending,ICT-2026-Q3-DIV-001,Q3 European entity dividend repatriation
+2026-12-31,RealCo Japan KK,RealCo Inc,JPY,720000000,dividend,pending,ICT-2026-Q4-DIV-001,Q4 Japan entity dividend repatriation
