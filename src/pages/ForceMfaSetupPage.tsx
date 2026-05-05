@@ -32,16 +32,24 @@ export function ForceMfaSetupPage() {
   const [showManualKey, setShowManualKey] = useState(false)
 
   const codeInputRef = useRef<HTMLInputElement>(null)
+  const initStartedRef = useRef(false)
 
   useEffect(() => {
+    // Guard against StrictMode double-invocation and any re-render churn.
+    // Enrolling MFA factors is not idempotent — every call creates a new
+    // factor — so this MUST run exactly once per mount.
+    if (initStartedRef.current) return
+    initStartedRef.current = true
+
     let active = true
 
     async function initEnroll() {
-      // First clean up dangling incomplete enrollments
+      // Clean up every non-verified factor before enrolling. Sequential
+      // awaits avoid races against Supabase's unique-friendly-name check.
       const { factors } = await listFactors()
       const pending = factors.filter(f => f.status !== 'verified')
       for (const f of pending) await unenroll(f.id)
-      
+
       const { factorId, totpUri, error } = await enroll()
       if (!active) return
 
@@ -50,18 +58,19 @@ export function ForceMfaSetupPage() {
         setMfaEnrolling(false)
         return
       }
-      
+
       setMfaFactorId(factorId)
       setMfaTotpUri(totpUri)
       setMfaEnrolling(false)
-      
+
       setTimeout(() => codeInputRef.current?.focus(), 100)
     }
 
     void initEnroll()
-    
+
     return () => { active = false }
-  }, [enroll, listFactors, unenroll])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()

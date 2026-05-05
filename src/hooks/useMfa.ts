@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase'
-import { useAuth } from './useAuth'
 
 export interface MfaFactor {
   id: string
@@ -9,8 +8,6 @@ export interface MfaFactor {
 }
 
 export function useMfa() {
-  useAuth()
-
   async function enroll(): Promise<{ factorId: string; totpUri: string; error: string | null }> {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
