@@ -25,7 +25,7 @@ interface AuthContextType {
     pendingToken?: string,
     pendingRefreshToken?: string,
   ) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string, orgName: string, fullName: string) => Promise<{ error: string | null; confirmationRequired?: boolean }>
+  signUp: (email: string, password: string, orgName: string, fullName: string, inviteId?: string | null) => Promise<{ error: string | null; confirmationRequired?: boolean }>
   signOut: () => Promise<void>
 }
 
@@ -64,15 +64,24 @@ async function buildAuthUser(session: Session): Promise<AuthUser | null> {
   // Pull org/name from the metadata stored at signup and complete it now.
   if (profileError || !profile) {
     const meta = (session.user.user_metadata ?? {}) as Record<string, unknown>
-    const orgName = typeof meta.org_name === 'string' ? meta.org_name : null
     const fullName = typeof meta.full_name === 'string' ? meta.full_name : null
-    if (!orgName || !fullName) return null
+    const inviteId = typeof meta.invite_id === 'string' ? meta.invite_id : null
 
-    const { error: onboardingError } = await supabase.rpc('onboard_new_user', {
-      p_org_name: orgName,
-      p_full_name: fullName,
-    })
-    if (onboardingError) return null
+    if (inviteId && fullName) {
+      const { error: inviteError } = await supabase.rpc('accept_invite', {
+        p_invite_id: inviteId,
+      })
+      if (inviteError) return null
+    } else {
+      const orgName = typeof meta.org_name === 'string' ? meta.org_name : null
+      if (!orgName || !fullName) return null
+
+      const { error: onboardingError } = await supabase.rpc('onboard_new_user', {
+        p_org_name: orgName,
+        p_full_name: fullName,
+      })
+      if (onboardingError) return null
+    }
 
     const { data: retried, error: retriedError } = await supabase
       .from('profiles')
@@ -185,27 +194,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string, orgName: string, fullName: string) => {
+  const signUp = useCallback(async (email: string, password: string, orgName: string, fullName: string, inviteId?: string | null) => {
     try {
+      if (!inviteId && !orgName.trim()) return { error: 'Organisation name is required' }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { org_name: orgName, full_name: fullName } },
+        options: {
+          data: inviteId
+            ? { invite_id: inviteId, full_name: fullName }
+            : { org_name: orgName, full_name: fullName },
+        },
       })
       if (error) return { error: error.message }
       if (!data.user) return { error: 'Sign up failed — please try again' }
       if (!data.session) {
         // Email confirmation is enabled. The confirmation email has been sent;
-        // onboarding will complete automatically when the user clicks the link
-        // (buildAuthUser detects the missing profile and runs onboard_new_user
-        // using the org_name / full_name stored in user metadata above).
+        // onboarding/invite acceptance will complete automatically when the user clicks the link
+        // (buildAuthUser detects the missing profile and uses metadata to finish setup).
         return { error: null, confirmationRequired: true }
       }
 
-      const { error: onboardingError } = await supabase.rpc('onboard_new_user', {
-        p_org_name: orgName,
-        p_full_name: fullName,
-      })
+      const setupResult = inviteId
+        ? await supabase.rpc('accept_invite', { p_invite_id: inviteId })
+        : await supabase.rpc('onboard_new_user', {
+          p_org_name: orgName,
+          p_full_name: fullName,
+        })
+      const onboardingError = setupResult.error
       if (onboardingError) {
         void reportMonitoringEvent({
           category: 'auth',
