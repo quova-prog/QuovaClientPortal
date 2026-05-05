@@ -13,17 +13,17 @@ const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com'
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   // Authenticate
   const auth = await authenticateRequest(req)
   if (!auth.authenticated) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
 
   // Parse body
@@ -31,12 +31,12 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json()
   } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400)
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, req)
   }
 
   const { alert_id, org_id } = body
   if (!alert_id || !org_id) {
-    return jsonResponse({ error: 'Missing alert_id or org_id' }, 400)
+    return jsonResponse({ error: 'Missing alert_id or org_id' }, 400, req)
   }
 
   const admin = createAdminClient()
@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
   // Guard: Logical access control — admin/editor only (viewers cannot trigger email blasts)
   if (!auth.isServiceRole) {
     if (!auth.user) {
-      return jsonResponse({ error: 'Unauthorized: User required' }, 401)
+      return jsonResponse({ error: 'Unauthorized: User required' }, 401, req)
     }
     const { data: profile } = await admin
       .from('profiles')
@@ -53,10 +53,10 @@ Deno.serve(async (req: Request) => {
       .single()
 
     if (profile?.org_id !== org_id) {
-      return jsonResponse({ error: 'Forbidden: You do not have access to this organisation' }, 403)
+      return jsonResponse({ error: 'Forbidden: You do not have access to this organisation' }, 403, req)
     }
     if (!profile?.role || !['admin', 'editor'].includes(profile.role)) {
-      return jsonResponse({ error: 'Forbidden: Admin or editor role required' }, 403)
+      return jsonResponse({ error: 'Forbidden: Admin or editor role required' }, 403, req)
     }
   }
 
@@ -69,17 +69,17 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (alertErr || !alert) {
-    return jsonResponse({ error: 'Alert not found' }, 404)
+    return jsonResponse({ error: 'Alert not found' }, 404, req)
   }
 
   // Guard: already emailed
   if (alert.email_sent_at) {
-    return jsonResponse({ message: 'Already emailed', alert_id }, 200)
+    return jsonResponse({ message: 'Already emailed', alert_id }, 200, req)
   }
 
   // Guard: not urgent
   if (alert.severity !== 'urgent') {
-    return jsonResponse({ message: 'Not an urgent alert', alert_id }, 200)
+    return jsonResponse({ message: 'Not an urgent alert', alert_id }, 200, req)
   }
 
   // Fetch org
@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (!org || !['pro', 'enterprise'].includes(org.plan)) {
-    return jsonResponse({ message: 'Org not on eligible tier', org_id }, 200)
+    return jsonResponse({ message: 'Org not on eligible tier', org_id }, 200, req)
   }
 
   // Fetch users with email_urgent enabled and matching alert type
@@ -103,14 +103,14 @@ Deno.serve(async (req: Request) => {
   if (!prefs || prefs.length === 0) {
     // Mark as sent to avoid re-triggering
     await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id).eq('org_id', org_id)
-    return jsonResponse({ message: 'No users opted in', alert_id }, 200)
+    return jsonResponse({ message: 'No users opted in', alert_id }, 200, req)
   }
 
   // Filter to users whose alert_types includes this alert type
   const eligible = prefs.filter(p => p.alert_types?.includes(alert.type))
   if (eligible.length === 0) {
     await admin.from('alerts').update({ email_sent_at: new Date().toISOString() }).eq('id', alert_id).eq('org_id', org_id)
-    return jsonResponse({ message: 'No users subscribed to this alert type', alert_id }, 200)
+    return jsonResponse({ message: 'No users subscribed to this alert type', alert_id }, 200, req)
   }
 
   // Fetch user emails

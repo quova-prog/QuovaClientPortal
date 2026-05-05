@@ -10,6 +10,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+// detectSessionInUrl is intentionally TRUE here (and FALSE in the
+// support portal). The customer-facing app needs the Supabase client
+// to auto-consume access_token fragments from URLs delivered via:
+//   - Email confirmation links (signup)
+//   - Password reset links (forgot-password)
+// Without it, those flows would land the user on the page but leave
+// them unauthenticated. The support portal has no signup/OAuth flow,
+// so it correctly leaves this off as defense-in-depth — a deliberate
+// asymmetry, not a bug. If a recovery link issued for the customer
+// app is ever clicked from the support portal (or vice versa), the
+// support portal will simply ignore the token; the user will need
+// to click the link from the correct portal.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,

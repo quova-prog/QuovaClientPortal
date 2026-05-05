@@ -159,17 +159,17 @@ interface GapResult {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   // ── Auth ───────────────────────────────────────────────────
   const auth = await authenticateRequest(req)
   if (!auth.authenticated || !auth.user) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
 
   const userId = auth.user.id
@@ -179,7 +179,7 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json()
   } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400)
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, req)
   }
 
   // The client (useNudges hook) historically sent `message`, while this
@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
   const custom_message = (body as { custom_message?: string; message?: string }).custom_message
     ?? (body as { custom_message?: string; message?: string }).message
   if (!org_id || !Array.isArray(gaps) || gaps.length === 0) {
-    return jsonResponse({ error: 'Missing org_id or gaps array' }, 400)
+    return jsonResponse({ error: 'Missing org_id or gaps array' }, 400, req)
   }
 
   const admin = createAdminClient()
@@ -202,7 +202,7 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (!supportUser?.is_active) {
-    return jsonResponse({ error: 'Forbidden: active support user required' }, 403)
+    return jsonResponse({ error: 'Forbidden: active support user required' }, 403, req)
   }
 
   // ── Verify JIT access grant for target org ─────────────────
@@ -217,7 +217,7 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (!grant) {
-    return jsonResponse({ error: 'Forbidden: no active JIT access grant for this organisation' }, 403)
+    return jsonResponse({ error: 'Forbidden: no active JIT access grant for this organisation' }, 403, req)
   }
 
   // ── Fetch org name ─────────────────────────────────────────
@@ -364,5 +364,5 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return jsonResponse({ results }, 200)
+  return jsonResponse({ results }, 200, req)
 })

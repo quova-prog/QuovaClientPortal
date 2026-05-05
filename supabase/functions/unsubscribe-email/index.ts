@@ -15,29 +15,29 @@ const PREF_LABELS: Record<string, string> = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'GET') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   const url = new URL(req.url)
   const tokenStr = url.searchParams.get('token')
 
   if (!tokenStr) {
-    return htmlResponse('<h1>Missing token</h1><p>Invalid unsubscribe link.</p>', 400)
+    return htmlResponse('<h1>Missing token</h1><p>Invalid unsubscribe link.</p>', 400, req)
   }
 
   // Decode and verify token
   const payload = await verifyUnsubscribeToken(tokenStr)
   if (!payload) {
-    return htmlResponse('<h1>Invalid or Expired Link</h1><p>This unsubscribe link is malformed or has expired. Please update your notification preferences in Quova settings.</p>', 400)
+    return htmlResponse('<h1>Invalid or Expired Link</h1><p>This unsubscribe link is malformed or has expired. Please update your notification preferences in Quova settings.</p>', 400, req)
   }
 
   const { user_id, pref } = payload
   if (!user_id || !pref || !PREF_LABELS[pref]) {
-    return htmlResponse('<h1>Invalid token</h1><p>Unknown preference type.</p>', 400)
+    return htmlResponse('<h1>Invalid token</h1><p>Unknown preference type.</p>', 400, req)
   }
 
   const admin = createAdminClient()
@@ -50,8 +50,8 @@ Deno.serve(async (req: Request) => {
 
   if (error) {
     console.error('Unsubscribe failed:', error)
-    return htmlResponse('<h1>Error</h1><p>Could not update your preferences. Please try again from Quova settings.</p>', 500)
+    return htmlResponse('<h1>Error</h1><p>Could not update your preferences. Please try again from Quova settings.</p>', 500, req)
   }
 
-  return htmlResponse(unsubscribeConfirmationHtml(PREF_LABELS[pref]))
+  return htmlResponse(unsubscribeConfirmationHtml(PREF_LABELS[pref]), 200, req)
 })

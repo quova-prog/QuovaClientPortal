@@ -6,11 +6,11 @@ const MAX_TOKENS_CEILING = 16384
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   // Centralised auth: validates the JWT signature AND enforces AAL2.
@@ -19,12 +19,12 @@ Deno.serve(async (req: Request) => {
   // which they don't and shouldn't.
   const auth = await authenticateRequest(req)
   if (!auth.authenticated || !auth.user) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
   if (auth.isServiceRole) {
     // Service role hitting the AI proxy would charge against no specific
     // user's quota and bypass the per-user rate limit. Block explicitly.
-    return jsonResponse({ error: 'Service-role calls not permitted on this endpoint' }, 403)
+    return jsonResponse({ error: 'Service-role calls not permitted on this endpoint' }, 403, req)
   }
 
   // We need the user-scoped Supabase client below for the rate-limit
@@ -42,21 +42,21 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json()
   } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400)
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, req)
   }
 
   const { model, max_tokens, messages, system, temperature } = body
 
   if (!model || !messages) {
-    return jsonResponse({ error: 'Missing required fields: model, messages' }, 400)
+    return jsonResponse({ error: 'Missing required fields: model, messages' }, 400, req)
   }
 
   if (!ALLOWED_MODELS.includes(model as string)) {
-    return jsonResponse({ error: `Model not allowed. Allowed: ${ALLOWED_MODELS.join(', ')}` }, 400)
+    return jsonResponse({ error: `Model not allowed. Allowed: ${ALLOWED_MODELS.join(', ')}` }, 400, req)
   }
 
   if (typeof max_tokens === 'number' && max_tokens > MAX_TOKENS_CEILING) {
-    return jsonResponse({ error: `max_tokens exceeds ceiling of ${MAX_TOKENS_CEILING}` }, 400)
+    return jsonResponse({ error: `max_tokens exceeds ceiling of ${MAX_TOKENS_CEILING}` }, 400, req)
   }
 
   // Rate Limiting (Financial DoS Protection)
@@ -74,13 +74,13 @@ Deno.serve(async (req: Request) => {
     // Map the RPC's own org-membership error to a 403 so the client
     // sees a meaningful response instead of a generic 500.
     if (rpcError.message?.includes('does not belong to an organization')) {
-      return jsonResponse({ error: 'User does not belong to an organization' }, 403)
+      return jsonResponse({ error: 'User does not belong to an organization' }, 403, req)
     }
-    return jsonResponse({ error: 'Failed to enforce rate limit' }, 500)
+    return jsonResponse({ error: 'Failed to enforce rate limit' }, 500, req)
   }
 
   if (!allowed) {
-    return jsonResponse({ error: 'Rate limit exceeded: 50 requests per hour allowed.' }, 429)
+    return jsonResponse({ error: 'Rate limit exceeded: 50 requests per hour allowed.' }, 429, req)
   }
 
 
@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
   // Forward to Anthropic
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
   if (!apiKey) {
-    return jsonResponse({ error: 'Service configuration error' }, 500)
+    return jsonResponse({ error: 'Service configuration error' }, 500, req)
   }
 
   try {
@@ -110,12 +110,12 @@ Deno.serve(async (req: Request) => {
     return new Response(anthropicRes.body, {
       status: anthropicRes.status,
       headers: {
-        ...corsHeaders,
+        ...corsHeaders(req),
         'content-type': anthropicRes.headers.get('content-type') ?? 'application/json',
       },
     })
   } catch (err) {
     console.error('Anthropic API call failed:', err)
-    return jsonResponse({ error: 'Failed to reach Anthropic API' }, 502)
+    return jsonResponse({ error: 'Failed to reach Anthropic API' }, 502, req)
   }
 })

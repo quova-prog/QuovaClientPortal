@@ -14,20 +14,20 @@ const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com'
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   const auth = await authenticateRequest(req)
   if (!auth.authenticated) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
   
   if (!auth.isServiceRole) {
-    return jsonResponse({ error: 'Forbidden: Service Role required for mass digest operations' }, 403)
+    return jsonResponse({ error: 'Forbidden: Service Role required for mass digest operations' }, 403, req)
   }
 
   // Optional: target a specific org
@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
   const { data: orgs } = await orgQuery
 
   if (!orgs || orgs.length === 0) {
-    return jsonResponse({ message: 'No eligible orgs', sent: 0 }, 200)
+    return jsonResponse({ message: 'No eligible orgs', sent: 0 }, 200, req)
   }
 
   let totalSent = 0
@@ -160,7 +160,7 @@ Deno.serve(async (req: Request) => {
     orgResults[org.id] = orgResult
   }
 
-  return jsonResponse({ message: `Digest complete`, sent: totalSent, orgs: orgResults }, 200)
+  return jsonResponse({ message: `Digest complete`, sent: totalSent, orgs: orgResults }, 200, req)
 })
 
 // ── Data gathering ────────────────────────────────────────────────────

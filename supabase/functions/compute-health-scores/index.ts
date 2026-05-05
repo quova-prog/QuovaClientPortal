@@ -46,20 +46,20 @@ const ONBOARDING_STATUS_SCORES: Record<string, number> = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
   const auth = await authenticateRequest(req)
   if (!auth.authenticated) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401)
+    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
 
   if (!auth.isServiceRole) {
-    return jsonResponse({ error: 'Forbidden: Service Role required' }, 403)
+    return jsonResponse({ error: 'Forbidden: Service Role required' }, 403, req)
   }
 
   // Optional: target a specific org
@@ -79,10 +79,10 @@ Deno.serve(async (req: Request) => {
   const { data: orgs, error: orgError } = await orgQuery
 
   if (orgError) {
-    return jsonResponse({ error: `Failed to fetch organisations: ${orgError.message}` }, 500)
+    return jsonResponse({ error: `Failed to fetch organisations: ${orgError.message}` }, 500, req)
   }
   if (!orgs || orgs.length === 0) {
-    return jsonResponse({ message: 'No organisations found', processed: 0 }, 200)
+    return jsonResponse({ message: 'No organisations found', processed: 0 }, 200, req)
   }
 
   // Pre-fetch all auth users once (expensive call, do it once)
