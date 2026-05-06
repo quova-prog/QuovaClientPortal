@@ -8,12 +8,8 @@ import type { SupplierContract } from '@/hooks/useSupplierContracts'
 import { parseSupplierContractCsv, downloadSupplierContractTemplate } from '@/lib/supplierContractParser'
 import { useAuth } from '@/hooks/useAuth'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0, EUR: 1.09, GBP: 1.27, JPY: 0.0067,
-  CAD: 0.73, AUD: 0.65, CHF: 1.11, CNY: 0.14,
-}
-function toUsd(amount: number, currency: string) { return amount * (USD_RATES[currency] ?? 1.0) }
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, notation: Math.abs(amount) >= 1_000_000 ? 'compact' : 'standard' }).format(amount)
 }
@@ -276,16 +272,17 @@ function ContractsTab({ contracts, onAdd, onUpdate, onDelete, onSwitchToUpload }
 // ── Analysis Tab ──────────────────────────────────────────────
 
 function AnalysisTab({ contracts }: { contracts: SupplierContract[] }) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const in90  = useMemo(() => new Date(today.getTime() + 90 * 86400000), [today])
   const in180 = useMemo(() => new Date(today.getTime() + 180 * 86400000), [today])
 
   const active = useMemo(() => contracts.filter(c => c.status === 'active'), [contracts])
 
-  const totalValueUsd = useMemo(() => active.reduce((s, c) => s + toUsd(c.contract_value, c.currency), 0), [active])
+  const totalValueUsd = useMemo(() => active.reduce((s, c) => s + toUsd(c.contract_value, c.currency, ratesMap), 0), [active, ratesMap])
   const annualPayablesUsd = useMemo(() =>
-    active.reduce((s, c) => s + toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency), 0),
-    [active]
+    active.reduce((s, c) => s + toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap), 0),
+    [active, ratesMap]
   )
   const activeCount   = useMemo(() => active.length, [active])
   const expiring90    = useMemo(() => contracts.filter(c => {
@@ -300,12 +297,12 @@ function AnalysisTab({ contracts }: { contracts: SupplierContract[] }) {
       const key = c.category || '(Uncategorized)'
       const cur = map.get(key) ?? { count: 0, valueUsd: 0, annualUsd: 0 }
       cur.count++
-      cur.valueUsd  += toUsd(c.contract_value, c.currency)
-      cur.annualUsd += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency)
+      cur.valueUsd  += toUsd(c.contract_value, c.currency, ratesMap)
+      cur.annualUsd += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap)
       map.set(key, cur)
     }
     return Array.from(map.entries()).map(([cat, v]) => ({ cat, ...v })).sort((a, b) => b.valueUsd - a.valueUsd)
-  }, [contracts])
+  }, [contracts, ratesMap])
 
   // By currency
   const currencyBreakdown = useMemo(() => {
@@ -313,12 +310,12 @@ function AnalysisTab({ contracts }: { contracts: SupplierContract[] }) {
     for (const c of contracts) {
       const cur = map.get(c.currency) ?? { count: 0, valueUsd: 0, annualUsd: 0 }
       cur.count++
-      cur.valueUsd  += toUsd(c.contract_value, c.currency)
-      cur.annualUsd += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency)
+      cur.valueUsd  += toUsd(c.contract_value, c.currency, ratesMap)
+      cur.annualUsd += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap)
       map.set(c.currency, cur)
     }
     return Array.from(map.entries()).map(([ccy, v]) => ({ ccy, ...v, pct: totalValueUsd > 0 ? v.valueUsd / totalValueUsd * 100 : 0 })).sort((a, b) => b.valueUsd - a.valueUsd)
-  }, [contracts, totalValueUsd])
+  }, [contracts, totalValueUsd, ratesMap])
 
   // Renewal pipeline
   const renewalPipeline = useMemo(() =>

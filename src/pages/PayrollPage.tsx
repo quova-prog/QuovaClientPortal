@@ -10,17 +10,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useEntity } from '@/context/EntityContext'
 import { UploadWizard } from '@/components/upload/UploadWizard'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
-
-// ── Constants ─────────────────────────────────────────────────
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0, EUR: 1.09, GBP: 1.27, JPY: 0.0067,
-  CAD: 0.73, AUD: 0.65, CHF: 1.11, CNY: 0.14,
-}
-
-function toUsd(amount: number, currency: string): number {
-  return amount * (USD_RATES[currency] ?? 1.0)
-}
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 
 function formatAmount(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -164,6 +155,7 @@ interface PayrollTabProps {
 }
 
 function PayrollTab({ entries, onAdd, onUpdate, onDelete, onSwitchToUpload }: PayrollTabProps) {
+  const { ratesMap } = useLiveFxRates()
   const [currencyFilter, setCurrencyFilter] = useState('All')
   const [entityFilter, setEntityFilter]     = useState('All')
   const [periodFilter, setPeriodFilter]     = useState('All')
@@ -193,8 +185,8 @@ function PayrollTab({ entries, onAdd, onUpdate, onDelete, onSwitchToUpload }: Pa
       cur.count += e.employee_count
       map.set(e.currency, cur)
     }
-    return Array.from(map.entries()).sort((a, b) => toUsd(b[1].gross, b[0]) - toUsd(a[1].gross, a[0]))
-  }, [filtered])
+    return Array.from(map.entries()).sort((a, b) => toUsd(b[1].gross, b[0], ratesMap) - toUsd(a[1].gross, a[0], ratesMap))
+  }, [filtered, ratesMap])
 
   function handleSave(data: Omit<PayrollEntry, 'id' | 'uploaded_at'>) {
     if (editingEntry) { onUpdate(editingEntry.id, data) } else { onAdd(data) }
@@ -314,10 +306,11 @@ function PayrollTab({ entries, onAdd, onUpdate, onDelete, onSwitchToUpload }: Pa
 // ── Analysis Tab ──────────────────────────────────────────────
 
 function AnalysisTab({ entries }: { entries: PayrollEntry[] }) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
 
-  const totalGrossUsd = useMemo(() => entries.reduce((s, e) => s + toUsd(e.gross_amount, e.currency), 0), [entries])
-  const totalNetUsd   = useMemo(() => entries.reduce((s, e) => s + toUsd(e.net_amount, e.currency), 0), [entries])
+  const totalGrossUsd = useMemo(() => entries.reduce((s, e) => s + toUsd(e.gross_amount, e.currency, ratesMap), 0), [entries, ratesMap])
+  const totalNetUsd   = useMemo(() => entries.reduce((s, e) => s + toUsd(e.net_amount, e.currency, ratesMap), 0), [entries, ratesMap])
   const totalEmployees = useMemo(() => entries.reduce((s, e) => s + e.employee_count, 0), [entries])
   const currencyCount  = useMemo(() => new Set(entries.map(e => e.currency)).size, [entries])
 
@@ -329,11 +322,11 @@ function AnalysisTab({ entries }: { entries: PayrollEntry[] }) {
       cur.gross += e.gross_amount
       cur.net   += e.net_amount
       cur.count += e.employee_count
-      cur.usd   += toUsd(e.gross_amount, e.currency)
+      cur.usd   += toUsd(e.gross_amount, e.currency, ratesMap)
       map.set(e.currency, cur)
     }
     return Array.from(map.entries()).map(([ccy, v]) => ({ ccy, ...v })).sort((a, b) => b.usd - a.usd)
-  }, [entries])
+  }, [entries, ratesMap])
 
   // By entity
   const entityBreakdown = useMemo(() => {
@@ -341,7 +334,7 @@ function AnalysisTab({ entries }: { entries: PayrollEntry[] }) {
     for (const e of entries) {
       const key = e.entity || '(No Entity)'
       const cur = map.get(key) ?? { usd: 0, count: 0, currencies: new Set() }
-      cur.usd += toUsd(e.gross_amount, e.currency)
+      cur.usd += toUsd(e.gross_amount, e.currency, ratesMap)
       cur.count += e.employee_count
       cur.currencies.add(e.currency)
       map.set(key, cur)
@@ -349,7 +342,7 @@ function AnalysisTab({ entries }: { entries: PayrollEntry[] }) {
     return Array.from(map.entries())
       .map(([entity, v]) => ({ entity, usd: v.usd, count: v.count, currencies: Array.from(v.currencies).sort().join(', ') }))
       .sort((a, b) => b.usd - a.usd)
-  }, [entries])
+  }, [entries, ratesMap])
 
   // Monthly trend — last 12 months
   const monthlyTrend = useMemo(() => {
@@ -364,11 +357,11 @@ function AnalysisTab({ entries }: { entries: PayrollEntry[] }) {
     for (const e of entries) {
       const key = e.pay_date.slice(0, 7)
       if (map.has(key)) {
-        map.set(key, (map.get(key) ?? 0) + toUsd(e.gross_amount, e.currency))
+        map.set(key, (map.get(key) ?? 0) + toUsd(e.gross_amount, e.currency, ratesMap))
       }
     }
     return monthKeys.map(key => ({ month: key, usd: map.get(key) ?? 0 }))
-  }, [entries, today])
+  }, [entries, today, ratesMap])
 
   const maxMonthlyUsd = Math.max(...monthlyTrend.map(m => m.usd), 1)
 

@@ -8,28 +8,13 @@ import type { RevenueForecast } from '@/hooks/useRevenueForecasts'
 import { useHedgeCoverage } from '@/hooks/useData'
 import { parseRevenueForecastCsv, downloadRevenueForecastTemplate } from '@/lib/revenueForecastParser'
 import { UploadWizard } from '@/components/upload/UploadWizard'
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 
 // ── Constants ─────────────────────────────────────────────────
 
 const CURRENT_YEAR = new Date().getFullYear()
 const FISCAL_YEARS = [2024, 2025, 2026, ...(CURRENT_YEAR > 2026 ? [CURRENT_YEAR] : [])]
-
-// Hardcoded USD conversion rates for display purposes
-const USD_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 1.09,
-  GBP: 1.27,
-  JPY: 0.0067,
-  CAD: 0.73,
-  AUD: 0.65,
-  CHF: 1.11,
-  CNY: 0.14,
-}
-
-function toUsd(amount: number, currency: string): number {
-  const rate = USD_RATES[currency] ?? 1.0
-  return amount * rate
-}
 
 function formatAmount(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -476,10 +461,11 @@ interface AnalysisTabProps {
 
 function AnalysisTab({ forecasts, onSwitchToUpload }: AnalysisTabProps) {
   const { coverage } = useHedgeCoverage()
+  const { ratesMap } = useLiveFxRates()
 
   const totalUsd = useMemo(
-    () => forecasts.reduce((s, f) => s + toUsd(f.amount, f.currency), 0),
-    [forecasts]
+    () => forecasts.reduce((s, f) => s + toUsd(f.amount, f.currency, ratesMap), 0),
+    [forecasts, ratesMap]
   )
 
   const byCurrency = useMemo(() => {
@@ -499,12 +485,12 @@ function AnalysisTab({ forecasts, onSwitchToUpload }: AnalysisTabProps) {
       .map(([currency, data]) => ({
         currency,
         total: data.total,
-        usd: toUsd(data.total, currency),
+        usd: toUsd(data.total, currency, ratesMap),
         periods: Array.from(data.periods.entries()).sort((a, b) => a[0].localeCompare(b[0])),
         segments: Array.from(data.segments.entries()).sort((a, b) => b[1] - a[1]),
       }))
       .sort((a, b) => b.total - a.total)
-  }, [forecasts])
+  }, [forecasts, ratesMap])
 
   const distinctCurrencies = byCurrency.length
   const distinctPeriods    = new Set(forecasts.map(f => f.period)).size

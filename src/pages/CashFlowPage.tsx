@@ -8,24 +8,8 @@ import type { CashFlowEntry } from '@/hooks/useCashFlows'
 import { useHedgeCoverage } from '@/hooks/useData'
 import { parseCashFlowCsv, downloadCashFlowTemplate } from '@/lib/cashFlowParser'
 import { UploadWizard } from '@/components/upload/UploadWizard'
-
-// ── Constants ─────────────────────────────────────────────────
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 1.09,
-  GBP: 1.27,
-  JPY: 0.0067,
-  CAD: 0.73,
-  AUD: 0.65,
-  CHF: 1.11,
-  CNY: 0.14,
-}
-
-function toUsd(amount: number, currency: string): number {
-  const rate = USD_RATES[currency] ?? 1.0
-  return amount * rate
-}
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 
 function formatAmount(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -617,6 +601,7 @@ interface AnalysisTabProps {
 
 function AnalysisTab({ flows }: AnalysisTabProps) {
   const { coverage } = useHedgeCoverage()
+  const { ratesMap } = useLiveFxRates()
 
   const today = useMemo(() => {
     const date = new Date()
@@ -631,13 +616,13 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
 
   // ── Summary tiles ──────────────────────────────────────────
   const totalInflowUsd = useMemo(() =>
-    futureFlows.filter(f => f.amount >= 0).reduce((s, f) => s + toUsd(f.amount, f.currency), 0),
-    [futureFlows]
+    futureFlows.filter(f => f.amount >= 0).reduce((s, f) => s + toUsd(f.amount, f.currency, ratesMap), 0),
+    [futureFlows, ratesMap]
   )
 
   const totalOutflowUsd = useMemo(() =>
-    futureFlows.filter(f => f.amount < 0).reduce((s, f) => s + Math.abs(toUsd(f.amount, f.currency)), 0),
-    [futureFlows]
+    futureFlows.filter(f => f.amount < 0).reduce((s, f) => s + Math.abs(toUsd(f.amount, f.currency, ratesMap)), 0),
+    [futureFlows, ratesMap]
   )
 
   const netPositionUsd = totalInflowUsd - totalOutflowUsd
@@ -655,10 +640,10 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
 
     function buildBucket(label: string, test: (d: Date) => boolean) {
       const entries = futureFlows.filter(f => test(new Date(f.flow_date + 'T00:00:00')))
-      const inflowUsd = entries.filter(e => e.amount >= 0).reduce((s, e) => s + toUsd(e.amount, e.currency), 0)
-      const outflowUsd = entries.filter(e => e.amount < 0).reduce((s, e) => s + Math.abs(toUsd(e.amount, e.currency)), 0)
+      const inflowUsd = entries.filter(e => e.amount >= 0).reduce((s, e) => s + toUsd(e.amount, e.currency, ratesMap), 0)
+      const outflowUsd = entries.filter(e => e.amount < 0).reduce((s, e) => s + Math.abs(toUsd(e.amount, e.currency, ratesMap)), 0)
       const netUsd = inflowUsd - outflowUsd
-      const top3 = [...entries].sort((a, b) => Math.abs(toUsd(b.amount, b.currency)) - Math.abs(toUsd(a.amount, a.currency))).slice(0, 3)
+      const top3 = [...entries].sort((a, b) => Math.abs(toUsd(b.amount, b.currency, ratesMap)) - Math.abs(toUsd(a.amount, a.currency, ratesMap))).slice(0, 3)
       return { label, entries, inflowUsd, outflowUsd, netUsd, top3 }
     }
 
@@ -668,7 +653,7 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
       buildBucket('30–90 Days', d => d > day30 && d <= day90),
       buildBucket('Beyond 90 Days', d => d > day90),
     ]
-  }, [futureFlows, today])
+  }, [futureFlows, today, ratesMap])
 
   // ── Currency exposure ─────────────────────────────────────
   const currencyExposures = useMemo(() => {
@@ -681,8 +666,8 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
 
     return Object.entries(map).map(([ccy, { inflow, outflow }]) => {
       const net = inflow - outflow
-      const inflowUsd = toUsd(inflow, ccy)
-      const outflowUsd = toUsd(outflow, ccy)
+      const inflowUsd = toUsd(inflow, ccy, ratesMap)
+      const outflowUsd = toUsd(outflow, ccy, ratesMap)
       const netUsd = inflowUsd - outflowUsd
       const total = inflow + outflow
       const pct = total > 0 ? (inflow / total) * 100 : 50
@@ -699,7 +684,7 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
 
       return { ccy, net, netUsd, inflowUsd, outflowUsd, pct, coveragePct, coverageLabel, coverageBadge }
     }).sort((a, b) => Math.abs(b.netUsd) - Math.abs(a.netUsd))
-  }, [futureFlows, coverage])
+  }, [futureFlows, coverage, ratesMap])
 
   // ── Category breakdown ────────────────────────────────────
   const categoryBreakdown = useMemo(() => {
@@ -707,8 +692,8 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
     futureFlows.forEach(f => {
       const cat = f.category || 'Uncategorised'
       if (!map[cat]) map[cat] = { inflow: 0, outflow: 0 }
-      if (f.amount >= 0) map[cat].inflow += toUsd(f.amount, f.currency)
-      else map[cat].outflow += Math.abs(toUsd(f.amount, f.currency))
+      if (f.amount >= 0) map[cat].inflow += toUsd(f.amount, f.currency, ratesMap)
+      else map[cat].outflow += Math.abs(toUsd(f.amount, f.currency, ratesMap))
     })
 
     const totalAbsNet = Object.values(map).reduce((s, { inflow, outflow }) => s + Math.abs(inflow - outflow), 0)
@@ -718,7 +703,7 @@ function AnalysisTab({ flows }: AnalysisTabProps) {
       const pct = totalAbsNet > 0 ? (Math.abs(net) / totalAbsNet) * 100 : 0
       return { cat, inflow, outflow, net, pct }
     }).sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
-  }, [futureFlows])
+  }, [futureFlows, ratesMap])
 
   const tileStyle: React.CSSProperties = {
     background: 'var(--bg-card)',

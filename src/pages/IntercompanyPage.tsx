@@ -9,11 +9,8 @@ import { parseIntercompanyCsv, downloadIntercompanyTemplate } from '@/lib/interc
 import { useAuth } from '@/hooks/useAuth'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
 
-const USD_RATES: Record<string, number> = {
-  USD: 1.0, EUR: 1.09, GBP: 1.27, JPY: 0.0067,
-  CAD: 0.73, AUD: 0.65, CHF: 1.11, CNY: 0.14,
-}
-function toUsd(amount: number, currency: string) { return amount * (USD_RATES[currency] ?? 1.0) }
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, notation: Math.abs(amount) >= 1_000_000 ? 'compact' : 'standard' }).format(amount)
 }
@@ -254,12 +251,13 @@ function TransfersTab({ transfers, onAdd, onUpdate, onDelete, onSwitchToUpload }
 // ── Analysis Tab ──────────────────────────────────────────────
 
 function AnalysisTab({ transfers }: { transfers: IntercompanyTransfer[] }) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const in30  = useMemo(() => new Date(today.getTime() + 30 * 86400000), [today])
 
-  const totalVolumeUsd    = useMemo(() => transfers.reduce((s, t) => s + toUsd(t.amount, t.currency), 0), [transfers])
-  const scheduledUsd      = useMemo(() => transfers.filter(t => t.status === 'scheduled').reduce((s, t) => s + toUsd(t.amount, t.currency), 0), [transfers])
-  const pendingUsd        = useMemo(() => transfers.filter(t => t.status === 'pending').reduce((s, t) => s + toUsd(t.amount, t.currency), 0), [transfers])
+  const totalVolumeUsd    = useMemo(() => transfers.reduce((s, t) => s + toUsd(t.amount, t.currency, ratesMap), 0), [transfers, ratesMap])
+  const scheduledUsd      = useMemo(() => transfers.filter(t => t.status === 'scheduled').reduce((s, t) => s + toUsd(t.amount, t.currency, ratesMap), 0), [transfers, ratesMap])
+  const pendingUsd        = useMemo(() => transfers.filter(t => t.status === 'pending').reduce((s, t) => s + toUsd(t.amount, t.currency, ratesMap), 0), [transfers, ratesMap])
   const entitiesInvolved  = useMemo(() => new Set([...transfers.map(t => t.from_entity), ...transfers.map(t => t.to_entity)]).size, [transfers])
 
   // By type
@@ -267,11 +265,11 @@ function AnalysisTab({ transfers }: { transfers: IntercompanyTransfer[] }) {
     const map = new Map<string, { usd: number; count: number }>()
     for (const t of transfers) {
       const cur = map.get(t.transfer_type) ?? { usd: 0, count: 0 }
-      cur.usd += toUsd(t.amount, t.currency); cur.count++
+      cur.usd += toUsd(t.amount, t.currency, ratesMap); cur.count++
       map.set(t.transfer_type, cur)
     }
     return Array.from(map.entries()).map(([type, v]) => ({ type, ...v })).sort((a, b) => b.usd - a.usd)
-  }, [transfers])
+  }, [transfers, ratesMap])
 
   const maxTypeUsd = typeBreakdown[0]?.usd ?? 1
 
@@ -281,14 +279,14 @@ function AnalysisTab({ transfers }: { transfers: IntercompanyTransfer[] }) {
     for (const t of transfers) {
       const key = `${t.from_entity}|||${t.to_entity}|||${t.currency}`
       const cur = map.get(key) ?? { usd: 0, count: 0 }
-      cur.usd += toUsd(t.amount, t.currency); cur.count++
+      cur.usd += toUsd(t.amount, t.currency, ratesMap); cur.count++
       map.set(key, cur)
     }
     return Array.from(map.entries())
       .map(([key, v]) => { const [from, to, ccy] = key.split('|||'); return { from, to, ccy, ...v } })
       .sort((a, b) => b.usd - a.usd)
       .slice(0, 20)
-  }, [transfers])
+  }, [transfers, ratesMap])
 
   // Upcoming 30d
   const upcoming = useMemo(() =>

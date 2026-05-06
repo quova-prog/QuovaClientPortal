@@ -8,24 +8,10 @@ import type { LoanSchedule } from '@/hooks/useLoanSchedules'
 import { parseLoanScheduleCsv, downloadLoanScheduleTemplate } from '@/lib/loanScheduleParser'
 import { useAuth } from '@/hooks/useAuth'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 
 // ── Constants ─────────────────────────────────────────────────
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 1.09,
-  GBP: 1.27,
-  JPY: 0.0067,
-  CAD: 0.73,
-  AUD: 0.65,
-  CHF: 1.11,
-  CNY: 0.14,
-}
-
-function toUsd(amount: number, currency: string): number {
-  const rate = USD_RATES[currency] ?? 1.0
-  return amount * rate
-}
 
 function formatAmount(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -276,6 +262,7 @@ interface LoansTabProps {
 }
 
 function LoansTab({ loans, onAdd, onUpdate, onDelete, onSwitchToUpload }: LoansTabProps) {
+  const { ratesMap } = useLiveFxRates()
   const [loanTypeFilter, setLoanTypeFilter]       = useState<LoanTypeFilter>('All')
   const [currencyFilter, setCurrencyFilter]       = useState('All')
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<PaymentTypeFilter>('All')
@@ -302,8 +289,8 @@ function LoansTab({ loans, onAdd, onUpdate, onDelete, onSwitchToUpload }: LoansT
     for (const l of filtered) {
       map.set(l.currency, (map.get(l.currency) ?? 0) + l.outstanding_balance)
     }
-    return Array.from(map.entries()).sort((a, b) => toUsd(b[1], b[0]) - toUsd(a[1], a[0]))
-  }, [filtered])
+    return Array.from(map.entries()).sort((a, b) => toUsd(b[1], b[0], ratesMap) - toUsd(a[1], a[0], ratesMap))
+  }, [filtered, ratesMap])
 
   function handleSave(data: Omit<LoanSchedule, 'id' | 'uploaded_at'>) {
     if (editingLoan) {
@@ -497,6 +484,7 @@ interface AnalysisTabProps {
 }
 
 function AnalysisTab({ loans }: AnalysisTabProps) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d
   }, [])
@@ -505,8 +493,8 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
   const in90 = useMemo(() => new Date(today.getTime() + 90 * 86400000), [today])
 
   const totalDebtUsd = useMemo(() =>
-    loans.reduce((s, l) => s + toUsd(l.outstanding_balance, l.currency), 0),
-    [loans]
+    loans.reduce((s, l) => s + toUsd(l.outstanding_balance, l.currency, ratesMap), 0),
+    [loans, ratesMap]
   )
 
   const upcoming30Usd = useMemo(() =>
@@ -515,8 +503,8 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
         const d = new Date(l.payment_date + 'T00:00:00')
         return d >= today && d <= in30
       })
-      .reduce((s, l) => s + toUsd(l.payment_amount, l.currency), 0),
-    [loans, today, in30]
+      .reduce((s, l) => s + toUsd(l.payment_amount, l.currency, ratesMap), 0),
+    [loans, today, in30, ratesMap]
   )
 
   const weightedAvgRate = useMemo(() => {
@@ -569,10 +557,10 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
     for (const l of loans) {
       map.set(l.currency, (map.get(l.currency) ?? 0) + l.outstanding_balance)
     }
-    const entries = Array.from(map.entries()).map(([ccy, amt]) => ({ ccy, amt, usd: toUsd(amt, ccy) }))
+    const entries = Array.from(map.entries()).map(([ccy, amt]) => ({ ccy, amt, usd: toUsd(amt, ccy, ratesMap) }))
     entries.sort((a, b) => b.usd - a.usd)
     return entries
-  }, [loans])
+  }, [loans, ratesMap])
 
   const maxCurrencyUsd = currencyBreakdown[0]?.usd ?? 1
 
@@ -582,14 +570,14 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
     for (const l of loans) {
       const year = l.maturity_date.slice(0, 4)
       const cur = map.get(year) ?? { balance: 0, count: 0 }
-      cur.balance += toUsd(l.outstanding_balance, l.currency)
+      cur.balance += toUsd(l.outstanding_balance, l.currency, ratesMap)
       cur.count++
       map.set(year, cur)
     }
     return Array.from(map.entries())
       .map(([year, v]) => ({ year, ...v }))
       .sort((a, b) => a.year.localeCompare(b.year))
-  }, [loans])
+  }, [loans, ratesMap])
 
   const sortedMaturity = [...maturityProfile].sort((a, b) => b.balance - a.balance)
 
@@ -628,7 +616,7 @@ function AnalysisTab({ loans }: AnalysisTabProps) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           {timeBuckets.map(bucket => {
-            const totalUsd = bucket.items.reduce((s, l) => s + toUsd(l.payment_amount, l.currency), 0)
+            const totalUsd = bucket.items.reduce((s, l) => s + toUsd(l.payment_amount, l.currency, ratesMap), 0)
             const byType = {
               principal: bucket.items.filter(l => l.payment_type === 'principal'),
               interest:  bucket.items.filter(l => l.payment_type === 'interest'),

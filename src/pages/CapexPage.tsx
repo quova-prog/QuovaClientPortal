@@ -8,12 +8,8 @@ import type { CapexEntry } from '@/hooks/useCapex'
 import { parseCapexCsv, downloadCapexTemplate } from '@/lib/capexParser'
 import { useAuth } from '@/hooks/useAuth'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0, EUR: 1.09, GBP: 1.27, JPY: 0.0067,
-  CAD: 0.73, AUD: 0.65, CHF: 1.11, CNY: 0.14,
-}
-function toUsd(amount: number, currency: string) { return amount * (USD_RATES[currency] ?? 1.0) }
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, notation: Math.abs(amount) >= 1_000_000 ? 'compact' : 'standard' }).format(amount)
 }
@@ -260,11 +256,12 @@ function CapexTab({ entries, onAdd, onUpdate, onDelete, onSwitchToUpload }: {
 // ── Analysis Tab ──────────────────────────────────────────────
 
 function AnalysisTab({ entries }: { entries: CapexEntry[] }) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const in90  = useMemo(() => new Date(today.getTime() + 90 * 86400000), [today])
 
-  const totalBudgetUsd    = useMemo(() => entries.reduce((s, e) => s + toUsd(e.budget_amount, e.currency), 0), [entries])
-  const totalCommittedUsd = useMemo(() => entries.reduce((s, e) => s + toUsd(e.committed_amount, e.currency), 0), [entries])
+  const totalBudgetUsd    = useMemo(() => entries.reduce((s, e) => s + toUsd(e.budget_amount, e.currency, ratesMap), 0), [entries, ratesMap])
+  const totalCommittedUsd = useMemo(() => entries.reduce((s, e) => s + toUsd(e.committed_amount, e.currency, ratesMap), 0), [entries, ratesMap])
   const utilizationPct    = useMemo(() => totalBudgetUsd > 0 ? (totalCommittedUsd / totalBudgetUsd * 100) : 0, [totalBudgetUsd, totalCommittedUsd])
   const activeCount       = useMemo(() => entries.filter(e => e.status !== 'completed').length, [entries])
 
@@ -273,23 +270,23 @@ function AnalysisTab({ entries }: { entries: CapexEntry[] }) {
     const map = new Map<string, { budget: number; committed: number }>()
     for (const e of entries) {
       const cur = map.get(e.category) ?? { budget: 0, committed: 0 }
-      cur.budget    += toUsd(e.budget_amount, e.currency)
-      cur.committed += toUsd(e.committed_amount, e.currency)
+      cur.budget    += toUsd(e.budget_amount, e.currency, ratesMap)
+      cur.committed += toUsd(e.committed_amount, e.currency, ratesMap)
       map.set(e.category, cur)
     }
     return Array.from(map.entries()).map(([cat, v]) => ({ cat, ...v, util: v.budget > 0 ? v.committed / v.budget : 0 })).sort((a, b) => b.budget - a.budget)
-  }, [entries])
+  }, [entries, ratesMap])
 
   // By status
   const statusBreakdown = useMemo(() => {
     const map = new Map<string, { count: number; budgetUsd: number }>()
     for (const e of entries) {
       const cur = map.get(e.status) ?? { count: 0, budgetUsd: 0 }
-      cur.count++; cur.budgetUsd += toUsd(e.budget_amount, e.currency)
+      cur.count++; cur.budgetUsd += toUsd(e.budget_amount, e.currency, ratesMap)
       map.set(e.status, cur)
     }
     return Array.from(map.entries()).map(([status, v]) => ({ status, ...v }))
-  }, [entries])
+  }, [entries, ratesMap])
 
   // Upcoming 90d
   const upcoming90 = useMemo(() =>

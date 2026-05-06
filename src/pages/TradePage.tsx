@@ -31,12 +31,7 @@ function triggerDownload(filename: string, content: string) {
   document.body.removeChild(a); URL.revokeObjectURL(url)
 }
 
-// toUsd imported from @/lib/fx — do not define locally
-// Kept as thin wrapper for call-site compatibility (ratesMap param name)
-import { toUsd as _toUsd } from '@/lib/fx'
-function toUsd(amount: number, currency: string, ratesMap: Record<string, number>): number {
-  return _toUsd(amount, currency, ratesMap)
-}
+import { toUsd } from '@/lib/fx'
 
 // MTM P&L in quote currency (e.g. USD for EUR/USD)
 function getMtmPnl(notional: number, direction: string, contracted: number, spot: number): number {

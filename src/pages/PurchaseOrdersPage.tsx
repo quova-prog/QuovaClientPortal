@@ -8,24 +8,8 @@ import type { PurchaseOrder } from '@/hooks/usePurchaseOrders'
 import { useHedgeCoverage } from '@/hooks/useData'
 import { parsePurchaseOrderCsv, downloadPurchaseOrderTemplate } from '@/lib/purchaseOrderParser'
 import { UploadWizard } from '@/components/upload/UploadWizard'
-
-// ── Constants ─────────────────────────────────────────────────
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 1.09,
-  GBP: 1.27,
-  JPY: 0.0067,
-  CAD: 0.73,
-  AUD: 0.65,
-  CHF: 1.11,
-  CNY: 0.14,
-}
-
-function toUsd(amount: number, currency: string): number {
-  const rate = USD_RATES[currency] ?? 1.0
-  return amount * rate
-}
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 
 function formatAmount(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
@@ -335,14 +319,16 @@ function OrdersTab({ orders, onAdd, onUpdate, onDelete, onSwitchToUpload }: Orde
     })
   }, [orders, statusFilter, currencyFilter, dateFilter, today])
 
+  const { ratesMap } = useLiveFxRates()
+
   // Footer totals by currency (active statuses only)
   const footerTotals = useMemo(() => {
     const map = new Map<string, number>()
     for (const o of filtered.filter(o => ACTIVE_STATUSES.includes(o.status))) {
       map.set(o.currency, (map.get(o.currency) ?? 0) + o.amount)
     }
-    return Array.from(map.entries()).sort((a, b) => toUsd(b[1], b[0]) - toUsd(a[1], a[0]))
-  }, [filtered])
+    return Array.from(map.entries()).sort((a, b) => toUsd(b[1], b[0], ratesMap) - toUsd(a[1], a[0], ratesMap))
+  }, [filtered, ratesMap])
 
   function handleSave(data: Omit<PurchaseOrder, 'id' | 'uploaded_at'>) {
     if (editingOrder) {
@@ -564,6 +550,7 @@ interface AnalysisTabProps {
 
 function AnalysisTab({ orders }: AnalysisTabProps) {
   const { coverage } = useHedgeCoverage()
+  const { ratesMap } = useLiveFxRates()
 
   const today = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d
@@ -578,15 +565,15 @@ function AnalysisTab({ orders }: AnalysisTabProps) {
   const totalOpenCount = activeOrders.length
 
   const totalPayablesUsd = useMemo(() =>
-    activeOrders.reduce((s, o) => s + toUsd(o.amount, o.currency), 0),
-    [activeOrders]
+    activeOrders.reduce((s, o) => s + toUsd(o.amount, o.currency, ratesMap), 0),
+    [activeOrders, ratesMap]
   )
 
   const overdueUsd = useMemo(() =>
     activeOrders
       .filter(o => isOverdue(o.due_date, o.status))
-      .reduce((s, o) => s + toUsd(o.amount, o.currency), 0),
-    [activeOrders]
+      .reduce((s, o) => s + toUsd(o.amount, o.currency, ratesMap), 0),
+    [activeOrders, ratesMap]
   )
 
   const currencyCount = useMemo(() =>
@@ -626,13 +613,13 @@ function AnalysisTab({ orders }: AnalysisTabProps) {
     for (const o of activeOrders) {
       const cur = map.get(o.currency) ?? { amount: 0, usd: 0 }
       cur.amount += o.amount
-      cur.usd += toUsd(o.amount, o.currency)
+      cur.usd += toUsd(o.amount, o.currency, ratesMap)
       map.set(o.currency, cur)
     }
     return Array.from(map.entries())
       .map(([ccy, v]) => ({ ccy, ...v }))
       .sort((a, b) => b.usd - a.usd)
-  }, [activeOrders])
+  }, [activeOrders, ratesMap])
 
   const maxCurrencyUsd = currencyBreakdown[0]?.usd ?? 1
 
@@ -642,7 +629,7 @@ function AnalysisTab({ orders }: AnalysisTabProps) {
     for (const o of activeOrders) {
       const s = map.get(o.supplier) ?? { count: 0, usd: 0, currencies: new Set(), dueDates: [] }
       s.count++
-      s.usd += toUsd(o.amount, o.currency)
+      s.usd += toUsd(o.amount, o.currency, ratesMap)
       s.currencies.add(o.currency)
       s.dueDates.push(o.due_date)
       map.set(o.supplier, s)
@@ -660,7 +647,7 @@ function AnalysisTab({ orders }: AnalysisTabProps) {
       }))
       .sort((a, b) => b.usd - a.usd)
       .slice(0, 10)
-  }, [activeOrders])
+  }, [activeOrders, ratesMap])
 
   // Coverage helper
   function getCoverageForCurrency(ccy: string) {
@@ -745,7 +732,7 @@ function AnalysisTab({ orders }: AnalysisTabProps) {
                 </span>
               </div>
               <div style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: bucket.orders.length > 0 ? bucket.color : 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                {formatUsd(bucket.orders.reduce((s, o) => s + toUsd(o.amount, o.currency), 0))}
+                {formatUsd(bucket.orders.reduce((s, o) => s + toUsd(o.amount, o.currency, ratesMap), 0))}
               </div>
               {bucket.orders.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

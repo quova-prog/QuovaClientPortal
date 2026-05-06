@@ -9,7 +9,7 @@
 import type { HedgePolicy, HedgePosition } from '@/types'
 import type { CombinedCoverage } from '@/hooks/useCombinedCoverage'
 import type { MonthlySnapshot } from '@/lib/frankfurter'
-import { toUsd as _toUsd } from '@/lib/fx'
+import { toUsd } from '@/lib/fx'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -98,10 +98,6 @@ export interface BacktestResult {
 }
 
 // ── Internal helpers ───────────────────────────────────────────────────────
-
-function toUsd(amount: number, currency: string, rates: Record<string, number>): number {
-  return _toUsd(amount, currency, rates)
-}
 
 /**
  * Derive annualized FX volatility from monthly historical snapshots.

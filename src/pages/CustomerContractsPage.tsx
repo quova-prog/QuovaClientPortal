@@ -8,12 +8,8 @@ import type { CustomerContract } from '@/hooks/useCustomerContracts'
 import { parseCustomerContractCsv, downloadCustomerContractTemplate } from '@/lib/customerContractParser'
 import { useAuth } from '@/hooks/useAuth'
 import { checkFileAlreadyUploaded, recordUploadBatch, formatUploadDate } from '@/lib/uploadDedup'
-
-const USD_RATES: Record<string, number> = {
-  USD: 1.0, EUR: 1.09, GBP: 1.27, JPY: 0.0067,
-  CAD: 0.73, AUD: 0.65, CHF: 1.11, CNY: 0.14,
-}
-function toUsd(amount: number, currency: string) { return amount * (USD_RATES[currency] ?? 1.0) }
+import { toUsd } from '@/lib/fx'
+import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, notation: Math.abs(amount) >= 1_000_000 ? 'compact' : 'standard' }).format(amount)
 }
@@ -280,6 +276,7 @@ function ContractsTab({ contracts, onAdd, onUpdate, onDelete, onSwitchToUpload }
 // ── Analysis Tab ──────────────────────────────────────────────
 
 function AnalysisTab({ contracts }: { contracts: CustomerContract[] }) {
+  const { ratesMap } = useLiveFxRates()
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const in90  = useMemo(() => new Date(today.getTime() + 90 * 86400000), [today])
   const in180 = useMemo(() => new Date(today.getTime() + 180 * 86400000), [today])
@@ -287,10 +284,10 @@ function AnalysisTab({ contracts }: { contracts: CustomerContract[] }) {
   const active = useMemo(() => contracts.filter(c => c.status === 'active'), [contracts])
 
   const totalArrUsd = useMemo(() =>
-    active.reduce((s, c) => s + toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency), 0),
-    [active]
+    active.reduce((s, c) => s + toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap), 0),
+    [active, ratesMap]
   )
-  const totalValueUsd = useMemo(() => active.reduce((s, c) => s + toUsd(c.contract_value, c.currency), 0), [active])
+  const totalValueUsd = useMemo(() => active.reduce((s, c) => s + toUsd(c.contract_value, c.currency, ratesMap), 0), [active, ratesMap])
   const activeCount   = useMemo(() => active.length, [active])
   const atRiskCount   = useMemo(() => contracts.filter(c => {
     const d = new Date(c.end_date + 'T00:00:00')
@@ -304,12 +301,12 @@ function AnalysisTab({ contracts }: { contracts: CustomerContract[] }) {
       const key = c.segment || '(No Segment)'
       const cur = map.get(key) ?? { count: 0, valueUsd: 0, arrUsd: 0 }
       cur.count++
-      cur.valueUsd += toUsd(c.contract_value, c.currency)
-      cur.arrUsd   += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency)
+      cur.valueUsd += toUsd(c.contract_value, c.currency, ratesMap)
+      cur.arrUsd   += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap)
       map.set(key, cur)
     }
     return Array.from(map.entries()).map(([seg, v]) => ({ seg, ...v, pctArr: totalArrUsd > 0 ? v.arrUsd / totalArrUsd * 100 : 0 })).sort((a, b) => b.arrUsd - a.arrUsd)
-  }, [contracts, totalArrUsd])
+  }, [contracts, totalArrUsd, ratesMap])
 
   // By currency
   const currencyBreakdown = useMemo(() => {
@@ -317,12 +314,12 @@ function AnalysisTab({ contracts }: { contracts: CustomerContract[] }) {
     for (const c of contracts) {
       const cur = map.get(c.currency) ?? { count: 0, valueUsd: 0, arrUsd: 0 }
       cur.count++
-      cur.valueUsd += toUsd(c.contract_value, c.currency)
-      cur.arrUsd   += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency)
+      cur.valueUsd += toUsd(c.contract_value, c.currency, ratesMap)
+      cur.arrUsd   += toUsd(annualizedAmount(c.payment_amount, c.payment_frequency), c.currency, ratesMap)
       map.set(c.currency, cur)
     }
     return Array.from(map.entries()).map(([ccy, v]) => ({ ccy, ...v, pct: totalArrUsd > 0 ? v.arrUsd / totalArrUsd * 100 : 0 })).sort((a, b) => b.arrUsd - a.arrUsd)
-  }, [contracts, totalArrUsd])
+  }, [contracts, totalArrUsd, ratesMap])
 
   // At-Risk Pipeline
   const atRiskPipeline = useMemo(() =>
@@ -331,8 +328,8 @@ function AnalysisTab({ contracts }: { contracts: CustomerContract[] }) {
         const d = new Date(c.end_date + 'T00:00:00')
         return d >= today && d <= in180
       })
-      .sort((a, b) => toUsd(b.contract_value, b.currency) - toUsd(a.contract_value, a.currency)),
-    [contracts, today, in180]
+      .sort((a, b) => toUsd(b.contract_value, b.currency, ratesMap) - toUsd(a.contract_value, a.currency, ratesMap)),
+    [contracts, today, in180, ratesMap]
   )
 
   if (contracts.length === 0) {
