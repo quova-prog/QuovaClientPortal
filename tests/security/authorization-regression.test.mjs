@@ -122,6 +122,23 @@ test('security test coverage points at the intended migration files', () => {
   expectIncludes('supabase/migrations/20260331_org_entity_admin_lockdown.sql', 'entities_update_admin', 'entity lockdown migration should remain present')
 })
 
+test('vercel CSP keeps core browser hardening directives', () => {
+  const content = readRepoFile('vercel.json')
+  const config = JSON.parse(content)
+  const csp = config.headers?.[0]?.headers?.find(header => header.key === 'Content-Security-Policy')?.value ?? ''
+
+  for (const directive of [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    'upgrade-insecure-requests',
+  ]) {
+    assert.match(csp, new RegExp(escapeRegExp(directive)), `CSP should include ${directive}`)
+  }
+})
+
 test('idle timeout ignores wake activity after the session has already expired', () => {
   const filePath = 'src/components/ui/IdleTimeout.tsx'
   const content = readRepoFile(filePath)
