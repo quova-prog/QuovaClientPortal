@@ -93,6 +93,17 @@ test('MFA hook no longer reads auth tokens from localStorage', () => {
   assert.match(content, /supabase\.auth\.mfa\./s)
 })
 
+test('notification preference writes cannot repoint org_id cross-tenant', () => {
+  const filePath = 'supabase/migrations/20260506_notification_preferences_org_binding.sql'
+  const content = readRepoFile(filePath)
+
+  assert.match(content, /UPDATE notification_preferences np[\s\S]*np\.org_id IS DISTINCT FROM p\.org_id/s)
+  assert.match(content, /DROP POLICY IF EXISTS "notif_prefs_insert" ON notification_preferences;/s)
+  assert.match(content, /DROP POLICY IF EXISTS "notif_prefs_update" ON notification_preferences;/s)
+  assert.match(content, /CREATE POLICY "notif_prefs_insert" ON notification_preferences[\s\S]*WITH CHECK\s*\([\s\S]*user_id = auth\.uid\(\)[\s\S]*org_id = current_user_org_id\(\)[\s\S]*\(auth\.jwt\(\)->>'aal'\) = 'aal2'[\s\S]*\)/s)
+  assert.match(content, /CREATE POLICY "notif_prefs_update" ON notification_preferences[\s\S]*USING\s*\([\s\S]*user_id = auth\.uid\(\)[\s\S]*org_id = current_user_org_id\(\)[\s\S]*\(auth\.jwt\(\)->>'aal'\) = 'aal2'[\s\S]*\)[\s\S]*WITH CHECK\s*\([\s\S]*user_id = auth\.uid\(\)[\s\S]*org_id = current_user_org_id\(\)[\s\S]*\(auth\.jwt\(\)->>'aal'\) = 'aal2'[\s\S]*\)/s)
+})
+
 test('alert writes are disabled in the client for viewer roles', () => {
   const filePath = 'src/hooks/useAlerts.ts'
   const content = readRepoFile(filePath)
