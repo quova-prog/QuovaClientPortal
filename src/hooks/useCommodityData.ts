@@ -15,18 +15,19 @@ export function useCommodityData() {
 
   useEffect(() => {
     if (!orgId) return
+    const orgIdValue = orgId
 
     let cancelled = false
     async function fetchData() {
       setLoading(true)
       const [expRes, hgRes] = await Promise.all([
-        supabase.from('commodity_exposures').select('*').eq('org_id', orgId),
-        supabase.from('commodity_hedges').select('*').eq('org_id', orgId),
+        supabase.from('commodity_exposures').select('*').eq('org_id', orgIdValue),
+        supabase.from('commodity_hedges').select('*').eq('org_id', orgIdValue),
       ])
 
       if (!cancelled) {
-        setExposures(expRes.data ?? [])
-        setHedges(hgRes.data ?? [])
+        setExposures((expRes.data ?? []) as unknown as CommodityExposure[])
+        setHedges((hgRes.data ?? []) as unknown as CommodityHedge[])
         setLoading(false)
       }
     }

@@ -14,6 +14,7 @@ export interface PayrollEntry {
   pay_period: string          // e.g. "2025-Q1", "2025-03", "Jan 2025"
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function usePayroll() {

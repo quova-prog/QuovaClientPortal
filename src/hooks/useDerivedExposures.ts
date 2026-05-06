@@ -126,7 +126,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base: po.amount,
         settlement_date,
-        entity_id: (po as any).entity_id ?? null,
+        entity_id: po.entity_id ?? null,
       })
     }
 
@@ -144,7 +144,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'receivable',
         notional_base: rf.amount,
         settlement_date,
-        entity_id: (rf as any).entity_id ?? null,
+        entity_id: rf.entity_id ?? null,
       })
     }
 
@@ -164,7 +164,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'receivable',
         notional_base: cc.payment_amount,
         settlement_date: cc.next_payment_date,
-        entity_id: (cc as any).entity_id ?? null,
+        entity_id: cc.entity_id ?? null,
       })
     }
 
@@ -184,7 +184,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base: sc.payment_amount,
         settlement_date: sc.next_payment_date,
-        entity_id: (sc as any).entity_id ?? null,
+        entity_id: sc.entity_id ?? null,
       })
     }
 
@@ -226,7 +226,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base: pr.gross_amount,
         settlement_date: pr.pay_date,
-        entity_id: (pr as any).entity_id ?? null,
+        entity_id: pr.entity_id ?? null,
       })
     }
 
@@ -245,7 +245,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base: ln.payment_amount,
         settlement_date,
-        entity_id: (ln as any).entity_id ?? null,
+        entity_id: ln.entity_id ?? null,
       })
     }
 
@@ -266,7 +266,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base,
         settlement_date: cx.payment_date,
-        entity_id: (cx as any).entity_id ?? null,
+        entity_id: cx.entity_id ?? null,
       })
     }
 
@@ -283,7 +283,7 @@ export function useDerivedExposures(): { derivedExposures: DerivedExposure[]; lo
         direction: 'payable',
         notional_base: ic.amount,
         settlement_date: ic.transfer_date,
-        entity_id: (ic as any).entity_id ?? null,
+        entity_id: ic.entity_id ?? null,
       })
     }
 

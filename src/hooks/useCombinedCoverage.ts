@@ -88,8 +88,8 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     if (!isConsolidated) {
       return coverage.map(c => ({
         currency_pair: c.currency_pair,
-        base_currency: (c as any).base_currency ?? c.currency_pair.split('/')[0] ?? '',
-        quote_currency: (c as any).quote_currency ?? c.currency_pair.split('/')[1] ?? '',
+        base_currency: c.currency_pair.split('/')[0] ?? '',
+        quote_currency: c.currency_pair.split('/')[1] ?? '',
         net_exposure: c.net_exposure,
         total_hedged: c.total_hedged,
         coverage_pct: c.coverage_pct,

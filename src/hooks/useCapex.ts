@@ -14,6 +14,7 @@ export interface CapexEntry {
   status: 'planned' | 'approved' | 'committed' | 'completed'
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function useCapex() {

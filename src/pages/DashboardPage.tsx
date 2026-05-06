@@ -389,7 +389,7 @@ export function DashboardPage() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{(user?.organisation as any)?.name ?? 'Dashboard'}</h1>
+          <h1 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.organisation?.name ?? 'Dashboard'}</h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{now}</p>
         </div>
       </div>

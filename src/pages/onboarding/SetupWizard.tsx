@@ -189,14 +189,14 @@ export function SetupWizard(): React.ReactElement {
         // Update existing
         const { error: upErr } = await supabase
           .from('organization_profiles')
-          .update({ ...profileData, updated_at: new Date().toISOString() })
+          .update({ ...profileData, updated_at: new Date().toISOString() } as never)
           .eq('org_id', user.profile.org_id)
         if (upErr) throw new Error(upErr.message)
       } else {
         // Insert new
         const { error: insErr } = await supabase
           .from('organization_profiles')
-          .insert(profileData)
+          .insert(profileData as never)
         if (insErr) throw new Error(insErr.message)
       }
 

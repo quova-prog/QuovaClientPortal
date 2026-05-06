@@ -12,6 +12,7 @@ export interface RevenueForecast {
   region: string
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function useRevenueForecasts() {

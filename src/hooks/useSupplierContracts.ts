@@ -16,6 +16,7 @@ export interface SupplierContract {
   status: 'active' | 'expired' | 'pending'
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function useSupplierContracts() {

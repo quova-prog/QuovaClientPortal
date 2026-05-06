@@ -17,6 +17,7 @@ export interface LoanSchedule {
   loan_type: 'term' | 'revolver' | 'bond' | 'other'
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function useLoanSchedules() {

@@ -14,6 +14,7 @@ export interface PurchaseOrder {
   status: 'open' | 'approved' | 'pending' | 'paid'
   description: string
   uploaded_at: string
+  entity_id?: string | null
 }
 
 export function usePurchaseOrders() {

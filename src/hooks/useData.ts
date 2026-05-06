@@ -177,8 +177,8 @@ export function useExposures() {
       .eq('org_id', user.profile.org_id)
       .eq('status', 'open')
       .order('settlement_date', { ascending: true })
-    if (currentEntityId) query = (query as any).eq('entity_id', currentEntityId)
-    const { data, error } = await (query as any)
+    if (currentEntityId) query = query.eq('entity_id', currentEntityId)
+    const { data, error } = await query
     if (error) setError(error.message)
     else { setError(null); setExposures(data ?? []) }
     setLoading(false)
@@ -245,8 +245,8 @@ export function useHedgePositions(statuses: readonly string[] = DEFAULT_STATUSES
       .eq('org_id', user.profile.org_id)
       .in('status', statuses as string[])
       .order('value_date', { ascending: true })
-    if (currentEntityId) query = (query as any).eq('entity_id', currentEntityId)
-    const { data } = await (query as any)
+    if (currentEntityId) query = query.eq('entity_id', currentEntityId)
+    const { data } = await query
     setPositions(data ?? [])
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps

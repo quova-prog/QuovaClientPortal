@@ -396,8 +396,8 @@ async function persistResults(
     await supabase.from('schema_discoveries').update({
       status:                  'completed',
       completed_at:            new Date().toISOString(),
-      raw_schema:              { columns: schema.columns, rowCount: schema.rowCount } as unknown as Record<string, unknown>,
-      ai_analysis:             aiResult as unknown as Record<string, unknown>,
+      raw_schema:              { columns: schema.columns, rowCount: schema.rowCount } as never,
+      ai_analysis:             aiResult as never,
       confidence_score:        aiResult.summary.avg_confidence,
       tables_scanned:          1,
       tables_identified:       aiResult.summary.tables_identified,

@@ -1261,7 +1261,7 @@ export function AnalyticsPage() {
                 : 'compliant'
               }
               preparedBy={user?.email ?? 'Treasury Team'}
-              orgName={(user?.organisation as any)?.name}
+              orgName={user?.organisation?.name}
               ratesAsOf={ratesLastUpdated}
             />
           </Suspense>

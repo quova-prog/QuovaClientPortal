@@ -103,8 +103,8 @@ async function buildAuthUser(session: Session): Promise<AuthUser | null> {
   return {
     id: userId,
     email,
-    profile,
-    organisation: organisation as Organisation,
+    profile: profile as unknown as Profile,
+    organisation: organisation as unknown as Organisation,
   }
 }
 
