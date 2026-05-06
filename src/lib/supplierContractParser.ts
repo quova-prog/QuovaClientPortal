@@ -15,13 +15,7 @@ const ALIASES: Record<string, string[]> = {
   description:       ['description', 'notes', 'memo'],
 }
 
-function findColumn(headers: string[], aliases: string[]): string | null {
-  const lowerAliases = aliases.map(a => a.toLowerCase())
-  for (const header of headers) {
-    if (lowerAliases.includes(header.trim().toLowerCase())) return header
-  }
-  return null
-}
+import { findColumn, parseDate } from '@/lib/csv/helpers'
 
 function isValidCurrency(code: string): boolean {
   return /^[A-Z]{3}$/.test(code)
@@ -43,24 +37,6 @@ function normalizeStatus(raw: string): SupplierContract['status'] {
   if ((VALID_STATUSES as readonly string[]).includes(lower)) return lower as SupplierContract['status']
   if (lower === 'true' || lower === '1' || lower === 'yes') return 'active'
   return 'active'
-}
-
-function parseDate(raw: string): string | null {
-  const trimmed = raw.trim()
-  if (!trimmed) return null
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const d = new Date(trimmed + 'T00:00:00')
-    if (!isNaN(d.getTime())) return trimmed
-  }
-  const mdy = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
-  if (mdy) {
-    const [, mm, dd, yyyy] = mdy
-    const d = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T00:00:00`)
-    if (!isNaN(d.getTime())) return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
-  }
-  const d = new Date(trimmed)
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
-  return null
 }
 
 export function parseSupplierContractCsv(

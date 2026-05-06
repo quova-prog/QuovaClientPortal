@@ -24,23 +24,7 @@ function parseDirection(raw: string): 'receivable' | 'payable' | null {
   return null
 }
 
-function parseDate(raw: string): string | null {
-  if (!raw) return null
-  // Try various date formats
-  const cleaned = raw.trim()
-  // ISO format already
-  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return cleaned
-  // MM/DD/YYYY or M/D/YYYY
-  const mdy = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`
-  // DD/MM/YYYY (European)
-  const dmy = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
-  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`
-  // Try native Date parse
-  const d = new Date(cleaned)
-  if (!isNaN(d.getTime())) return d.toISOString().split('T')[0]
-  return null
-}
+import { parseDate } from '@/lib/csv/helpers'
 
 function parseNotional(raw: string): number | null {
   if (!raw) return null

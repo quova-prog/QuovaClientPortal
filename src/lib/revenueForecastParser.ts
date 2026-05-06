@@ -13,13 +13,7 @@ const ALIASES: Record<string, string[]> = {
   description: ['description', 'notes', 'memo', 'comment'],
 }
 
-function findColumn(headers: string[], aliases: string[]): string | null {
-  const lowerAliases = aliases.map(a => a.toLowerCase())
-  for (const header of headers) {
-    if (lowerAliases.includes(header.trim().toLowerCase())) return header
-  }
-  return null
-}
+import { findColumn } from '@/lib/csv/helpers'
 
 function isValidCurrency(code: string): boolean {
   return /^[A-Z]{3}$/.test(code)

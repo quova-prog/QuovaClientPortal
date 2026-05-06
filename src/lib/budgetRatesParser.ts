@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { findColumn, isValidCurrencyPair, normalizeCurrencyPair } from '@/lib/csv/helpers'
 
 export interface ParsedBudgetRate {
   currency_pair: string   // normalized to 'USD/CAD' format
@@ -23,27 +24,6 @@ const ALIASES: Record<string, string[]> = {
   period:          ['period', 'Period', 'Quarter', 'Month'],
   notional_budget: ['notional_budget', 'Notional', 'Budget Amount', 'Amount', 'Notional Budget'],
   description:     ['description', 'Description', 'Notes', 'Memo', 'Comment'],
-}
-
-function findColumn(headers: string[], aliases: string[]): string | null {
-  for (const alias of aliases) {
-    const found = headers.find(h => h.trim() === alias)
-    if (found) return found
-  }
-  return null
-}
-
-function normalizeCurrencyPair(raw: string): string {
-  const stripped = raw.replace(/[^A-Za-z]/g, '').toUpperCase()
-  if (stripped.length === 6) {
-    return `${stripped.slice(0, 3)}/${stripped.slice(3, 6)}`
-  }
-  // If it already had a separator, it's already normalized
-  return raw.toUpperCase().trim()
-}
-
-function isValidCurrencyPair(pair: string): boolean {
-  return /^[A-Z]{3}\/[A-Z]{3}$/.test(pair)
 }
 
 const VALID_PERIODS = new Set([
