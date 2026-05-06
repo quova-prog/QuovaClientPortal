@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { toCsvRows } from './csv/escape'
 import { normalizeCurrencyPair, parseCurrencyPair } from './utils'
 import type { CsvExposureRow, CsvParseResult, ParsedExposure } from '@/types'
 
@@ -129,9 +130,7 @@ export function downloadCsvTemplate() {
     'Celonis Inc', 'GBP/USD', 'payable', '750000',
     '2026-05-15', 'London office rent'
   ]
-  const csv = [headers, example, example2]
-    .map(row => row.join(','))
-    .join('\n')
+  const csv = toCsvRows([headers, example, example2])
 
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)

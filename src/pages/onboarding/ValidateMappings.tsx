@@ -6,6 +6,7 @@ import { HumanReviewCard }  from '@/components/onboarding/HumanReviewCard'
 import { useMappings }      from '@/hooks/useMappings'
 import { useOnboarding }    from '@/hooks/useOnboarding'
 import { ORBIT_TARGET_FIELDS } from '@/lib/discoveryService'
+import { toCsvRows } from '@/lib/csv/escape'
 import { supabase } from '@/lib/supabase'
 import type { OnboardingHumanReviewItem } from '@/types'
 
@@ -117,19 +118,19 @@ export function ValidateMappings(): React.ReactElement {
     const headers = ['Source Table', 'Source Field', 'Target Entity', 'Target Field', 'Confidence', 'Status', 'AI Reasoning']
     if (isErpMode) headers.push('Verdict', 'Reconciliation Reasoning')
 
-    const rows = [
-      headers.join(','),
+    const rows = toCsvRows([
+      headers,
       ...mappings.map(m => {
         const base = [
           m.source_table, m.source_field, m.target_entity, m.target_field,
-          `${Math.round(m.confidence * 100)}%`, m.status, (m.ai_reasoning ?? '').replace(/,/g, ';'),
+          `${Math.round(m.confidence * 100)}%`, m.status, m.ai_reasoning ?? '',
         ]
         if (isErpMode) {
-          base.push(m.verdict ?? '', (m.reconciliation_reasoning ?? '').replace(/,/g, ';'))
+          base.push(m.verdict ?? '', m.reconciliation_reasoning ?? '')
         }
-        return base.join(',')
+        return base
       }),
-    ].join('\n')
+    ])
     const blob = new Blob([rows], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')

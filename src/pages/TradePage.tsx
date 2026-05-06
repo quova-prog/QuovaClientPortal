@@ -6,21 +6,11 @@ import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useEntity } from '@/context/EntityContext'
 import { formatCurrency, formatDate, daysUntil, formatPnl, formatFxRate, formatValuationTimestamp } from '@/lib/utils'
+import { toCsvObjects } from '@/lib/csv/escape'
 
 type TabKey = 'summary' | 'blotter' | 'management'
 type SummaryView = 'overview' | 'rfq' | 'executed'
 type ActionType = 'roll' | 'amend' | 'close'
-
-function csvEscape(v: unknown): string {
-  const s = String(v ?? '')
-  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
-}
-
-function toCsv(rows: Record<string, unknown>[]): string {
-  if (!rows.length) return ''
-  const headers = Object.keys(rows[0])
-  return [headers.map(csvEscape).join(','), ...rows.map(r => headers.map(h => csvEscape(r[h])).join(','))].join('\n')
-}
 
 function triggerDownload(filename: string, content: string) {
   const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' })
@@ -922,7 +912,7 @@ export function TradePage() {
                           Settlement:   p.value_date,
                           Status:       p.status,
                         }))
-                        triggerDownload(`trade_blotter_${new Date().toISOString().split('T')[0]}.csv`, toCsv(rows))
+                        triggerDownload(`trade_blotter_${new Date().toISOString().split('T')[0]}.csv`, toCsvObjects(rows))
                       }}>
                       <Download size={13} /> Export CSV
                     </button>

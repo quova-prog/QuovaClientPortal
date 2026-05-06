@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, FileText, X, Download, AlertTriangle, CheckCircle } from 'lucide-react'
 import Papa from 'papaparse'
+import { toCsvRows } from '@/lib/csv/escape'
 import { stripPIIString } from '@/lib/piiStripper'
 import type { FlatFileSchema } from '@/lib/discoveryService'
 
@@ -124,7 +125,7 @@ export function FlatFileUploader({ onParsed }: FlatFileUploaderProps): React.Rea
   }, [handleFile])
 
   function downloadTemplate(): void {
-    const csv = [TEMPLATE_HEADERS.join(','), TEMPLATE_EXAMPLE.join(',')].join('\n')
+    const csv = toCsvRows([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE])
     const blob = new Blob([csv], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')

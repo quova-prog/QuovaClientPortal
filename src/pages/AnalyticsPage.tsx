@@ -13,6 +13,7 @@ import { useAuditLog } from '@/hooks/useAuditLog'
 import { useEntity } from '@/context/EntityContext'
 import { formatCurrency } from '@/lib/utils'
 import { toUsd } from '@/lib/fx'
+import { toCsvObjects } from '@/lib/csv/escape'
 import type { HedgePosition, FxExposure, ExposureSummary } from '@/types'
 
 const HedgeAccountingExport = lazy(() =>
@@ -54,23 +55,6 @@ const FX_REPORTS: ReportDef[] = [
 ]
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
-
-function csvEscape(v: unknown): string {
-  const s = String(v ?? '')
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s
-}
-
-function toCsv(rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) return ''
-  const headers = Object.keys(rows[0])
-  const lines = [
-    headers.map(csvEscape).join(','),
-    ...rows.map(r => headers.map(h => csvEscape(r[h])).join(',')),
-  ]
-  return lines.join('\n')
-}
 
 function triggerDownload(filename: string, content: string, mime = 'text/csv;charset=utf-8;') {
   const blob = new Blob(['\uFEFF' + content], { type: mime }) // BOM for Excel UTF-8
@@ -621,7 +605,7 @@ export function AnalyticsPage() {
 
     const safeName = CUSTOM_REPORTS.find(r => r.id === reportId)?.name.replace(/[^a-z0-9]/gi, '_') ?? reportId
     if (format === 'xlsx') await triggerXlsx(`${safeName}.xlsx`, rows)
-    else triggerDownload(`${safeName}.csv`, toCsv(rows.length ? rows : [{ Note: `No data for "${safeName}"` }]))
+    else triggerDownload(`${safeName}.csv`, toCsvObjects(rows.length ? rows : [{ Note: `No data for "${safeName}"` }]))
     await log({
       action: 'export',
       resource: 'custom_report',
@@ -736,9 +720,9 @@ export function AnalyticsPage() {
     if (rows.length === 0) {
       // Still download an empty CSV with headers so the user knows it worked
       const emptyRow = { Note: `No data found for "${report.name}" with period: ${PERIOD_LABELS[period]}` }
-      triggerDownload(`${report.name.replace(/[^a-z0-9]/gi, '_')}_${period}.csv`, toCsv([emptyRow]))
+      triggerDownload(`${report.name.replace(/[^a-z0-9]/gi, '_')}_${period}.csv`, toCsvObjects([emptyRow]))
     } else {
-      triggerDownload(`${report.name.replace(/[^a-z0-9]/gi, '_')}_${period}.csv`, toCsv(rows))
+      triggerDownload(`${report.name.replace(/[^a-z0-9]/gi, '_')}_${period}.csv`, toCsvObjects(rows))
     }
     await log({
       action: 'export',

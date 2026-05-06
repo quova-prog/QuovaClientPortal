@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useEntity } from '@/context/EntityContext'
+import { csvEscape } from '@/lib/csv/escape'
 import type { HedgePosition } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -107,12 +108,6 @@ function periodLabel(year: number, month: number): string {
 
 function refNum(prefix: string, n: number): string {
   return `${prefix}-${String(n).padStart(4, '0')}`
-}
-
-function csvEscape(v: unknown): string {
-  const s = String(v ?? '')
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 function fmt2(n: number): string {
