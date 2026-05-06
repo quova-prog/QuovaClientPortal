@@ -1,6 +1,6 @@
 # Quova — Claude Code Context
 
-> **Last updated:** 2026-04-15 (session 15 — security audit: JIT support access, audit log validation, email hardening, MFA teardown gate)
+> **Last updated:** 2026-05-05 (session 16 — code-hygiene sweep: FX consolidation, generated Supabase types, CSV helper de-dup, vitest suite, ESLint guardrails, CI lint+types-drift)
 > **Product:** Quova — The Financial Risk OS
 > **Founder / CEO:** Steve LaBella
 > **Target customer:** $1B–$40B revenue companies (Loblaw, Atlassian, Celonis, Sagard)
@@ -29,21 +29,23 @@ and never exposed to the client. All AI callers use `callAnthropicProxy()` from 
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Framework | React 18 + TypeScript 5.3 | Strict mode, no `any` |
-| Build | Vite 5 | `@vitejs/plugin-react` |
-| Routing | React Router 6 | |
-| Database / Auth | Supabase (`@supabase/supabase-js` 2.39) | PostgreSQL, RLS, Auth |
+| Framework | React 18.2 + TypeScript 5.3 | Strict mode; `no-explicit-any` enforced as ESLint warn |
+| Build | Vite 5 | `@vitejs/plugin-react` 4 |
+| Routing | React Router 6.21 | |
+| Database / Auth | Supabase (`@supabase/supabase-js` ^2.39) | PostgreSQL, RLS, Auth. **Typed `createClient<Database>()`** — see `src/types/database.types.ts` (regenerate with `npm run types:db`) |
 | Styling | Plain CSS (`src/index.css`) + inline styles | Design tokens via CSS variables |
 | Charts | Recharts 2.10 | Bar, line charts |
-| CSV Parsing | PapaParse 5 | All CSV uploads + onboarding flat file |
-| Excel Export | xlsx 0.18 | XLSX multi-sheet exports |
-| PDF Export | jsPDF 2.5 + jsPDF-autotable 3.8 | Board report PDF |
+| CSV Parsing | PapaParse 5 | Shared helpers in `src/lib/csv/helpers.ts` (`findColumn`, `parseDate`, `isValidCurrencyPair`, `normalizeCurrencyPair`) |
+| Excel Export | exceljs 4.4 | XLSX multi-sheet exports (board report, hedge accounting) |
+| PDF Export | jsPDF 4.2 + jsPDF-autotable 5.0 | Board report PDF |
 | PPTX Export | pptxgenjs 4.0 | Board report PowerPoint |
-| AI / LLM | `@anthropic-ai/sdk` + direct API fetch | claude-haiku-4-5 model |
+| AI / LLM | `@anthropic-ai/sdk` + Edge Function proxy | claude-haiku-4-5 model |
 | FX Rates | Frankfurter API (free, ECB-sourced) | `src/lib/frankfurter.ts` — **domain: `api.frankfurter.dev/v1`** (migrated from `api.frankfurter.app`) |
 | Icons | Lucide React 0.303 | |
 | Date utils | date-fns 3 | |
 | Monitoring | Internal `src/lib/monitoring.ts` | |
+| Testing | Vitest 4 (unit) + `node --test` (security regressions) | `npm test`, `npm run test:watch`, `npm run test:security`. Tests at `src/**/*.test.ts`. |
+| Lint | ESLint 8 + `@typescript-eslint` | `npm run lint`. Bans local `toUsd`/`USD_RATES`, bans `console.log`, warns on `any`. Runs in CI. |
 
 ---
 
@@ -463,7 +465,7 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 1. **Strategy B & C not interactive** — only Strategy A drives recommendations
 2. **ERP integrations are UI-only** — credential forms work but no actual API calls to SAP/Oracle/NetSuite. Backend Edge Functions needed for real connectivity. Connection test is simulated (90% random pass rate, clearly labelled in code).
 3. **Onboarding GoLive** — imports into `fx_exposures` but doesn't create `hedge_policies` from the onboarding profile
-4. **`as any` casts** — 15+ instances in data hooks hiding type errors. Requires Supabase DB type generation (`supabase gen types`) to fix properly.
+4. **`any` annotations remaining** — ~50 left, surfaced as ESLint warnings (down from 33+ `as any` casts pre-session 16). Untyped `SupabaseClient<any, any, any>` in `useAuth`, lucide `React.FC<any>` icon props, `catch (err: any)`, `useState<any | null>` in TradePage, etc. The 14 unavoidable `as any` casts (DOM event widening, jspdf-autotable runtime extension, react-router untyped state) carry `eslint-disable-next-line` comments with justifications. Goal: drive the count to 0, then flip `@typescript-eslint/no-explicit-any` from `warn` to `error`.
 5. **`mapping_templates` table has no write policies** — flywheel feature (reusable ERP mapping templates) is non-functional at the DB level
 6. **Scenario engine hedged-exposure offset** — `scenarioEngine.ts` sets `hedgedExposureDelta = -hedgeInstrumentDelta` (perfect offset), so net impact = unhedged residual only. Acceptable as a conservative stress-test simplification for sub-1-year vanilla forwards but doesn't model basis mismatch.
 7. **Advisor VaR is undiversified** — `advisorEngine.ts` sums standalone per-pair VaRs with no correlation matrix. Conservative (correlation=1 assumption) but not a true portfolio VaR. Label says "P&L at Risk (95%)" which is accurate; adding "(undiversified)" would improve transparency.
@@ -496,8 +498,14 @@ Separate Vite React SPA at `/Users/stevenlabella/Git/orbit-support/` (port 5177)
 
 ### Architecture
 - No message queue / background jobs — all sync happens in browser
-- No test suite
 - Onboarding uses sessionStorage to pass data between steps (reliable but not persistent across browser restarts)
+
+### Testing & CI
+- **Unit tests** (vitest, ~71 cases): `src/lib/fx.test.ts` (22), `src/lib/hedgeEffectiveness.test.ts` (25), `src/lib/csv/helpers.test.ts` (24). Pure-TS modules only — no DOM/Supabase mocks needed. Run with `npm test`.
+- **Security regression tests** (node native runner): `tests/security/*.test.mjs`. Run with `npm run test:security`.
+- **CI pipeline** (`.github/workflows/ci.yml`): install → lint → guardrails → security tests → unit tests → types-drift check (regenerates `database.types.ts` and fails if it differs) → build.
+- **Coverage gaps:** no tests yet for `scenarioEngine.ts`, `advisorEngine.ts`, or any React components. Components are deliberately untested for now (mostly presentational; refactor planned).
+- **Lint guardrails:** `no-restricted-syntax` blocks any new local `toUsd` / `USD_RATES` declarations (search `.eslintrc.cjs` for context). `no-console` blocks bare `console.log`. `@typescript-eslint/no-explicit-any` is currently `warn`.
 
 ### CSP (vercel.json)
 Must include `api.frankfurter.dev` in `connect-src` (was `api.frankfurter.app`).
@@ -1085,6 +1093,48 @@ Systematic security audit addressing 6 reported vulnerabilities across multi-ten
 - `orbit-support/src/pages/TenantDetailPage.tsx` — AccessGate wrapper
 - `orbit-support/src/pages/ImpersonatePage.tsx` — AccessGate wrapper, revoke on end session
 - `orbit-support/src/types/index.ts` — `SupportAccessGrant` type, new audit actions
+
+---
+
+## Session 16 — Code-Hygiene Sweep (2026-05-05)
+
+Six-step refactor pass focused on consolidating drifted code, generating proper types, and adding a safety net. No behavioural feature changes; one real bug fixed as a side-effect (#1).
+
+### 1. Single source of truth for `toUsd`
+Nine pages (`CapexPage`, `SupplierContractsPage`, `IntercompanyPage`, `PurchaseOrdersPage`, `PayrollPage`, `CashFlowPage`, `RevenueForecastsPage`, `LoanSchedulesPage`, `CustomerContractsPage`) plus `advisorEngine.ts` carried their own copies of `toUsd()` and a stale hard-coded `USD_RATES` table. USD totals on those pages had silently diverged from live ECB rates and treated unknown currencies (BRL, INR, ZAR, MXN, KRW, TRY, etc.) as `1.0`.
+
+Deleted every local copy. All pages now read `ratesMap` from `useLiveFxRates()` and call canonical `toUsd(amount, currency, ratesMap)` from `@/lib/fx`. ESLint `no-restricted-syntax` rule added to prevent regression. **Net: –81 lines, real correctness fix.**
+
+### 2. Generated Supabase Database types
+Ran `supabase gen types typescript --project-id vmtwojalyzvmdpldgabi` and wired `createClient<Database>()`. Added `entity_id?: string | null` to 8 hook interfaces. Dropped 16 of the 33 `as any` casts (−48%). Boundary casts at the Supabase write layer use `as never` (preferred) or properly-cast unknowns. New `npm run types:db` script regenerates the file. CI verifies the committed file matches the live schema (skipped when `SUPABASE_ACCESS_TOKEN` not available, e.g. forked PRs).
+
+### 3. CSV parser de-duplication
+Eleven parsers carried their own `findColumn`, `parseDate`, `normalizeCurrencyPair`, `isValidCurrencyPair` helpers — sometimes with subtle differences (`budgetRatesParser` was case-sensitive while the other 9 were case-insensitive; `csvParser` accepted European `DD.MM.YYYY` while the 8 table parsers accepted US hyphen `MM-DD-YYYY` but not European). Extracted to `src/lib/csv/helpers.ts` (79 lines) as a strict superset of every variant — every parser now accepts every format. Net: **-260 LOC of duplicated code**. Unit tests in `helpers.test.ts` (24 cases).
+
+### 4. Vitest + financial-math test coverage
+Added `vitest@4` and 47 unit tests for the two highest-risk pure-TS modules:
+- `fx.test.ts` (22 tests): USD passthrough, direct/inverse pair resolution, slash vs condensed forms, division-by-zero guards, live > FALLBACK precedence, all 25 fallback currencies present, numerical stability across IDR (1B IDR ≈ $63K) and 10¹² notional scales.
+- `hedgeEffectiveness.test.ts` (25 tests): retro pass/fail/inconclusive paths, **real ineffectiveness when forward points create basis divergence** (locks down the session-7 hypothetical-derivative fix), buy/sell symmetry, USD/JPY inverted-pair handling, `spot_rate_at_trade: null` fallback, prospective regression with sufficient/insufficient data, **non-circular slope test** (catches the previous `y = -x` bug if it returns), full `overallStatus` state-machine, ASC 815 designation memo content, summary aggregator.
+
+Total vitest count after step 3 helpers tests: **71 passing in ~110ms**. `npm test` and `npm run test:watch` scripts; `vitest.config.ts` scoped to `src/**/*.test.ts` so legacy `tests/security/*.test.mjs` (node native runner) keeps working unchanged.
+
+### 5. ESLint guardrails
+Three new rules in `.eslintrc.cjs`:
+- **`no-restricted-syntax`** (error): bans any `FunctionDeclaration` or `VariableDeclarator` named `toUsd` or `USD_RATES` outside `src/lib/fx.ts`. Prevents step-1 regression.
+- **`no-console`** (error, allow `warn`/`error`/`info`): bans bare `console.log`. Converted 7 existing `console.log` → `console.info` in onboarding pipeline.
+- **`@typescript-eslint/no-explicit-any`** (warn): surfaces ~50 pre-existing `any` annotations as warnings. Goal: drive count to 0 and ratchet to error.
+
+Cleanup: removed 1 truly-fixable `as any` in `HedgeAccountingExport` (now natively typed). 14 unavoidable casts (DOM event widening, jspdf-autotable runtime extension, react-router untyped state) carry `eslint-disable-next-line` with justifications. Dropped 10 `(r: any)` annotations in upload hooks — typed Supabase client now infers `r` correctly.
+
+### 6. CI hardening
+`.github/workflows/ci.yml` now runs: install → **lint** → guardrails → security tests → **unit tests (vitest)** → **types-drift check** → build. Any new local `toUsd`, bare `console.log`, financial-math regression, schema/types mismatch, type error, or build failure now blocks PRs.
+
+### Deferred (deliberately out of scope)
+- **Page-file size:** `SettingsPage` (1652 LOC), `TradePage` (1319), `IntegrationSetupModal` (1287), `AnalyticsPage` (1274), six others over 950. Splitting these into per-tab files is the next-biggest hygiene win.
+- **`any` count to zero:** 50 warnings remain. Untyped `SupabaseClient<any, any, any>` in `useAuth` is the largest cluster.
+- **Style-system enforcement:** ~4,140 inline `style={{}}` blocks; `COVERAGE_COLORS` and `CHART_COLORS` ship hardcoded hex; `COVERAGE_BG` ships dead Tailwind class strings (no Tailwind in deps).
+- **Component / scenarioEngine / advisorEngine tests:** not started.
+- **CLAUDE.md doc ↔ package.json version sync:** done in this session.
 
 ---
 
