@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:security": "node --test tests/security/*.test.mjs",
-    "types:db": "supabase gen types typescript --project-id vmtwojalyzvmdpldgabi 2>/dev/null > src/types/database.types.ts",
+    "types:db": "supabase gen types typescript --project-id vmtwojalyzvmdpldgabi > src/types/database.types.ts",
     "verify:guardrails": "node scripts/verify-security-guardrails.cjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx"

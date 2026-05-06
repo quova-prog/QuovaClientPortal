@@ -33,6 +33,14 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Install Supabase CLI
+        # Required by `npm run types:db` (which calls `supabase gen types`).
+        # Always install — fast binary fetch, harmless when the next
+        # step skips the actual type-check on missing access token.
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       - name: Verify Supabase types are in sync with schema
         # Regenerates src/types/database.types.ts from the live Supabase
         # project schema and fails if it differs from what's committed.
