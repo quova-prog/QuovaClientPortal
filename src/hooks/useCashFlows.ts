@@ -36,7 +36,7 @@ export function useCashFlows() {
       .eq('org_id', orgId as string)
       .order('flow_date', { ascending: true })
     if (err) setError(err.message)
-    else setFlows((data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at })))
+    else setFlows((data ?? []).map(r => ({ ...r, uploaded_at: r.created_at })))
     setLoading(false)
   }, [orgId, db])
 
@@ -61,7 +61,7 @@ export function useCashFlows() {
       .insert(rows.map(r => ({ ...r, org_id: orgId, uploaded_by: user?.id })))
       .select()
     if (err) throw new Error(err.message)
-    const newRows = (data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at }))
+    const newRows = (data ?? []).map(r => ({ ...r, uploaded_at: r.created_at }))
     setFlows(prev => [...prev, ...newRows])
   }
 

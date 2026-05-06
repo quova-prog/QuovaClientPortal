@@ -170,7 +170,7 @@ async function runFlatFileFlow(
       setDiscoveryId(discId)
       if (discId) {
         try { sessionStorage.setItem('orbit_discovery_id', discId) } catch { /* ignore */ }
-        if (import.meta.env.DEV) console.log('[useDiscoveryPipeline] Created discovery record:', discId)
+        if (import.meta.env.DEV) console.info('[useDiscoveryPipeline] Created discovery record:', discId)
       }
     }
   }
@@ -424,7 +424,7 @@ async function persistResults(
         console.error('[useDiscoveryPipeline] Failed to insert field_mappings:', mapErr.message)
       } else {
         if (import.meta.env.DEV) {
-          console.log(`[useDiscoveryPipeline] Inserted ${aiResult.mappings.length} field mappings for discovery ${discId}`)
+          console.info(`[useDiscoveryPipeline] Inserted ${aiResult.mappings.length} field mappings for discovery ${discId}`)
         }
       }
     }
@@ -436,7 +436,7 @@ async function persistResults(
     sessionStorage.setItem('orbit_discovery_gaps', JSON.stringify(aiResult.gaps))
     sessionStorage.setItem('orbit_discovery_summary', JSON.stringify(aiResult.summary))
     if (import.meta.env.DEV) {
-      console.log(`[useDiscoveryPipeline] Saved ${aiResult.mappings.length} mappings to sessionStorage`)
+      console.info(`[useDiscoveryPipeline] Saved ${aiResult.mappings.length} mappings to sessionStorage`)
     }
   } catch { /* ignore */ }
 }

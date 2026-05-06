@@ -37,7 +37,7 @@ export function useSupplierContracts() {
       .eq('org_id', orgId as string)
       .order('end_date', { ascending: true })
     if (err) setError(err.message)
-    else setContracts((data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at })))
+    else setContracts((data ?? []).map(r => ({ ...r, uploaded_at: r.created_at })))
     setLoading(false)
   }, [orgId, db])
 
@@ -62,7 +62,7 @@ export function useSupplierContracts() {
       .insert(rows.map(r => ({ ...r, org_id: orgId, uploaded_by: user?.id })))
       .select()
     if (err) throw new Error(err.message)
-    const newRows = (data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at }))
+    const newRows = (data ?? []).map(r => ({ ...r, uploaded_at: r.created_at }))
     setContracts(prev => [...prev, ...newRows])
   }
 

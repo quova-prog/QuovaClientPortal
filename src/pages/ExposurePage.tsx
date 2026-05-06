@@ -685,6 +685,7 @@ export function ExposurePage() {
                 <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search source, description, pair…"
                   value={search} onChange={e => setSearch(e.target.value)} />
               </div>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- DOM <select> value widens to string */}
               <select className="input" style={{ width: 'auto' }} value={filterDir} onChange={e => setFilterDir(e.target.value as any)}>
                 <option value="all">All directions</option>
                 <option value="receivable">Receivable</option>
@@ -753,11 +754,13 @@ export function ExposurePage() {
                         <tbody>
                           {uploadPreview.slice(0, 50).map((r, i) => (
                             <tr key={i}>
+                              {/* eslint-disable @typescript-eslint/no-explicit-any -- CSV preview rows are loosely typed pre-import shape */}
                               <td>{(r as any).entity}</td>
                               <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{r.currency_pair}</td>
                               <td><span className={`badge badge-${r.direction === 'receivable' ? 'green' : 'blue'}`}>{r.direction}</span></td>
                               <td className="text-right mono">{formatCurrency((r as any).amount ?? 0, r.currency_pair.split('/')[0])}</td>
                               <td>{(r as any).settlement_date ? formatDate((r as any).settlement_date) : '—'}</td>
+                              {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </tr>
                           ))}
                         </tbody>

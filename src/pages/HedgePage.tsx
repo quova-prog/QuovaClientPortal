@@ -157,6 +157,8 @@ export function HedgePage() {
   // Auto-open form when navigated from StrategyPage with a strategy pre-selected
   // OR from AdvisorPage with a pre-filled recommendation
   useEffect(() => {
+    // react-router types location.state as `unknown`; we set it ourselves at the call sites
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state = location.state as any
     if (state?.strategy) {
       const match = STRATEGY_TYPES.find(s => s.title === state.strategy)
@@ -226,6 +228,7 @@ export function HedgePage() {
     const hedgeTypeLabel = form.hedge_type === 'cash_flow' ? 'cash flow' : form.hedge_type === 'fair_value' ? 'fair value' : 'net investment'
     const designationNote = `${hedgeTypeLabel} hedge — FX rate risk on ${form.currency_pair} exposure`
     const notes = form.notes ? `${form.notes}\n${designationNote}` : designationNote
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- form payload is broader than addPosition's inferred Insert shape
     const { error } = await addPosition({ ...form, notes, base_currency: base, quote_currency: quote, notional_usd: null, status: 'active' } as any)
     setSubmitting(false)
     if (error) { setFormError(error); return }
@@ -778,6 +781,7 @@ export function HedgePage() {
                   <label className="label">Instrument</label>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {INSTRUMENT_TYPES.map(t => (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- t.value is string-literal union but typed string here
                       <button key={t.value} onClick={() => set('instrument_type', t.value as any)} className={`btn btn-sm ${form.instrument_type === t.value ? 'btn-primary' : 'btn-ghost'}`}>{t.label}</button>
                     ))}
                   </div>

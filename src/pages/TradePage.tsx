@@ -120,6 +120,8 @@ export function TradePage() {
 
   // Auto-open roll modal when navigating from StrategyPage
   useEffect(() => {
+    // react-router types location.state as `unknown`; we set it ourselves at the call sites
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state = location.state as any
     if (state?.action === 'roll' && state?.positionId && positions.length > 0) {
       setTab('management')
@@ -175,6 +177,7 @@ export function TradePage() {
   // opposite to the instrument. We calculate it per-position using spot_rate_at_trade
   // so the offset is anchored to the same inception point as the hedge MTM.
   const exposureOffsetUsd = positionsWithMtm.reduce((s, p) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy positions may lack spot_rate_at_trade; cast bypasses the strict-null type narrowing here
     const inceptionSpot = (p as any).spot_rate_at_trade ?? p.contracted_rate
     const currentSpot   = p.spot
     const quoteCcy      = p.currency_pair.split('/')[1] ?? 'USD'
@@ -246,6 +249,7 @@ export function TradePage() {
       status: 'active',
       notes: `Executed via RFQ · ${bank}`,
       ...(currentEntityId ? { entity_id: currentEntityId } : {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- HedgePosition insert payload widening; addPosition signature is stricter than the form shape here
     } as any)
 
     setSaving(false)
@@ -807,6 +811,7 @@ export function TradePage() {
                   />
                 </div>
                 <select className="input" style={{ width: 'auto', fontSize: '0.8125rem' }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DOM <select> value widens to string
                   value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
                   <option value="all">All Status</option>
                   <option value="active">Active</option>

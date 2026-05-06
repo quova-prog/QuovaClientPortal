@@ -507,7 +507,7 @@ export function HedgeAccountingExport() {
   const scopedPositions = useMemo(() =>
     isConsolidated
       ? positions
-      : positions.filter(p => (p as any).entity_id === currentEntityId || !(p as any).entity_id),
+      : positions.filter(p => p.entity_id === currentEntityId || !p.entity_id),
   [positions, isConsolidated, currentEntityId])
 
   const periodDate = lastDayOfMonth(year, month)

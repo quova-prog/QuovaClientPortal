@@ -109,7 +109,7 @@ export function DiscoveryFeed(): React.ReactElement {
       if (stored) {
         schema = JSON.parse(stored) as FlatFileSchema
         if (import.meta.env.DEV) {
-          console.log('[DiscoveryFeed] Loaded schema from sessionStorage:', schema.columns.length, 'columns,', schema.rowCount, 'rows')
+          console.info('[DiscoveryFeed] Loaded schema from sessionStorage:', schema.columns.length, 'columns,', schema.rowCount, 'rows')
         }
       }
     } catch (err) {

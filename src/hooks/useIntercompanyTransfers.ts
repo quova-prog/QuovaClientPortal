@@ -35,7 +35,7 @@ export function useIntercompanyTransfers() {
       .eq('org_id', orgId as string)
       .order('transfer_date', { ascending: true })
     if (err) setError(err.message)
-    else setTransfers((data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at })))
+    else setTransfers((data ?? []).map(r => ({ ...r, uploaded_at: r.created_at })))
     setLoading(false)
   }, [orgId, db])
 
@@ -60,7 +60,7 @@ export function useIntercompanyTransfers() {
       .insert(rows.map(r => ({ ...r, org_id: orgId, uploaded_by: user?.id })))
       .select()
     if (err) throw new Error(err.message)
-    const newRows = (data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at }))
+    const newRows = (data ?? []).map(r => ({ ...r, uploaded_at: r.created_at }))
     setTransfers(prev => [...prev, ...newRows])
   }
 

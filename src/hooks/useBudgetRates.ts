@@ -31,7 +31,7 @@ export function useBudgetRates() {
       .eq('org_id', orgId as string)
       .order('created_at', { ascending: false })
     if (err) setError(err.message)
-    else setRates((data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at })))
+    else setRates((data ?? []).map(r => ({ ...r, uploaded_at: r.created_at })))
     setLoading(false)
   }, [orgId, db])
 
@@ -56,7 +56,7 @@ export function useBudgetRates() {
       .insert(rows.map(r => ({ ...r, org_id: orgId, uploaded_by: user?.id })))
       .select()
     if (err) throw new Error(err.message)
-    const newRows = (data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at }))
+    const newRows = (data ?? []).map(r => ({ ...r, uploaded_at: r.created_at }))
     setRates(prev => [...newRows, ...prev])
   }
 

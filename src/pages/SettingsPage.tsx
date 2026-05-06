@@ -116,6 +116,8 @@ export function SettingsPage() {
         let detail = fnErr.message
         try {
           if ('context' in fnErr) {
+            // FunctionsHttpError.context is a Response but isn't typed on the error union
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const ctx = (fnErr as any).context
             if (ctx instanceof Response) {
               const body = await ctx.json()
@@ -1243,6 +1245,7 @@ export function SettingsPage() {
                             <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                               <select
                                 value={m.role}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DOM <select> value widens to string; runtime values constrained by <option>s
                                 onChange={e => handleRoleChange(m.id, e.target.value as any)}
                                 style={{
                                   appearance: 'none', background: 'transparent', border: '1px solid var(--border)',
@@ -1362,6 +1365,7 @@ export function SettingsPage() {
                     <select
                       className="input"
                       value={inviteRole}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DOM <select> value widens to string; runtime values constrained by <option>s
                       onChange={e => setInviteRole(e.target.value as any)}
                       style={{ marginBottom: '0.5rem' }}
                     >

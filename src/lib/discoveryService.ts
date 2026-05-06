@@ -185,7 +185,7 @@ export async function runFlatFileDiscovery(
   if (requiredCovered >= requiredFields.length - 1) {
     // Rules covered most/all required fields — use as-is, bump confidence for exact matches
     if (import.meta.env.DEV) {
-      console.log(`[discoveryService] Rule-based mapping covered ${requiredCovered}/${requiredFields.length} required fields — skipping AI`)
+      console.info(`[discoveryService] Rule-based mapping covered ${requiredCovered}/${requiredFields.length} required fields — skipping AI`)
     }
     return {
       ...ruleResult,

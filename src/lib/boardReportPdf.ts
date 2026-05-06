@@ -382,6 +382,8 @@ function addExposurePolicyPage(doc: jsPDF, data: BoardReportData, pageNum: numbe
     margin: { left: 18, right: 18 },
   })
 
+  // jspdf-autotable extends the doc instance at runtime with .lastAutoTable; not in jspdf types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY: number = (doc as any).lastAutoTable?.finalY ?? 120
 
   // Note box
@@ -501,6 +503,8 @@ function addHedgePortfolioPage(doc: jsPDF, data: BoardReportData, pageNum: numbe
     margin: { left: 18, right: 18 },
   })
 
+  // jspdf-autotable extends the doc instance at runtime with .lastAutoTable; not in jspdf types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY: number = (doc as any).lastAutoTable?.finalY ?? 150
 
   // MTM callout box

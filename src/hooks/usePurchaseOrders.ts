@@ -35,7 +35,7 @@ export function usePurchaseOrders() {
       .eq('org_id', orgId as string)
       .order('due_date', { ascending: true })
     if (err) setError(err.message)
-    else setOrders((data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at })))
+    else setOrders((data ?? []).map(r => ({ ...r, uploaded_at: r.created_at })))
     setLoading(false)
   }, [orgId, db])
 
@@ -60,7 +60,7 @@ export function usePurchaseOrders() {
       .insert(rows.map(r => ({ ...r, org_id: orgId, uploaded_by: user?.id })))
       .select()
     if (err) throw new Error(err.message)
-    const newRows = (data ?? []).map((r: any) => ({ ...r, uploaded_at: r.created_at }))
+    const newRows = (data ?? []).map(r => ({ ...r, uploaded_at: r.created_at }))
     setOrders(prev => [...prev, ...newRows])
   }
 

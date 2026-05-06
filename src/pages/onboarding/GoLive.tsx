@@ -136,7 +136,7 @@ export function GoLive(): React.ReactElement {
         const columnMap = loadColumnMap()
         const hasMappings = Object.keys(columnMap).length > 0
         if (hasMappings && import.meta.env.DEV) {
-          console.log(`[GoLive] Applying ${Object.keys(columnMap).length} field mappings`)
+          console.info(`[GoLive] Applying ${Object.keys(columnMap).length} field mappings`)
         }
         const rows: ParsedRow[] = rawRows.map(r => hasMappings ? remapRow(r, columnMap) : r as ParsedRow)
         await pause(300)
@@ -205,7 +205,7 @@ export function GoLive(): React.ReactElement {
 
           importedCount = inserted
           setImportCount(inserted)
-          if (import.meta.env.DEV) console.log(`[GoLive] Imported ${inserted} exposures`)
+          if (import.meta.env.DEV) console.info(`[GoLive] Imported ${inserted} exposures`)
         }
 
         // Step 5: currency pairs
