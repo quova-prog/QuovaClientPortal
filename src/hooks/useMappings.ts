@@ -1,8 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { FieldMapping, MappingStatus } from '@/types'
+import type { Database } from '@/types/database.types'
 
 const SESSION_MAPPINGS_KEY = 'orbit_discovery_mappings'
+
+/**
+ * The DB-side update shape for `field_mappings`. The app-level `FieldMapping`
+ * type is wider than this — it carries reconciliation enrichment fields
+ * (verdict, signals, proposal_*) that live in memory only and must NOT be
+ * sent to PostgREST. Use this narrow type for any `.update()` payload.
+ */
+type FieldMappingsDbUpdate = Database['public']['Tables']['field_mappings']['Update']
 
 export interface UseMappingsResult {
   mappings: FieldMapping[]
@@ -108,9 +117,24 @@ export function useMappings(discoveryId: string | null): UseMappingsResult {
 
   const applyUpdate = useCallback(async (id: string, updates: Partial<FieldMapping>) => {
     if (!isLocal) {
+      // Build the DB-narrow payload by hand. App-only enrichment fields
+      // (verdict, signals, proposal_*, human_review_*) live in memory only
+      // and never get persisted to field_mappings.
+      const dbUpdate: FieldMappingsDbUpdate = {
+        reviewed_at: new Date().toISOString(),
+      }
+      if (updates.status        !== undefined) dbUpdate.status        = updates.status
+      if (updates.target_field  !== undefined) dbUpdate.target_field  = updates.target_field
+      if (updates.target_entity !== undefined) dbUpdate.target_entity = updates.target_entity
+      if (updates.human_notes   !== undefined) dbUpdate.human_notes   = updates.human_notes
+      if (updates.confidence    !== undefined) dbUpdate.confidence    = updates.confidence
+      if (updates.ai_reasoning  !== undefined) dbUpdate.ai_reasoning  = updates.ai_reasoning
+      if (updates.reviewed_by   !== undefined) dbUpdate.reviewed_by   = updates.reviewed_by
+      if (updates.reviewed_at   !== undefined) dbUpdate.reviewed_at   = updates.reviewed_at
+
       const { error: err } = await supabase
         .from('field_mappings')
-        .update({ ...updates, reviewed_at: new Date().toISOString() } as never)
+        .update(dbUpdate)
         .eq('id', id)
       if (err && import.meta.env.DEV) console.warn('[useMappings] DB update failed:', err.message)
     }

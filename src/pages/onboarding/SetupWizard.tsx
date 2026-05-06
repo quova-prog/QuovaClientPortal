@@ -4,6 +4,10 @@ import { ChevronDown, ChevronUp, Plus, Trash2, ArrowRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useOnboarding } from '@/hooks/useOnboarding'
+import type { Database, Json } from '@/types/database.types'
+
+type OrgProfileInsert = Database['public']['Tables']['organization_profiles']['Insert']
+type OrgProfileUpdate = Database['public']['Tables']['organization_profiles']['Update']
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -171,13 +175,19 @@ export function SetupWizard(): React.ReactElement {
     setError(null)
 
     try {
-      const profileData = {
+      // Type-narrow the payload so the supabase client's generated
+      // Insert/Update types catch any field drift at the variable site
+      // rather than getting hidden behind a `as never` cast.
+      const profileData: OrgProfileInsert = {
         org_id:                user.profile.org_id,
         functional_currency:   funcCcy,
         reporting_currencies:  reportingCcys,
         fiscal_year_end_month: fiscalMonth,
         transaction_currencies: txCcys,
-        entities:              entities.filter(e => e.name.trim()),
+        // entities is a JSONB column on organization_profiles; cast through
+        // unknown→Json to bridge the structurally-typed EntityRow[] to the
+        // generated Json type (no runtime change).
+        entities:              entities.filter(e => e.name.trim()) as unknown as Json,
         industry,
         annual_revenue_band:   revBand,
         bank_relationships:    banks,
@@ -186,17 +196,21 @@ export function SetupWizard(): React.ReactElement {
       }
 
       if (profile) {
-        // Update existing
+        // Update existing — Update type allows partial payloads + updated_at
+        const updatePayload: OrgProfileUpdate = {
+          ...profileData,
+          updated_at: new Date().toISOString(),
+        }
         const { error: upErr } = await supabase
           .from('organization_profiles')
-          .update({ ...profileData, updated_at: new Date().toISOString() } as never)
+          .update(updatePayload)
           .eq('org_id', user.profile.org_id)
         if (upErr) throw new Error(upErr.message)
       } else {
         // Insert new
         const { error: insErr } = await supabase
           .from('organization_profiles')
-          .insert(profileData as never)
+          .insert(profileData)
         if (insErr) throw new Error(insErr.message)
       }
 
