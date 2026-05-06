@@ -110,7 +110,7 @@ export function useMappings(discoveryId: string | null): UseMappingsResult {
     if (!isLocal) {
       const { error: err } = await supabase
         .from('field_mappings')
-        .update({ ...updates, reviewed_at: new Date().toISOString() })
+        .update({ ...updates, reviewed_at: new Date().toISOString() } as never)
         .eq('id', id)
       if (err && import.meta.env.DEV) console.warn('[useMappings] DB update failed:', err.message)
     }
