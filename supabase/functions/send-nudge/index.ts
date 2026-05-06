@@ -7,6 +7,7 @@
 import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { signUnsubscribeToken } from '../_shared/crypto.ts'
+import { escapeHtmlAttr, joinAppUrl, safeHttpUrl } from '../_shared/url.ts'
 
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com'
 
@@ -100,6 +101,8 @@ function buildNudgeEmailHtml(opts: {
   unsubscribeUrl: string
 }): string {
   const body = opts.customMessage ?? opts.message
+  const safeCtaUrl = escapeHtmlAttr(joinAppUrl(APP_BASE_URL, opts.ctaUrl, '/dashboard'))
+  const safeUnsubscribeUrl = escapeHtmlAttr(safeHttpUrl(opts.unsubscribeUrl, `${APP_BASE_URL}/settings`))
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -117,14 +120,14 @@ function buildNudgeEmailHtml(opts: {
       <p style="margin:0 0 8px;color:#475569;font-size:14px;line-height:1.6">Hi ${escapeHtml(opts.orgName)} team,</p>
       <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6">${escapeHtml(body)}</p>
       <table cellpadding="0" cellspacing="0"><tr><td style="background:#00c8a0;border-radius:8px;padding:12px 28px">
-        <a href="${APP_BASE_URL}${opts.ctaUrl}" style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;display:inline-block">${escapeHtml(opts.ctaLabel)}</a>
+        <a href="${safeCtaUrl}" style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;display:inline-block">${escapeHtml(opts.ctaLabel)}</a>
       </td></tr></table>
     </td></tr>
     <!-- Footer -->
     <tr><td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center">
       <p style="margin:0;color:#94a3b8;font-size:12px">
         This is an automated nudge from Quova support on behalf of your account.
-        <br><a href="${opts.unsubscribeUrl}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a>
+        <br><a href="${safeUnsubscribeUrl}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a>
       </p>
     </td></tr>
   </table>

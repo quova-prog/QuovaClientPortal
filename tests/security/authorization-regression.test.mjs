@@ -122,6 +122,31 @@ test('security test coverage points at the intended migration files', () => {
   expectIncludes('supabase/migrations/20260331_org_entity_admin_lockdown.sql', 'entities_update_admin', 'entity lockdown migration should remain present')
 })
 
+test('email templates validate app CTA paths and escape URL attributes', () => {
+  const helper = readRepoFile('supabase/functions/_shared/url.ts')
+  assert.match(helper, /export function escapeHtmlAttr/s)
+  assert.match(helper, /export function safeAppPath/s)
+  assert.match(helper, /export function safeHttpUrl/s)
+  assert.match(helper, /export function joinAppUrl/s)
+  assert.match(helper, /!value\.startsWith\('\/'\) \|\| value\.startsWith\('\/\/'\)/s)
+  assert.match(helper, /char === '\\\\' \|\| code <= 31 \|\| code === 127/s)
+  assert.match(helper, /parsed\.protocol !== 'https:' && parsed\.protocol !== 'http:'/s)
+
+  const sharedTemplates = readRepoFile('supabase/functions/_shared/emailTemplates.ts')
+  assert.match(sharedTemplates, /import \{ escapeHtmlAttr, joinAppUrl, safeHttpUrl \} from '\.\/url\.ts'/s)
+  assert.match(sharedTemplates, /const safeCtaUrl = escapeHtmlAttr\(joinAppUrl\(data\.appBaseUrl, data\.href, '\/inbox'\)\)/s)
+  assert.match(sharedTemplates, /escapeHtmlAttr\(joinAppUrl\(data\.appBaseUrl, '\/dashboard'\)\)/s)
+  assert.match(sharedTemplates, /escapeHtmlAttr\(safeHttpUrl\(unsubscribeUrl,/s)
+  assert.doesNotMatch(sharedTemplates, /const ctaUrl = data\.href \? `\$\{data\.appBaseUrl\}\$\{data\.href\}`/s)
+
+  const nudge = readRepoFile('supabase/functions/send-nudge/index.ts')
+  assert.match(nudge, /import \{ escapeHtmlAttr, joinAppUrl, safeHttpUrl \} from '\.\.\/_shared\/url\.ts'/s)
+  assert.match(nudge, /const safeCtaUrl = escapeHtmlAttr\(joinAppUrl\(APP_BASE_URL, opts\.ctaUrl, '\/dashboard'\)\)/s)
+  assert.match(nudge, /const safeUnsubscribeUrl = escapeHtmlAttr\(safeHttpUrl\(opts\.unsubscribeUrl,/s)
+  assert.doesNotMatch(nudge, /href="\$\{APP_BASE_URL\}\$\{opts\.ctaUrl\}"/s)
+  assert.doesNotMatch(nudge, /href="\$\{opts\.unsubscribeUrl\}"/s)
+})
+
 test('vercel CSP keeps core browser hardening directives', () => {
   const content = readRepoFile('vercel.json')
   const config = JSON.parse(content)

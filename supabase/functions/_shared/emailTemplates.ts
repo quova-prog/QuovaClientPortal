@@ -3,6 +3,8 @@
 // Inline CSS for maximum email client compatibility
 // ============================================================
 
+import { escapeHtmlAttr, joinAppUrl, safeHttpUrl } from './url.ts'
+
 const NAVY = '#0B1526'
 const TEAL = '#00C8A0'
 const WHITE = '#FFFFFF'
@@ -14,6 +16,7 @@ const AMBER = '#F59E0B'
 const BORDER = '#E2E8F0'
 
 function baseTemplate(content: string, unsubscribeUrl: string): string {
+  const safeUnsubscribeUrl = escapeHtmlAttr(safeHttpUrl(unsubscribeUrl, 'https://app.quovaos.com/settings'))
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -37,7 +40,7 @@ function baseTemplate(content: string, unsubscribeUrl: string): string {
 <tr><td style="padding:24px 32px;border-top:1px solid ${BORDER};background:${LIGHT_BG};">
   <p style="margin:0;font-size:12px;color:${TEXT_MUTED};line-height:1.5;">
     You received this email because you have notifications enabled in Quova.
-    <a href="${unsubscribeUrl}" style="color:${TEAL};text-decoration:underline;">Unsubscribe</a>
+    <a href="${safeUnsubscribeUrl}" style="color:${TEAL};text-decoration:underline;">Unsubscribe</a>
   </p>
   <p style="margin:8px 0 0;font-size:11px;color:${TEXT_MUTED};">
     &copy; ${new Date().getFullYear()} Quova Inc. All rights reserved.
@@ -68,7 +71,7 @@ export function urgentAlertEmail(data: UrgentAlertEmailData): { subject: string;
   const severityColor = data.severity === 'urgent' ? RED : AMBER
   const severityLabel = data.severity.charAt(0).toUpperCase() + data.severity.slice(1)
   const typeLabel = data.alertType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-  const ctaUrl = data.href ? `${data.appBaseUrl}${data.href}` : `${data.appBaseUrl}/inbox`
+  const safeCtaUrl = escapeHtmlAttr(joinAppUrl(data.appBaseUrl, data.href, '/inbox'))
 
   const content = `
     <div style="margin-bottom:24px;">
@@ -81,7 +84,7 @@ export function urgentAlertEmail(data: UrgentAlertEmailData): { subject: string;
     </div>
     <h2 style="margin:0 0 12px;font-size:20px;color:${TEXT_PRIMARY};font-weight:600;">${escapeHtml(data.alertTitle)}</h2>
     <p style="margin:0 0 24px;font-size:14px;color:${TEXT_MUTED};line-height:1.6;">${escapeHtml(data.alertBody)}</p>
-    <a href="${ctaUrl}" style="display:inline-block;padding:10px 24px;background:${TEAL};color:${WHITE};border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+    <a href="${safeCtaUrl}" style="display:inline-block;padding:10px 24px;background:${TEAL};color:${WHITE};border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
       View in Quova
     </a>
   `
@@ -162,7 +165,7 @@ export function dailyDigestEmail(data: DigestEmailData): { subject: string; html
       ` : '<p style="font-size:13px;color:' + TEXT_MUTED + ';">No alerts in the past 24 hours.</p>'}
     </div>
 
-    <a href="${data.appBaseUrl}/dashboard" style="display:inline-block;padding:10px 24px;background:${TEAL};color:${WHITE};border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+    <a href="${escapeHtmlAttr(joinAppUrl(data.appBaseUrl, '/dashboard'))}" style="display:inline-block;padding:10px 24px;background:${TEAL};color:${WHITE};border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
       View Full Dashboard
     </a>
   `
