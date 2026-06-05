@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       ai_usage_logs: {
         Row: {
+          bank_id: string
           cost_tokens: number
           created_at: string
           id: string
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_id: string
           cost_tokens?: number
           created_at?: string
           id?: string
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_id?: string
           cost_tokens?: number
           created_at?: string
           id?: string
@@ -40,6 +43,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ai_usage_logs_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ai_usage_logs_org_id_fkey"
             columns: ["org_id"]
@@ -114,6 +124,7 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string
+          bank_id: string
           created_at: string
           id: string
           metadata: Json | null
@@ -126,6 +137,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          bank_id: string
           created_at?: string
           id?: string
           metadata?: Json | null
@@ -138,6 +150,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          bank_id?: string
           created_at?: string
           id?: string
           metadata?: Json | null
@@ -149,6 +162,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "audit_logs_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "audit_logs_org_id_fkey"
             columns: ["org_id"]
@@ -229,6 +249,291 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bank_brand: {
+        Row: {
+          accent_color: string | null
+          bank_id: string
+          email_from_addr: string | null
+          email_from_name: string | null
+          favicon_url: string | null
+          logo_url: string | null
+          page_title: string | null
+          primary_color: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          bank_id: string
+          email_from_addr?: string | null
+          email_from_name?: string | null
+          favicon_url?: string | null
+          logo_url?: string | null
+          page_title?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          bank_id?: string
+          email_from_addr?: string | null
+          email_from_name?: string | null
+          favicon_url?: string | null
+          logo_url?: string | null
+          page_title?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_brand_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: true
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_commercial: {
+        Row: {
+          allowed_modules: string[]
+          allowed_tiers: string[]
+          bank_id: string
+          contract_ends: string | null
+          contract_starts: string | null
+          created_at: string
+          tier_display: Json
+          updated_at: string
+        }
+        Insert: {
+          allowed_modules?: string[]
+          allowed_tiers?: string[]
+          bank_id: string
+          contract_ends?: string | null
+          contract_starts?: string | null
+          created_at?: string
+          tier_display?: Json
+          updated_at?: string
+        }
+        Update: {
+          allowed_modules?: string[]
+          allowed_tiers?: string[]
+          bank_id?: string
+          contract_ends?: string | null
+          contract_starts?: string | null
+          created_at?: string
+          tier_display?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_commercial_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: true
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_features: {
+        Row: {
+          bank_id: string
+          features: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bank_id: string
+          features?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bank_id?: string
+          features?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_features_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: true
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_identity: {
+        Row: {
+          bank_id: string
+          cidr_allowlist: unknown[]
+          group_role_mapping: Json
+          idle_timeout_minutes: number
+          idp_acs_url: string | null
+          idp_entity_id: string | null
+          idp_metadata_url: string | null
+          idp_protocol: string | null
+          required_aal: string
+          updated_at: string
+        }
+        Insert: {
+          bank_id: string
+          cidr_allowlist?: unknown[]
+          group_role_mapping?: Json
+          idle_timeout_minutes?: number
+          idp_acs_url?: string | null
+          idp_entity_id?: string | null
+          idp_metadata_url?: string | null
+          idp_protocol?: string | null
+          required_aal?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_id?: string
+          cidr_allowlist?: unknown[]
+          group_role_mapping?: Json
+          idle_timeout_minutes?: number
+          idp_acs_url?: string | null
+          idp_entity_id?: string | null
+          idp_metadata_url?: string | null
+          idp_protocol?: string | null
+          required_aal?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_identity_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: true
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_integrations: {
+        Row: {
+          bank_id: string
+          config: Json
+          created_at: string
+          credentials_ref: string | null
+          enabled: boolean
+          id: string
+          integration_type: string
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          bank_id: string
+          config?: Json
+          created_at?: string
+          credentials_ref?: string | null
+          enabled?: boolean
+          id?: string
+          integration_type: string
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          bank_id?: string
+          config?: Json
+          created_at?: string
+          credentials_ref?: string | null
+          enabled?: boolean
+          id?: string
+          integration_type?: string
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_integrations_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_policy_versions: {
+        Row: {
+          approval_reason: string
+          approved_by: string | null
+          bank_id: string
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          policy_data: Json
+          version_number: number
+        }
+        Insert: {
+          approval_reason: string
+          approved_by?: string | null
+          bank_id: string
+          created_at?: string
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          policy_data: Json
+          version_number: number
+        }
+        Update: {
+          approval_reason?: string
+          approved_by?: string | null
+          bank_id?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          policy_data?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_policy_versions_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banks: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          legal_name: string
+          region: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          legal_name: string
+          region: string
+          slug: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          legal_name?: string
+          region?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       budget_rates: {
         Row: {
@@ -766,6 +1071,7 @@ export type Database = {
       email_logs: {
         Row: {
           alert_id: string | null
+          bank_id: string
           email_type: string
           error: string | null
           id: string
@@ -778,6 +1084,7 @@ export type Database = {
         }
         Insert: {
           alert_id?: string | null
+          bank_id: string
           email_type: string
           error?: string | null
           id?: string
@@ -790,6 +1097,7 @@ export type Database = {
         }
         Update: {
           alert_id?: string | null
+          bank_id?: string
           email_type?: string
           error?: string | null
           id?: string
@@ -806,6 +1114,13 @@ export type Database = {
             columns: ["alert_id"]
             isOneToOne: false
             referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
             referencedColumns: ["id"]
           },
           {
@@ -1701,6 +2016,7 @@ export type Database = {
       }
       organisations: {
         Row: {
+          bank_id: string
           created_at: string
           domain: string | null
           id: string
@@ -1712,6 +2028,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bank_id: string
           created_at?: string
           domain?: string | null
           id?: string
@@ -1723,6 +2040,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bank_id?: string
           created_at?: string
           domain?: string | null
           id?: string
@@ -1733,7 +2051,15 @@ export type Database = {
           setup_fee?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organisations_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_profiles: {
         Row: {
@@ -1869,6 +2195,113 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_action_events: {
+        Row: {
+          created_at: string
+          event_source: string
+          from_status: string | null
+          id: string
+          payload: Json
+          platform_action_id: string
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          event_source: string
+          from_status?: string | null
+          id?: string
+          payload?: Json
+          platform_action_id: string
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          event_source?: string
+          from_status?: string | null
+          id?: string
+          payload?: Json
+          platform_action_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_action_events_platform_action_id_fkey"
+            columns: ["platform_action_id"]
+            isOneToOne: false
+            referencedRelation: "platform_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_actions: {
+        Row: {
+          action_type: string
+          bank_id: string
+          bank_quote_id: string | null
+          bank_trade_id: string | null
+          client_request_id: string
+          created_at: string
+          id: string
+          last_known_result: Json | null
+          last_polled_at: string | null
+          next_poll_at: string | null
+          org_id: string
+          spec: Json
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          bank_id: string
+          bank_quote_id?: string | null
+          bank_trade_id?: string | null
+          client_request_id: string
+          created_at?: string
+          id?: string
+          last_known_result?: Json | null
+          last_polled_at?: string | null
+          next_poll_at?: string | null
+          org_id: string
+          spec: Json
+          status: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          bank_id?: string
+          bank_quote_id?: string | null
+          bank_trade_id?: string | null
+          client_request_id?: string
+          created_at?: string
+          id?: string
+          last_known_result?: Json | null
+          last_polled_at?: string | null
+          next_poll_at?: string | null
+          org_id?: string
+          spec?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_actions_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_actions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -2306,6 +2739,7 @@ export type Database = {
       }
       support_users: {
         Row: {
+          bank_id: string | null
           created_at: string
           email: string
           id: string
@@ -2314,6 +2748,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bank_id?: string | null
           created_at?: string
           email: string
           id: string
@@ -2322,6 +2757,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bank_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -2329,7 +2765,15 @@ export type Database = {
           role?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_users_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tier_definitions: {
         Row: {
@@ -2522,18 +2966,48 @@ export type Database = {
         Args: { p_new_status: string; p_reason?: string; p_session_id: string }
         Returns: undefined
       }
+      assert_support_can_act_on_org: {
+        Args: { p_org_id: string }
+        Returns: undefined
+      }
       check_and_log_ai_usage: { Args: { p_model: string }; Returns: boolean }
+      current_support_bank_id: { Args: never; Returns: string }
+      current_user_bank_id: { Args: never; Returns: string }
       current_user_org_id: { Args: never; Returns: string }
       current_user_role: { Args: never; Returns: string }
       delete_organisation: { Args: never; Returns: undefined }
+      dump_schema_introspection: { Args: never; Returns: Json }
       get_support_user_role: { Args: never; Returns: string }
       has_support_access_to: { Args: { p_org_id: string }; Returns: boolean }
+      has_support_access_to_bank: {
+        Args: { p_bank_id: string }
+        Returns: boolean
+      }
+      is_feature_enabled: {
+        Args: { p_feature_key: string; p_org_id: string }
+        Returns: boolean
+      }
+      is_quova_platform_admin: { Args: never; Returns: boolean }
       is_support_user: { Args: never; Returns: boolean }
       onboard_new_user: {
         Args: { p_full_name: string; p_org_name: string }
         Returns: string
       }
+      platform_actions_is_terminal: {
+        Args: { p_status: string }
+        Returns: boolean
+      }
       remove_member: { Args: { p_target_user_id: string }; Returns: undefined }
+      submit_policy_change: {
+        Args: {
+          p_approval_reason: string
+          p_bank_id: string
+          p_effective_from: string
+          p_policy_data: Json
+        }
+        Returns: string
+      }
+      support_can_see_org: { Args: { p_org_id: string }; Returns: boolean }
       support_change_org_modules: {
         Args: { p_modules: string[]; p_org_id: string; p_reason: string }
         Returns: undefined
@@ -2551,7 +3025,7 @@ export type Database = {
         Returns: string
       }
       support_revoke_org_access: {
-        Args: { p_org_id: string }
+        Args: { p_grant_id: string }
         Returns: undefined
       }
       support_set_org_pricing: {
@@ -2563,26 +3037,47 @@ export type Database = {
         }
         Returns: undefined
       }
-      support_set_payment_method: {
-        Args: {
-          p_ach_account_holder?: string
-          p_ach_account_type?: string
-          p_ach_bank_name?: string
-          p_ach_last_four?: string
-          p_cc_brand?: string
-          p_cc_cardholder_name?: string
-          p_cc_expiry_month?: number
-          p_cc_expiry_year?: number
-          p_cc_last_four?: string
-          p_invoice_contact_name?: string
-          p_invoice_email?: string
-          p_invoice_terms?: string
-          p_org_id: string
-          p_payment_type: string
-          p_reason?: string
-        }
-        Returns: undefined
-      }
+      support_set_payment_method:
+        | {
+            Args: {
+              p_ach_account_holder?: string
+              p_ach_account_type?: string
+              p_ach_bank_name?: string
+              p_ach_last_four?: string
+              p_cc_brand?: string
+              p_cc_cardholder_name?: string
+              p_cc_expiry_month?: number
+              p_cc_expiry_year?: number
+              p_cc_last_four?: string
+              p_invoice_contact_name?: string
+              p_invoice_email?: string
+              p_invoice_terms?: string
+              p_org_id: string
+              p_payment_type: string
+              p_reason?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_ach_account_holder?: string
+              p_ach_account_type?: string
+              p_ach_bank_name?: string
+              p_ach_last_four?: string
+              p_cc_brand?: string
+              p_cc_cardholder_name?: string
+              p_cc_expiry_month?: number
+              p_cc_expiry_year?: number
+              p_cc_last_four?: string
+              p_invoice_contact_name?: string
+              p_invoice_email?: string
+              p_invoice_terms?: string
+              p_org_id: string
+              p_payment_type: string
+              p_reason?: string
+            }
+            Returns: undefined
+          }
       support_write_audit_log: {
         Args: {
           p_action: string
