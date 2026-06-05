@@ -40,7 +40,7 @@ jobs:
         # Required by `npm run types:db` (which calls `supabase gen types`).
         # Always install — fast binary fetch, harmless when the next
         # step skips the actual type-check on missing access token.
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
