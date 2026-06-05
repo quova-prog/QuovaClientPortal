@@ -25,3 +25,39 @@ test('Migration A: hedge_positions allows window_forward and adds window columns
   // drawn_notional bounded to [0, notional_base]
   assert.match(sql, /drawn_notional >= 0 AND drawn_notional <= notional_base/s)
 })
+
+test('Migration B: draws table stores write-once economics with invariant triggers + RLS', () => {
+  const sql = read('supabase/migrations/20260604000002_window_forward_draws.sql')
+
+  // table + write-once economic columns
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS hedge_position_draws/s)
+  for (const col of [
+    'spot_rate_at_draw', 'settlement_quote', 'realized_pnl_quote',
+    'realized_pnl_usd', 'is_final_settlement', 'draw_seq',
+  ]) {
+    assert.match(sql, new RegExp(col, 's'), `missing column ${col}`)
+  }
+
+  // unique draw sequence per position
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS uq_draw_seq\s+ON hedge_position_draws\(position_id, draw_seq\)/s)
+
+  // org-match trigger: draw.org_id must equal parent position org
+  assert.match(sql, /enforce_draw_org_matches_position/s)
+  assert.match(sql, /does not match position org/s)
+  assert.match(sql, /BEFORE INSERT OR UPDATE ON hedge_position_draws/s)
+
+  // recalc trigger locks the parent row (FOR UPDATE) and auto-closes when fully drawn
+  assert.match(sql, /recalc_drawn_notional/s)
+  assert.match(sql, /FROM hedge_positions WHERE id = v_pos FOR UPDATE/s)
+  assert.match(sql, /WHEN v_total >= v_notional THEN 'closed'/s)
+
+  // mandatory audit trigger
+  assert.match(sql, /trg_audit_hedge_position_draws[\s\S]*audit_trigger_func\(\)/s)
+
+  // RLS: select scoped to org; direct writes blocked (RPC is the only write path)
+  assert.match(sql, /ALTER TABLE hedge_position_draws ENABLE ROW LEVEL SECURITY/s)
+  assert.match(sql, /FOR SELECT USING \(org_id = current_user_org_id\(\)\)/s)
+  assert.match(sql, /FOR INSERT TO authenticated WITH CHECK \(false\)/s)
+  assert.match(sql, /FOR UPDATE TO authenticated USING \(false\)/s)
+  assert.match(sql, /FOR DELETE TO authenticated USING \(false\)/s)
+})
