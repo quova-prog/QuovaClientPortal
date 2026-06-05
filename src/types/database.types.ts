@@ -1068,6 +1068,61 @@ export type Database = {
           },
         ]
       }
+      draw_exposure_allocations: {
+        Row: {
+          allocated_amount: number
+          created_at: string
+          derived_ref: string | null
+          derived_source: string | null
+          draw_id: string
+          exposure_id: string | null
+          id: string
+          org_id: string
+        }
+        Insert: {
+          allocated_amount: number
+          created_at?: string
+          derived_ref?: string | null
+          derived_source?: string | null
+          draw_id: string
+          exposure_id?: string | null
+          id?: string
+          org_id: string
+        }
+        Update: {
+          allocated_amount?: number
+          created_at?: string
+          derived_ref?: string | null
+          derived_source?: string | null
+          draw_id?: string
+          exposure_id?: string | null
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draw_exposure_allocations_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_position_draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draw_exposure_allocations_exposure_id_fkey"
+            columns: ["exposure_id"]
+            isOneToOne: false
+            referencedRelation: "fx_exposures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draw_exposure_allocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           alert_id: string | null
@@ -1321,6 +1376,7 @@ export type Database = {
           notional_usd: number | null
           org_id: string
           quote_currency: string
+          settled_amount: number
           settlement_date: string
           source_system: string | null
           status: string
@@ -1340,6 +1396,7 @@ export type Database = {
           notional_usd?: number | null
           org_id: string
           quote_currency: string
+          settled_amount?: number
           settlement_date: string
           source_system?: string | null
           status?: string
@@ -1359,6 +1416,7 @@ export type Database = {
           notional_usd?: number | null
           org_id?: string
           quote_currency?: string
+          settled_amount?: number
           settlement_date?: string
           source_system?: string | null
           status?: string
@@ -1419,7 +1477,9 @@ export type Database = {
           entity_id: string | null
           id: string
           max_coverage_pct: number
+          max_draws_per_window: number
           max_tenor_months: number | null
+          max_window_days: number
           min_coverage_pct: number
           min_notional_threshold: number
           min_tenor_days: number
@@ -1428,6 +1488,7 @@ export type Database = {
           rebalance_frequency: string
           target_hedge_ratio_pct: number | null
           updated_at: string
+          window_forward_pairs: string[]
         }
         Insert: {
           active?: boolean
@@ -1438,7 +1499,9 @@ export type Database = {
           entity_id?: string | null
           id?: string
           max_coverage_pct?: number
+          max_draws_per_window?: number
           max_tenor_months?: number | null
+          max_window_days?: number
           min_coverage_pct?: number
           min_notional_threshold?: number
           min_tenor_days?: number
@@ -1447,6 +1510,7 @@ export type Database = {
           rebalance_frequency?: string
           target_hedge_ratio_pct?: number | null
           updated_at?: string
+          window_forward_pairs?: string[]
         }
         Update: {
           active?: boolean
@@ -1457,7 +1521,9 @@ export type Database = {
           entity_id?: string | null
           id?: string
           max_coverage_pct?: number
+          max_draws_per_window?: number
           max_tenor_months?: number | null
+          max_window_days?: number
           min_coverage_pct?: number
           min_notional_threshold?: number
           min_tenor_days?: number
@@ -1466,6 +1532,7 @@ export type Database = {
           rebalance_frequency?: string
           target_hedge_ratio_pct?: number | null
           updated_at?: string
+          window_forward_pairs?: string[]
         }
         Relationships: [
           {
@@ -1484,6 +1551,88 @@ export type Database = {
           },
         ]
       }
+      hedge_position_draws: {
+        Row: {
+          bank_confirmation: string | null
+          created_at: string
+          created_by: string | null
+          draw_amount: number
+          draw_date: string
+          draw_rate: number
+          draw_seq: number
+          id: string
+          is_final_settlement: boolean
+          notes: string | null
+          org_id: string
+          position_id: string
+          realized_pnl_quote: number
+          realized_pnl_usd: number
+          reference_number: string | null
+          settlement_quote: number
+          spot_rate_at_draw: number
+        }
+        Insert: {
+          bank_confirmation?: string | null
+          created_at?: string
+          created_by?: string | null
+          draw_amount: number
+          draw_date: string
+          draw_rate: number
+          draw_seq: number
+          id?: string
+          is_final_settlement?: boolean
+          notes?: string | null
+          org_id: string
+          position_id: string
+          realized_pnl_quote: number
+          realized_pnl_usd: number
+          reference_number?: string | null
+          settlement_quote: number
+          spot_rate_at_draw: number
+        }
+        Update: {
+          bank_confirmation?: string | null
+          created_at?: string
+          created_by?: string | null
+          draw_amount?: number
+          draw_date?: string
+          draw_rate?: number
+          draw_seq?: number
+          id?: string
+          is_final_settlement?: boolean
+          notes?: string | null
+          org_id?: string
+          position_id?: string
+          realized_pnl_quote?: number
+          realized_pnl_usd?: number
+          reference_number?: string | null
+          settlement_quote?: number
+          spot_rate_at_draw?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hedge_position_draws_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedge_position_draws_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedge_position_draws_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hedge_positions: {
         Row: {
           amended_at: string | null
@@ -1496,6 +1645,7 @@ export type Database = {
           created_by: string | null
           currency_pair: string
           direction: string
+          drawn_notional: number
           entity_id: string | null
           hedge_type: string
           id: string
@@ -1504,6 +1654,7 @@ export type Database = {
           notional_base: number
           notional_usd: number | null
           org_id: string
+          pricing_method: string | null
           quote_currency: string
           reference_number: string | null
           rolled_from_id: string | null
@@ -1512,6 +1663,8 @@ export type Database = {
           trade_date: string
           updated_at: string
           value_date: string
+          window_end_date: string | null
+          window_start_date: string | null
         }
         Insert: {
           amended_at?: string | null
@@ -1524,6 +1677,7 @@ export type Database = {
           created_by?: string | null
           currency_pair: string
           direction: string
+          drawn_notional?: number
           entity_id?: string | null
           hedge_type?: string
           id?: string
@@ -1532,6 +1686,7 @@ export type Database = {
           notional_base: number
           notional_usd?: number | null
           org_id: string
+          pricing_method?: string | null
           quote_currency: string
           reference_number?: string | null
           rolled_from_id?: string | null
@@ -1540,6 +1695,8 @@ export type Database = {
           trade_date: string
           updated_at?: string
           value_date: string
+          window_end_date?: string | null
+          window_start_date?: string | null
         }
         Update: {
           amended_at?: string | null
@@ -1552,6 +1709,7 @@ export type Database = {
           created_by?: string | null
           currency_pair?: string
           direction?: string
+          drawn_notional?: number
           entity_id?: string | null
           hedge_type?: string
           id?: string
@@ -1560,6 +1718,7 @@ export type Database = {
           notional_base?: number
           notional_usd?: number | null
           org_id?: string
+          pricing_method?: string | null
           quote_currency?: string
           reference_number?: string | null
           rolled_from_id?: string | null
@@ -1568,6 +1727,8 @@ export type Database = {
           trade_date?: string
           updated_at?: string
           value_date?: string
+          window_end_date?: string | null
+          window_start_date?: string | null
         }
         Relationships: [
           {
@@ -3091,6 +3252,17 @@ export type Database = {
       }
       update_member_role: {
         Args: { p_new_role: string; p_target_user_id: string }
+        Returns: undefined
+      }
+      validate_window_forward: {
+        Args: {
+          p_currency_pair: string
+          p_notional: number
+          p_org_id: string
+          p_position_id?: string
+          p_window_end: string
+          p_window_start: string
+        }
         Returns: undefined
       }
       write_audit_log: {
