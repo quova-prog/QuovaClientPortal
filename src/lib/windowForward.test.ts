@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { effectiveHedgedNotional } from './windowForward'
+import { effectiveHedgedNotional, windowForwardMtm } from './windowForward'
 import type { HedgePosition } from '@/types'
 
 // effectiveHedgedNotional is the single source of truth for "how much
@@ -70,5 +70,63 @@ describe('effectiveHedgedNotional', () => {
       drawn_notional: 1_200_000,
     })
     expect(effectiveHedgedNotional(p)).toBe(0)
+  })
+})
+
+describe('windowForwardMtm', () => {
+  // EUR/USD: USD is the quote ccy so MTM is already in USD (toUsd passthrough).
+  const rates = { 'EUR/USD': 1.10, 'USD/CAD': 1.36, 'GBP/USD': 1.27 }
+
+  function wf(overrides: Partial<HedgePosition>): HedgePosition {
+    return pos({
+      instrument_type: 'window_forward', pricing_method: 'fixed_worst_rate',
+      currency_pair: 'EUR/USD', base_currency: 'EUR', quote_currency: 'USD',
+      direction: 'sell', notional_base: 1_000_000, contracted_rate: 1.09,
+      window_start_date: '2026-05-01', window_end_date: '2026-06-30',
+      ...overrides,
+    })
+  }
+
+  it('fully-undrawn window MTM equals the equivalent vanilla forward MTM', () => {
+    // sell 1m EUR at 1.09, current 1.10 → loss of (1.09-1.10)*1m = -10,000 USD
+    const m = windowForwardMtm(wf({ drawn_notional: 0 }), [], rates)
+    expect(m.remaining).toBe(1_000_000)
+    expect(m.floatingMtmUsd).toBeCloseTo(-10_000, 6)
+    expect(m.realizedUsd).toBe(0)
+  })
+
+  it('fully-drawn window has zero floating MTM and surfaces stored realized P&L', () => {
+    const m = windowForwardMtm(
+      wf({ drawn_notional: 1_000_000 }),
+      [{ realized_pnl_usd: 4200 }, { realized_pnl_usd: -1500 }],
+      rates,
+    )
+    expect(m.remaining).toBe(0)
+    expect(m.floatingMtmUsd).toBe(0)
+    expect(m.realizedUsd).toBeCloseTo(2700, 6)
+  })
+
+  it('partial draw reduces floating MTM proportionally to remaining notional', () => {
+    const m = windowForwardMtm(wf({ drawn_notional: 600_000 }), [{ realized_pnl_usd: 0 }], rates)
+    expect(m.remaining).toBe(400_000)
+    // (1.09-1.10)*400k = -4,000 USD
+    expect(m.floatingMtmUsd).toBeCloseTo(-4000, 6)
+  })
+
+  it('buy direction flips the sign', () => {
+    const m = windowForwardMtm(wf({ direction: 'buy', drawn_notional: 0 }), [], rates)
+    // buy 1m EUR at 1.09, current 1.10 → gain of (1.10-1.09)*1m = +10,000 USD
+    expect(m.floatingMtmUsd).toBeCloseTo(10_000, 6)
+  })
+
+  it('converts a non-USD quote currency to USD (USD/CAD: quote CAD)', () => {
+    // sell 1m USD vs CAD at 1.35, current 1.36 → (1.35-1.36)*1m = -10,000 CAD
+    // CAD→USD via USD/CAD=1.36 (inverse) → -10,000 / 1.36 ≈ -7,352.94 USD
+    const p = wf({
+      currency_pair: 'USD/CAD', base_currency: 'USD', quote_currency: 'CAD',
+      contracted_rate: 1.35, direction: 'sell', drawn_notional: 0,
+    })
+    const m = windowForwardMtm(p, [], rates)
+    expect(m.floatingMtmUsd).toBeCloseTo(-10_000 / 1.36, 4)
   })
 })

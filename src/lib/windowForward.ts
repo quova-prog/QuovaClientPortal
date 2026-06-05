@@ -1,4 +1,5 @@
 import type { HedgePosition } from '@/types'
+import { toUsd } from '@/lib/fx'
 
 // Window-forward valuation & coverage helpers (Phase 3+).
 //
@@ -25,4 +26,52 @@ export function effectiveHedgedNotional(position: HedgePosition): number {
     return Math.max(0, position.notional_base - (position.drawn_notional ?? 0))
   }
   return position.notional_base
+}
+
+/** Minimal shape needed from a draw to roll up realized economics. */
+export interface DrawRealized {
+  realized_pnl_usd: number
+}
+
+export interface WindowForwardMtm {
+  /** Undrawn notional still floating (base currency). */
+  remaining: number
+  /** Indicative MTM on the undrawn residual, in USD (sign = gain/loss). */
+  floatingMtmUsd: number
+  /** Sum of stored realized P&L (USD) across settled draws — not recomputed. */
+  realizedUsd: number
+  /** The indicative mark used (current pair rate, or contracted_rate fallback). */
+  currentRate: number
+}
+
+/**
+ * Indicative MTM for a window forward. Two components:
+ *
+ *  (A) Drawn notional — settled; its realized P&L is the STORED
+ *      `realized_pnl_usd` per draw, summed. Never recomputed here.
+ *  (B) Undrawn notional — floats against `contracted_rate`, marked to the
+ *      current pair rate (indicative). Direction-aware, USD-converted with
+ *      the canonical `toUsd(abs)*sign` pattern used across the app.
+ *
+ * INDICATIVE only — built from the live/fallback rate map, not an ASC 820
+ * exit-price fair value. Bank MTM is the accounting source of truth.
+ * Produces no journal entries (hedge accounting is a separate spec).
+ */
+export function windowForwardMtm(
+  position: HedgePosition,
+  draws: DrawRealized[],
+  ratesMap: Record<string, number>,
+): WindowForwardMtm {
+  const remaining = Math.max(0, position.notional_base - (position.drawn_notional ?? 0))
+  const currentRate = ratesMap[position.currency_pair] ?? position.contracted_rate
+  const quoteCcy = position.currency_pair.split('/')[1] ?? 'USD'
+
+  const rawMtm = position.direction === 'sell'
+    ? (position.contracted_rate - currentRate) * remaining
+    : (currentRate - position.contracted_rate) * remaining
+  const floatingMtmUsd = toUsd(Math.abs(rawMtm), quoteCcy, ratesMap) * (rawMtm >= 0 ? 1 : -1)
+
+  const realizedUsd = draws.reduce((s, d) => s + (d.realized_pnl_usd ?? 0), 0)
+
+  return { remaining, floatingMtmUsd, realizedUsd, currentRate }
 }
