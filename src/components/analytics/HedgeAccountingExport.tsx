@@ -2,16 +2,12 @@
  * HedgeAccountingExport
  *
  * Generates ASC 815-compliant journal entry CSV exports for:
- *   1. Period-End MTM Adjustments   — mark open positions to fair value
- *   2. Settlement Entries           — record gain/loss when positions expire
- *   3. OCI Reclassification         — reclassify AOCI to P&L when hedged item settles (CF hedges)
+ *   1. Period-End MTM Adjustments   — from derivative + AOCI ledger rows
+ *   2. Settlement Entries           — from derivative carrying-value release rows
+ *   3. OCI Reclassification         — from AOCI ledger reclassification rows
  *
- * Simplification note:
- *   Fair value is computed as (current spot − contracted rate) × notional.
- *   This ignores interest rate differentials and time value, which are immaterial
- *   for short-tenor FX forwards but should be reviewed by your auditor.
- *   The "MTM Adjustment" entry shows cumulative fair value; the period change
- *   equals this period's entry minus the prior period's entry for the same position.
+ * Fair-value calculations happen in the close engine; this export reads the
+ * immutable accounting ledgers and does not recompute journal amounts.
  */
 
 import { useState, useMemo } from 'react'
@@ -19,53 +15,26 @@ import {
   Download, ChevronDown, ChevronUp, Settings2,
   CheckCircle, AlertTriangle, Info,
 } from 'lucide-react'
-import { useHedgePositions, useFxRates } from '@/hooks/useData'
+import { useHedgePositions } from '@/hooks/useData'
 import { useEntity } from '@/context/EntityContext'
 import { csvEscape } from '@/lib/csv/escape'
-import { windowForwardMtm } from '@/lib/windowForward'
 import { useWindowDrawLedger, type WindowDraw } from '@/hooks/useWindowForward'
+import { useHedgeAccountingLedgers } from '@/hooks/useHedgeAccounting'
+import {
+  generateLedgerJournalLines,
+  type HedgeAccountingAccountMap,
+  type LedgerJournalEntryType,
+  type LedgerJournalLine,
+} from '@/lib/hedgeAccounting/journal'
 import type { HedgePosition } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface AccountCode { code: string; name: string }
-
-interface AccountMap {
-  derivative_asset:        AccountCode
-  derivative_liability:    AccountCode
-  aoci_cf_reserve:         AccountCode
-  unrealized_gl:           AccountCode
-  realized_gl:             AccountCode
-  settlement_account:      AccountCode
-  reclassification_target: AccountCode
-}
-
-type EntryType = 'MTM_Adjustment' | 'Settlement' | 'OCI_Reclassification'
+type AccountMap = HedgeAccountingAccountMap
+type EntryType = LedgerJournalEntryType
 type EntryFilter = 'all' | 'mtm' | 'settlement' | 'reclass'
 
-export interface JournalLine {
-  reference:       string
-  journalDate:     string
-  entryType:       EntryType
-  hedgeType:       string
-  positionId:      string
-  currencyPair:    string
-  instrumentType:  string
-  counterparty:    string
-  maturityDate:    string
-  accountCode:     string
-  accountName:     string
-  debitUsd:        number
-  creditUsd:       number
-  notionalBase:    number
-  contractedRate:  number
-  spotRate:        number
-  fairValueUsd:    number
-  memo:            string
-  entity:          string
-  period:          string
-  asc815Note:      string
-}
+export type JournalLine = LedgerJournalLine
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -95,7 +64,6 @@ const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December',
 ]
-const JOURNAL_POSITION_STATUSES = ['active', 'expired'] as const
 const DRAW_LEDGER_POSITION_STATUSES = ['active', 'expired', 'closed'] as const
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -110,10 +78,6 @@ function periodLabel(year: number, month: number): string {
   return `${MONTHS[month - 1]} ${year}`
 }
 
-function refNum(prefix: string, n: number): string {
-  return `${prefix}-${String(n).padStart(4, '0')}`
-}
-
 function fmt2(n: number): string {
   return n === 0 ? '' : Math.abs(n).toFixed(2)
 }
@@ -122,322 +86,6 @@ function fmtUsd(n: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', maximumFractionDigits: 0,
   }).format(Math.abs(n))
-}
-
-/**
- * Compute fair value of a hedge position in USD.
- * Positive = asset (favorable); negative = liability (unfavorable).
- */
-function computeFairValue(
-  position: HedgePosition,
-  spotRates: Record<string, number>,
-): number {
-  // Window forwards: only the UNDRAWN residual floats. Route through the
-  // shared indicative-MTM helper so the existing CFH/FVH AOCI machinery
-  // below values the residual, not the full notional. (Indicative — bank
-  // MTM is the accounting source of truth; see windowForward.ts.)
-  if (position.instrument_type === 'window_forward') {
-    return windowForwardMtm(position, [], spotRates).floatingMtmUsd
-  }
-  const spot = spotRates[position.currency_pair] ?? spotRates[`${position.base_currency}/USD`] ?? 1
-  const contracted = position.contracted_rate
-  const notional   = position.notional_base
-
-  // For buy (long base): gain when spot rises above contracted
-  // For sell (short base): gain when spot falls below contracted
-  const raw = position.direction === 'buy'
-    ? (spot - contracted) * notional
-    : (contracted - spot) * notional
-
-  // Convert to USD if quote isn't USD
-  if (position.quote_currency !== 'USD') {
-    const quoteToUsd = spotRates[`${position.quote_currency}/USD`] ?? 1
-    return raw * quoteToUsd
-  }
-  return raw
-}
-
-function getSpotRate(position: HedgePosition, spotRates: Record<string, number>): number {
-  return spotRates[position.currency_pair]
-    ?? spotRates[`${position.base_currency}/USD`]
-    ?? position.contracted_rate
-}
-
-// ── Journal entry generators ──────────────────────────────────────────────────
-
-function generateMtmEntries(
-  positions: HedgePosition[],
-  spotRates: Record<string, number>,
-  accountMap: AccountMap,
-  periodDate: string,
-  periodLbl: string,
-  entityName: string,
-): JournalLine[] {
-  const lines: JournalLine[] = []
-  let seq = 1
-
-  for (const p of positions) {
-    if (p.status !== 'active') continue
-    const fv   = computeFairValue(p, spotRates)
-    if (fv === 0) continue
-    const absFv = Math.abs(fv)
-    const spot  = getSpotRate(p, spotRates)
-    const ref   = refNum('HEDGE-MTM', seq++)
-    const hedge = (p.hedge_type ?? 'cash_flow').replace('_', ' ').toUpperCase().replace(' ', '_')
-    const counterparty = p.counterparty_bank ?? 'Unknown Counterparty'
-    const base = {
-      reference: ref,
-      journalDate: periodDate,
-      entryType: 'MTM_Adjustment' as EntryType,
-      hedgeType: hedge,
-      positionId: p.reference_number ?? p.id.slice(0, 8).toUpperCase(),
-      currencyPair: p.currency_pair,
-      instrumentType: p.instrument_type,
-      counterparty,
-      maturityDate: p.value_date,
-      notionalBase: p.notional_base,
-      contractedRate: p.contracted_rate,
-      spotRate: spot,
-      fairValueUsd: fv,
-      entity: entityName,
-      period: periodLbl,
-    }
-
-    const hedgeType = p.hedge_type ?? 'cash_flow'
-
-    if (hedgeType === 'cash_flow') {
-      if (fv > 0) {
-        // Gain: Dr Derivative Asset / Cr AOCI
-        lines.push({
-          ...base, debitUsd: absFv, creditUsd: 0,
-          accountCode: accountMap.derivative_asset.code || '[DERIVATIVE_ASSET]',
-          accountName: accountMap.derivative_asset.name,
-          memo: `MTM gain on ${p.currency_pair} ${p.instrument_type} maturing ${p.value_date}`,
-          asc815Note: 'ASC 815-20: Cash flow hedge — effective portion to OCI',
-        })
-        lines.push({
-          ...base, debitUsd: 0, creditUsd: absFv,
-          accountCode: accountMap.aoci_cf_reserve.code || '[AOCI_CF_RESERVE]',
-          accountName: accountMap.aoci_cf_reserve.name,
-          memo: `Unrealized gain deferred to OCI — ${p.currency_pair} ${p.instrument_type}`,
-          asc815Note: 'ASC 815-30-35: Record effective gain in AOCI',
-        })
-      } else {
-        // Loss: Dr AOCI / Cr Derivative Liability
-        lines.push({
-          ...base, debitUsd: absFv, creditUsd: 0,
-          accountCode: accountMap.aoci_cf_reserve.code || '[AOCI_CF_RESERVE]',
-          accountName: accountMap.aoci_cf_reserve.name,
-          memo: `MTM loss on ${p.currency_pair} ${p.instrument_type} maturing ${p.value_date}`,
-          asc815Note: 'ASC 815-30-35: Record effective loss in AOCI',
-        })
-        lines.push({
-          ...base, debitUsd: 0, creditUsd: absFv,
-          accountCode: accountMap.derivative_liability.code || '[DERIVATIVE_LIABILITY]',
-          accountName: accountMap.derivative_liability.name,
-          memo: `Derivative liability — ${p.currency_pair} ${p.instrument_type}`,
-          asc815Note: 'ASC 815-20: Cash flow hedge — derivative at fair value',
-        })
-      }
-    } else {
-      // Fair Value Hedge: derivative and hedged item both to P&L
-      if (fv > 0) {
-        lines.push({
-          ...base, debitUsd: absFv, creditUsd: 0,
-          accountCode: accountMap.derivative_asset.code || '[DERIVATIVE_ASSET]',
-          accountName: accountMap.derivative_asset.name,
-          memo: `FV hedge gain on ${p.currency_pair} ${p.instrument_type} maturing ${p.value_date}`,
-          asc815Note: 'ASC 815-20: Fair value hedge — derivative at fair value through P&L',
-        })
-        lines.push({
-          ...base, debitUsd: 0, creditUsd: absFv,
-          accountCode: accountMap.unrealized_gl.code || '[UNREALIZED_GL]',
-          accountName: accountMap.unrealized_gl.name,
-          memo: `Unrealized gain on FV hedge — ${p.currency_pair}`,
-          asc815Note: 'ASC 815-25: Gain on derivative recognized in earnings',
-        })
-      } else {
-        lines.push({
-          ...base, debitUsd: absFv, creditUsd: 0,
-          accountCode: accountMap.unrealized_gl.code || '[UNREALIZED_GL]',
-          accountName: accountMap.unrealized_gl.name,
-          memo: `Unrealized loss on FV hedge — ${p.currency_pair} ${p.instrument_type}`,
-          asc815Note: 'ASC 815-25: Loss on derivative recognized in earnings',
-        })
-        lines.push({
-          ...base, debitUsd: 0, creditUsd: absFv,
-          accountCode: accountMap.derivative_liability.code || '[DERIVATIVE_LIABILITY]',
-          accountName: accountMap.derivative_liability.name,
-          memo: `Derivative liability — ${p.currency_pair} ${p.instrument_type}`,
-          asc815Note: 'ASC 815-20: Fair value hedge — derivative at fair value',
-        })
-      }
-    }
-  }
-
-  return lines
-}
-
-function generateSettlementEntries(
-  positions: HedgePosition[],
-  spotRates: Record<string, number>,
-  accountMap: AccountMap,
-  year: number,
-  month: number,
-  entityName: string,
-): JournalLine[] {
-  const lines: JournalLine[] = []
-  let seq = 1
-
-  // Filter positions that matured in the selected month
-  const periodStart = `${year}-${String(month).padStart(2, '0')}-01`
-  const periodEnd   = lastDayOfMonth(year, month)
-
-  for (const p of positions) {
-    if (p.status !== 'expired' && p.status !== 'active') continue
-    if (p.value_date < periodStart || p.value_date > periodEnd) continue
-
-    const fv     = computeFairValue(p, spotRates)
-    const absFv  = Math.abs(fv)
-    const spot   = getSpotRate(p, spotRates)
-    const ref    = refNum('HEDGE-SETL', seq++)
-    const hedgeType = p.hedge_type ?? 'cash_flow'
-    const counterparty = p.counterparty_bank ?? 'Unknown Counterparty'
-    const base = {
-      reference: ref,
-      journalDate: p.value_date,
-      entryType: 'Settlement' as EntryType,
-      hedgeType: hedgeType.replace('_', ' ').toUpperCase().replace(' ', '_'),
-      positionId: p.reference_number ?? p.id.slice(0, 8).toUpperCase(),
-      currencyPair: p.currency_pair,
-      instrumentType: p.instrument_type,
-      counterparty,
-      maturityDate: p.value_date,
-      notionalBase: p.notional_base,
-      contractedRate: p.contracted_rate,
-      spotRate: spot,
-      fairValueUsd: fv,
-      entity: entityName,
-      period: periodLabel(year, month),
-    }
-
-    if (fv >= 0) {
-      // Net settlement gain
-      lines.push({
-        ...base, debitUsd: absFv, creditUsd: 0,
-        accountCode: accountMap.settlement_account.code || '[SETTLEMENT_ACCOUNT]',
-        accountName: accountMap.settlement_account.name,
-        memo: `Settlement receipt — ${p.currency_pair} ${p.instrument_type} matured ${p.value_date}`,
-        asc815Note: 'ASC 815: Record net cash settlement of derivative at maturity',
-      })
-      lines.push({
-        ...base, debitUsd: 0, creditUsd: absFv,
-        accountCode: accountMap.realized_gl.code || '[REALIZED_GL]',
-        accountName: accountMap.realized_gl.name,
-        memo: `Realized gain — ${p.currency_pair} hedge settled at ${spot.toFixed(4)} vs contracted ${p.contracted_rate.toFixed(4)}`,
-        asc815Note: hedgeType === 'cash_flow'
-          ? 'ASC 815-30: Gain deferred in AOCI pending hedged transaction; see OCI reclassification entry'
-          : 'ASC 815-25: Realized gain on settled FV hedge derivative',
-      })
-    } else {
-      // Net settlement loss
-      lines.push({
-        ...base, debitUsd: absFv, creditUsd: 0,
-        accountCode: accountMap.realized_gl.code || '[REALIZED_GL]',
-        accountName: accountMap.realized_gl.name,
-        memo: `Realized loss — ${p.currency_pair} hedge settled at ${spot.toFixed(4)} vs contracted ${p.contracted_rate.toFixed(4)}`,
-        asc815Note: hedgeType === 'cash_flow'
-          ? 'ASC 815-30: Loss deferred in AOCI pending hedged transaction; see OCI reclassification entry'
-          : 'ASC 815-25: Realized loss on settled FV hedge derivative',
-      })
-      lines.push({
-        ...base, debitUsd: 0, creditUsd: absFv,
-        accountCode: accountMap.settlement_account.code || '[SETTLEMENT_ACCOUNT]',
-        accountName: accountMap.settlement_account.name,
-        memo: `Settlement payment — ${p.currency_pair} ${p.instrument_type} matured ${p.value_date}`,
-        asc815Note: 'ASC 815: Record net cash settlement of derivative at maturity',
-      })
-    }
-  }
-
-  return lines
-}
-
-function generateReclassEntries(
-  positions: HedgePosition[],
-  spotRates: Record<string, number>,
-  accountMap: AccountMap,
-  year: number,
-  month: number,
-  entityName: string,
-): JournalLine[] {
-  // OCI reclassification only applies to Cash Flow hedges
-  // Generated as template entries for settled CF hedges in the period
-  const lines: JournalLine[] = []
-  let seq = 1
-
-  const periodStart = `${year}-${String(month).padStart(2, '0')}-01`
-  const periodEnd   = lastDayOfMonth(year, month)
-
-  for (const p of positions) {
-    if ((p.hedge_type ?? 'cash_flow') !== 'cash_flow') continue
-    if (p.value_date < periodStart || p.value_date > periodEnd) continue
-
-    const fv    = computeFairValue(p, spotRates)
-    const absFv = Math.abs(fv)
-    if (absFv === 0) continue
-    const ref = refNum('HEDGE-RECLASS', seq++)
-    const base = {
-      reference: ref,
-      journalDate: periodEnd,
-      entryType: 'OCI_Reclassification' as EntryType,
-      hedgeType: 'CASH_FLOW',
-      positionId: p.reference_number ?? p.id.slice(0, 8).toUpperCase(),
-      currencyPair: p.currency_pair,
-      instrumentType: p.instrument_type,
-      counterparty: p.counterparty_bank ?? 'Unknown Counterparty',
-      maturityDate: p.value_date,
-      notionalBase: p.notional_base,
-      contractedRate: p.contracted_rate,
-      spotRate: getSpotRate(p, spotRates),
-      fairValueUsd: fv,
-      entity: entityName,
-      period: periodLabel(year, month),
-      asc815Note: 'ASC 815-30-35-3: Reclassify AOCI to earnings when hedged item affects P&L. Amount = cumulative AOCI balance for this hedge. Update account code to match the hedged item income statement line.',
-    }
-
-    if (fv > 0) {
-      // Reclassify AOCI gain to P&L
-      lines.push({
-        ...base, debitUsd: absFv, creditUsd: 0,
-        accountCode: accountMap.aoci_cf_reserve.code || '[AOCI_CF_RESERVE]',
-        accountName: accountMap.aoci_cf_reserve.name,
-        memo: `Reclassify AOCI gain to P&L — ${p.currency_pair} hedge settled ${p.value_date}`,
-      })
-      lines.push({
-        ...base, debitUsd: 0, creditUsd: absFv,
-        accountCode: accountMap.reclassification_target.code || '[RECLASSIFICATION_TARGET]',
-        accountName: accountMap.reclassification_target.name,
-        memo: `Hedge gain reclassified to earnings — ${p.currency_pair} ${p.instrument_type}`,
-      })
-    } else {
-      // Reclassify AOCI loss to P&L
-      lines.push({
-        ...base, debitUsd: absFv, creditUsd: 0,
-        accountCode: accountMap.reclassification_target.code || '[RECLASSIFICATION_TARGET]',
-        accountName: accountMap.reclassification_target.name,
-        memo: `Hedge loss reclassified to earnings — ${p.currency_pair} ${p.instrument_type}`,
-      })
-      lines.push({
-        ...base, debitUsd: 0, creditUsd: absFv,
-        accountCode: accountMap.aoci_cf_reserve.code || '[AOCI_CF_RESERVE]',
-        accountName: accountMap.aoci_cf_reserve.name,
-        memo: `Reclassify AOCI loss to P&L — ${p.currency_pair} hedge settled ${p.value_date}`,
-      })
-    }
-  }
-
-  return lines
 }
 
 // ── CSV export ────────────────────────────────────────────────────────────────
@@ -522,6 +170,7 @@ const ENTRY_TYPE_COLORS: Record<EntryType, string> = {
   MTM_Adjustment:    '#3b82f6',
   Settlement:        '#10b981',
   OCI_Reclassification: '#f59e0b',
+  Forecast_Failure: '#ef4444',
 }
 
 export function HedgeAccountingExport() {
@@ -541,11 +190,8 @@ export function HedgeAccountingExport() {
   })
   const [accountSaved, setAccountSaved] = useState(false)
 
-  // Include expired positions so Settlement entries cover positions that settled this period.
   // Closed positions are loaded separately for the non-journal window-forward draw ledger.
-  const { positions } = useHedgePositions(JOURNAL_POSITION_STATUSES)
   const { positions: drawLedgerPositions } = useHedgePositions(DRAW_LEDGER_POSITION_STATUSES)
-  const { rates: spotRates } = useFxRates()
   const { currentEntityId, isConsolidated, entities } = useEntity()
 
   const entityName = useMemo(() => {
@@ -553,12 +199,17 @@ export function HedgeAccountingExport() {
     return entities.find(e => e.id === currentEntityId)?.name ?? 'Unknown Entity'
   }, [isConsolidated, currentEntityId, entities])
 
-  // Filter positions by entity
-  const scopedPositions = useMemo(() =>
-    isConsolidated
-      ? positions
-      : positions.filter(p => p.entity_id === currentEntityId || !p.entity_id),
-  [positions, isConsolidated, currentEntityId])
+  const periodDate = lastDayOfMonth(year, month)
+  const periodLbl  = periodLabel(year, month)
+  const periodKey = `${year}-${String(month).padStart(2, '0')}`
+  const periodStart = `${periodKey}-01`
+  const {
+    derivativeRows,
+    aociRows,
+    metadataByDesignationId,
+    loading: ledgerLoading,
+  } = useHedgeAccountingLedgers(periodKey)
+
   const scopedDrawLedgerPositions = useMemo(() =>
     isConsolidated
       ? drawLedgerPositions
@@ -573,30 +224,35 @@ export function HedgeAccountingExport() {
     [scopedDrawLedgerPositions],
   )
 
-  const periodDate = lastDayOfMonth(year, month)
-  const periodLbl  = periodLabel(year, month)
-  const periodStart = `${year}-${String(month).padStart(2, '0')}-01`
-
   const periodWindowDraws = useMemo(() =>
     windowDraws.filter(d => d.draw_date >= periodStart && d.draw_date <= periodDate),
   [windowDraws, periodStart, periodDate])
 
-  // Generate all journal entries
+  const allLines = useMemo(() =>
+    generateLedgerJournalLines({
+      period: periodKey,
+      journalDate: periodDate,
+      entityName,
+      accountMap,
+      derivativeRows,
+      aociRows,
+      metadataByDesignationId,
+    }),
+  [periodKey, periodDate, entityName, accountMap, derivativeRows, aociRows, metadataByDesignationId])
+
   const mtmLines = useMemo(() =>
-    generateMtmEntries(scopedPositions, spotRates, accountMap, periodDate, periodLbl, entityName),
-  [scopedPositions, spotRates, accountMap, periodDate, periodLbl, entityName])
+    allLines.filter(line => line.entryType === 'MTM_Adjustment'),
+  [allLines])
 
   const settlementLines = useMemo(() =>
-    generateSettlementEntries(scopedPositions, spotRates, accountMap, year, month, entityName),
-  [scopedPositions, spotRates, accountMap, year, month, entityName])
+    allLines.filter(line => line.entryType === 'Settlement'),
+  [allLines])
 
   const reclassLines = useMemo(() =>
-    generateReclassEntries(scopedPositions, spotRates, accountMap, year, month, entityName),
-  [scopedPositions, spotRates, accountMap, year, month, entityName])
-
-  const allLines = useMemo(() =>
-    [...mtmLines, ...settlementLines, ...reclassLines],
-  [mtmLines, settlementLines, reclassLines])
+    allLines.filter(line =>
+      line.entryType === 'OCI_Reclassification' || line.entryType === 'Forecast_Failure',
+    ),
+  [allLines])
 
   const displayLines = useMemo(() => {
     if (filter === 'mtm')        return mtmLines
@@ -800,12 +456,8 @@ export function HedgeAccountingExport() {
             borderRadius: 6, fontSize: '0.75rem', color: '#60a5fa', display: 'flex', gap: 8 }}>
             <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>
-              Fair values are computed as (spot rate − contracted rate) × notional.
-              This approximation is appropriate for short-tenor FX forwards but excludes
-              interest rate differentials and time value. Confirm with your auditor for
-              longer-dated positions. MTM entries show <strong>cumulative</strong> fair
-              value; period change = this month's entry minus prior month's entry per position.
-              Window-forward draw economics are available as a separate audit ledger export
+              Journal entries are generated from accounting ledger rows written during period
+              close. Window-forward draw economics are available as a separate audit ledger export
               and are not mixed into the balanced journal-entry CSV.
             </span>
           </div>
@@ -816,9 +468,11 @@ export function HedgeAccountingExport() {
       {displayLines.length === 0 ? (
         <div className="card" style={{ padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {allLines.length === 0
-              ? 'No hedge positions found for this period. Positions must be Active (MTM) or expire within the selected month (Settlement / OCI Reclass).'
-              : 'No entries match the selected filter.'}
+            {ledgerLoading
+              ? 'Loading accounting ledger entries...'
+              : allLines.length === 0
+                ? 'No accounting ledger entries found for this period.'
+                : 'No entries match the selected filter.'}
           </div>
         </div>
       ) : (
