@@ -24,6 +24,7 @@ const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ de
 const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage').then(m => ({ default: m.BankAccountsPage })))
 const IntegrationsPage = lazy(() => import('@/pages/IntegrationsPage').then(m => ({ default: m.IntegrationsPage })))
 const ForceMfaSetupPage = lazy(() => import('@/pages/ForceMfaSetupPage').then(m => ({ default: m.ForceMfaSetupPage })))
+const AcceptInvitePage = lazy(() => import('@/pages/AcceptInvitePage').then(m => ({ default: m.AcceptInvitePage })))
 const InboxPage = lazy(() => import('@/pages/InboxPage').then(m => ({ default: m.InboxPage })))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
 const AdvisorPage = lazy(() => import('@/pages/AdvisorPage').then(m => ({ default: m.AdvisorPage })))
@@ -137,6 +138,8 @@ export default function App() {
               <Route path="/mfa-setup" element={<PublicRoute><RouteBoundary><ForceMfaSetupPage /></RouteBoundary></PublicRoute>} />
               <Route path="/forgot-password" element={<PublicRoute><RouteBoundary><ForgotPasswordPage /></RouteBoundary></PublicRoute>} />
               <Route path="/reset-password"  element={<RouteBoundary><ResetPasswordPage /></RouteBoundary>} />
+              {/* Accept-invite landing: works for both logged-in (RPC) and logged-out (→ /signup) users. */}
+              <Route path="/accept-invite"   element={<RouteBoundary><AcceptInvitePage /></RouteBoundary>} />
 
               {/* Protected */}
               <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

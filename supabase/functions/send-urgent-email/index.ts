@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
       .single()
 
     if (profile?.org_id !== org_id) {
-      return jsonResponse({ error: 'Forbidden: You do not have access to this organisation' }, 403, req)
+      return jsonResponse({ error: 'Forbidden: You do not have access to this organization' }, 403, req)
     }
     if (!profile?.role || !['admin', 'editor'].includes(profile.role)) {
       return jsonResponse({ error: 'Forbidden: Admin or editor role required' }, 403, req)

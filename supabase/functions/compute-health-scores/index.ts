@@ -79,10 +79,10 @@ Deno.serve(async (req: Request) => {
   const { data: orgs, error: orgError } = await orgQuery
 
   if (orgError) {
-    return jsonResponse({ error: `Failed to fetch organisations: ${orgError.message}` }, 500, req)
+    return jsonResponse({ error: `Failed to fetch organizations: ${orgError.message}` }, 500, req)
   }
   if (!orgs || orgs.length === 0) {
-    return jsonResponse({ message: 'No organisations found', processed: 0 }, 200, req)
+    return jsonResponse({ message: 'No organizations found', processed: 0 }, 200, req)
   }
 
   // Pre-fetch all auth users once (expensive call, do it once)
