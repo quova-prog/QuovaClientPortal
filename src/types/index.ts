@@ -81,6 +81,10 @@ export interface HedgePolicy {
   coverage_horizon_months: number          // rolling horizon in months: 3, 6, 12, 18, 24
   base_currency: string
   active: boolean
+  // Window-forward policy controls (20260604000004_window_forward_policy.sql)
+  window_forward_pairs: string[]            // eligible pairs; empty = none allowed
+  max_window_days: number                   // cap on window span (default 90, ≤365)
+  max_draws_per_window: number              // cap on partial draws (default 8, ≤50)
   created_at: string
   updated_at: string
 }
@@ -296,7 +300,7 @@ export interface CsvParseResult {
 // ── Form Types ────────────────────────────────────────────
 
 export interface HedgePositionForm {
-  instrument_type: 'forward' | 'swap' | 'option' | 'spot'
+  instrument_type: 'forward' | 'window_forward' | 'swap' | 'option' | 'spot'
   hedge_type: 'cash_flow' | 'fair_value' | 'net_investment'
   currency_pair: string
   direction: 'buy' | 'sell'
@@ -305,6 +309,9 @@ export interface HedgePositionForm {
   spot_rate_at_trade?: number
   trade_date: string
   value_date: string
+  // Window-forward only — the settlement window (value_date mirrors window_end_date).
+  window_start_date?: string
+  window_end_date?: string
   counterparty_bank?: string
   reference_number?: string
   notes?: string

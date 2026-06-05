@@ -23,6 +23,7 @@ function triggerDownload(filename: string, content: string) {
 
 import { toUsd } from '@/lib/fx'
 import { windowForwardMtm } from '@/lib/windowForward'
+import { useWindowDraws, type DrawEconomics } from '@/hooks/useWindowForward'
 
 // MTM P&L in quote currency (e.g. USD for EUR/USD)
 function getMtmPnl(notional: number, direction: string, contracted: number, spot: number): number {
@@ -99,6 +100,44 @@ export function TradePage() {
   const [amendForm, setAmendForm] = useState({ notional_base: 0, contracted_rate: 0, value_date: '', counterparty_bank: '', notes: '' })
   // Close form state
   const [closeForm, setCloseForm] = useState({ close_date: '', close_rate: 0 })
+
+  // Window-forward draw modal state
+  const [drawPosition, setDrawPosition] = useState<any | null>(null)
+  const [drawForm, setDrawForm] = useState({ draw_date: '', draw_amount: 0, bank_confirmation: '', reference_number: '', notes: '' })
+  const [drawEconomics, setDrawEconomics] = useState<DrawEconomics | null>(null)
+  const [drawError, setDrawError] = useState<string | null>(null)
+  const [drawSubmitting, setDrawSubmitting] = useState(false)
+  const { draws: drawLedger, recordDraw } = useWindowDraws(drawPosition?.id ?? null)
+
+  function openDrawModal(p: any) {
+    setDrawPosition(p)
+    setDrawError(null)
+    setDrawEconomics(null)
+    const remaining = Number(p.notional_base) - Number(p.drawn_notional ?? 0)
+    setDrawForm({
+      draw_date: new Date().toISOString().slice(0, 10),
+      draw_amount: remaining,
+      bank_confirmation: '', reference_number: '', notes: '',
+    })
+  }
+
+  async function handleRecordDraw() {
+    setDrawError(null)
+    if (!drawForm.draw_amount || drawForm.draw_amount <= 0) { setDrawError('Enter a draw amount'); return }
+    if (!drawForm.draw_date) { setDrawError('Draw date is required'); return }
+    setDrawSubmitting(true)
+    const { economics, error } = await recordDraw({
+      drawDate: drawForm.draw_date,
+      drawAmount: drawForm.draw_amount,
+      bankConfirmation: drawForm.bank_confirmation || undefined,
+      referenceNumber: drawForm.reference_number || undefined,
+      notes: drawForm.notes || undefined,
+    })
+    setDrawSubmitting(false)
+    if (error) { setDrawError(error); return }
+    setDrawEconomics(economics ?? null)
+    await refreshPositions()
+  }
 
   const ALL_STATUSES = ['active', 'expired', 'cancelled', 'rolled', 'closed'] as const
   const { positions, loading: positionsLoading, addPosition, rollPosition, amendPosition, closePosition, refresh: refreshPositions } = useHedgePositions(ALL_STATUSES)
@@ -1009,6 +1048,13 @@ export function TradePage() {
                                   onClick={() => openAmendModal(p)}>
                                   Amend
                                 </button>
+                                {p.instrument_type === 'window_forward' && (
+                                  <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'var(--teal)', borderColor: 'var(--teal)' }}
+                                    title="Record a draw against this window forward"
+                                    onClick={() => openDrawModal(p)}>
+                                    Draw
+                                  </button>
+                                )}
                                 {!matured && (
                                   <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'var(--red)', borderColor: 'var(--red)' }}
                                     title="Close this position early"
@@ -1305,6 +1351,89 @@ export function TradePage() {
                 </p>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Recorded in the audit trail.</p>
                 <button className="btn btn-ghost btn-sm" onClick={() => { setActionModal(null); refreshPositions() }}>Done</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    })()}
+
+    {/* Window-forward draw modal */}
+    {drawPosition && (() => {
+      const remaining = Number(drawPosition.notional_base) - Number(drawPosition.drawn_notional ?? 0)
+      const labelStyle = { fontSize: '0.75rem', fontWeight: 600 as const, color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }
+      const inputStyle = { width: '100%', padding: '0.5rem 0.625rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+          onClick={e => { if (e.target === e.currentTarget) setDrawPosition(null) }}>
+          <div className="card" style={{ maxWidth: 460, width: '100%', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Record Draw — {drawPosition.currency_pair}</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDrawPosition(null)}><X size={16} /></button>
+            </div>
+
+            {!drawEconomics ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  Remaining undrawn: <strong>{remaining.toLocaleString()} {drawPosition.base_currency}</strong>
+                  {' · '}window ends {formatDate(drawPosition.window_end_date)}
+                </div>
+                <div>
+                  <label style={labelStyle}>Draw Date</label>
+                  <input type="date" style={inputStyle} value={drawForm.draw_date}
+                    min={drawPosition.window_start_date} max={drawPosition.window_end_date}
+                    onChange={e => setDrawForm(f => ({ ...f, draw_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Draw Amount ({drawPosition.base_currency})</label>
+                  <input type="number" style={inputStyle} value={drawForm.draw_amount || ''}
+                    min={0} max={remaining} step="1"
+                    onChange={e => setDrawForm(f => ({ ...f, draw_amount: Number(e.target.value) }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Bank Confirmation (optional)</label>
+                  <input type="text" style={inputStyle} value={drawForm.bank_confirmation}
+                    onChange={e => setDrawForm(f => ({ ...f, bank_confirmation: e.target.value }))} />
+                </div>
+                {drawError && (
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--red)', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--r-md)', padding: '0.5rem 0.75rem' }}>{drawError}</div>
+                )}
+                <button className="btn btn-primary" disabled={drawSubmitting} onClick={handleRecordDraw}>
+                  {drawSubmitting ? 'Recording…' : 'Record Draw'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <div style={{ fontWeight: 600, color: 'var(--green)' }}>✓ Draw {drawEconomics.draw_seq} recorded</div>
+                {[
+                  ['Draw rate', formatFxRate(drawEconomics.draw_rate, drawPosition.currency_pair)],
+                  ['Spot at draw', formatFxRate(drawEconomics.spot_rate_at_draw, drawPosition.currency_pair)],
+                  ['Settlement (quote)', drawEconomics.settlement_quote.toLocaleString()],
+                  ['Realized P&L (USD)', `${drawEconomics.realized_pnl_usd >= 0 ? '+' : ''}${drawEconomics.realized_pnl_usd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`],
+                  ['Remaining after', `${drawEconomics.remaining_after.toLocaleString()} ${drawPosition.base_currency}`],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.375rem' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>{k}</span><strong>{v}</strong>
+                  </div>
+                ))}
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Realized P&L is recorded for treasury analytics — not an accounting journal entry.
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => setDrawPosition(null)}>Done</button>
+              </div>
+            )}
+
+            {drawLedger.length > 0 && !drawEconomics && (
+              <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                  Draw History ({drawLedger.length})
+                </div>
+                {drawLedger.map(d => (
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.25rem 0' }}>
+                    <span>#{d.draw_seq} · {formatDate(d.draw_date)}{d.is_final_settlement ? ' (final)' : ''}</span>
+                    <span>{Number(d.draw_amount).toLocaleString()} @ {formatFxRate(d.draw_rate, drawPosition.currency_pair)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
