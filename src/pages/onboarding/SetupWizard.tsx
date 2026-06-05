@@ -129,6 +129,9 @@ export function SetupWizard(): React.ReactElement {
   const [bankInput,      setBankInput]      = useState('')
   const [cadence,        setCadence]        = useState(profile?.reporting_cadence ?? '')
   const [painPoints,     setPainPoints]     = useState(profile?.fx_pain_points ?? '')
+  const [instruments,    setInstruments]    = useState<string[]>(
+    (profile as { instruments_used?: string[] } | null)?.instruments_used ?? [],
+  )
 
   // Sync form state when profile loads from DB (handles back-navigation)
   useEffect(() => {
@@ -144,6 +147,7 @@ export function SetupWizard(): React.ReactElement {
     setBanks(profile.bank_relationships ?? [])
     setCadence(profile.reporting_cadence ?? '')
     setPainPoints(profile.fx_pain_points ?? '')
+    setInstruments((profile as { instruments_used?: string[] }).instruments_used ?? [])
     // Collapse all sections since data is already filled
     setOpenSection(-1)
   }, [profile]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -193,6 +197,7 @@ export function SetupWizard(): React.ReactElement {
         bank_relationships:    banks,
         reporting_cadence:     cadence || null,
         fx_pain_points:        painPoints || null,
+        instruments_used:      instruments,
       }
 
       if (profile) {
@@ -248,7 +253,7 @@ export function SetupWizard(): React.ReactElement {
     } finally {
       setSaving(false)
     }
-  }, [user, session, profile, funcCcy, reportingCcys, fiscalMonth, txCcys, entities, industry, revBand, banks, cadence, painPoints, advanceStatus, reload, navigate])
+  }, [user, session, profile, funcCcy, reportingCcys, fiscalMonth, txCcys, entities, industry, revBand, banks, cadence, painPoints, instruments, advanceStatus, reload, navigate])
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1rem' }}>
@@ -478,6 +483,36 @@ export function SetupWizard(): React.ReactElement {
                   value={painPoints}
                   onChange={e => setPainPoints(e.target.value)}
                 />
+              </div>
+
+              <div style={{ marginTop: '1rem' }}>
+                <label className="label">
+                  Hedging instruments you currently use <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                  {[
+                    { value: 'forward',        label: 'Outright forwards' },
+                    { value: 'window_forward', label: 'Window forwards' },
+                    { value: 'swap',           label: 'FX swaps' },
+                    { value: 'option',         label: 'Options' },
+                    { value: 'spot',           label: 'Spot' },
+                  ].map(opt => {
+                    const on = instruments.includes(opt.value)
+                    return (
+                      <button key={opt.value} type="button"
+                        onClick={() => setInstruments(cur => on ? cur.filter(i => i !== opt.value) : [...cur, opt.value])}
+                        style={{
+                          padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
+                          fontSize: '0.8125rem', fontWeight: 600,
+                          background: on ? 'var(--teal)' : 'var(--bg-surface)',
+                          color: on ? '#fff' : 'var(--text-secondary)',
+                          border: `1px solid ${on ? 'var(--teal)' : 'var(--border)'}`,
+                        }}>
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}

@@ -2234,6 +2234,7 @@ export type Database = {
           hedging_policy_url: string | null
           id: string
           industry: string | null
+          instruments_used: string[]
           org_id: string
           reporting_cadence: string | null
           reporting_currencies: string[]
@@ -2251,6 +2252,7 @@ export type Database = {
           hedging_policy_url?: string | null
           id?: string
           industry?: string | null
+          instruments_used?: string[]
           org_id: string
           reporting_cadence?: string | null
           reporting_currencies?: string[]
@@ -2268,6 +2270,7 @@ export type Database = {
           hedging_policy_url?: string | null
           id?: string
           industry?: string | null
+          instruments_used?: string[]
           org_id?: string
           reporting_cadence?: string | null
           reporting_currencies?: string[]

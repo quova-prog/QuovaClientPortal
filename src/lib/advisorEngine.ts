@@ -59,10 +59,13 @@ export interface RiskMetrics {
   currencyRisks: CurrencyRisk[]
   primaryPair: string           // largest exposure
   hasPolicy: boolean
+  // Share of exposure (0–1) coming from timing-uncertain sources (payroll,
+  // cash flows, supplier/customer contracts). Drives Strategy D scoring.
+  timingUncertaintyShare: number
 }
 
 export interface Strategy {
-  id: 'A' | 'B' | 'C'
+  id: 'A' | 'B' | 'C' | 'D'
   name: string
   tagline: string
   instruments: { type: string; pct: number }[]
@@ -214,6 +217,21 @@ export function computeRiskMetrics(
   const nearestSettlementDays = futureDays.length > 0
     ? Math.round(Math.min(...futureDays)) : 90
 
+  // Timing-uncertainty share: fraction of derived exposure from recurring /
+  // uncertain-date sources, where window forwards add the most value.
+  const TIMING_UNCERTAIN: ReadonlySet<string> = new Set([
+    'payroll', 'cash_flow', 'supplier_contract', 'customer_contract',
+  ])
+  let uncertainAmt = 0
+  let totalDerivedAmt = 0
+  for (const c of combinedCoverage) {
+    for (const b of c.source_breakdown ?? []) {
+      totalDerivedAmt += b.amount
+      if (TIMING_UNCERTAIN.has(b.source)) uncertainAmt += b.amount
+    }
+  }
+  const timingUncertaintyShare = totalDerivedAmt > 0 ? uncertainAmt / totalDerivedAmt : 0
+
   return {
     totalExposureUsd,
     totalHedgedUsd,
@@ -231,6 +249,7 @@ export function computeRiskMetrics(
     currencyRisks,
     primaryPair: currencyRisks[0]?.pair ?? '',
     hasPolicy: policy !== null,
+    timingUncertaintyShare,
   }
 }
 
@@ -310,6 +329,22 @@ export function rankStrategies(
   const C_volRed  = (C_target / 100) * 0.96 // asymmetric protection — very efficient
   const C_score   = policyScore(C_target, C_tenor, ['option'])
 
+  // ── Strategy D: Flex-Timing Window Forwards ──────────────
+  // Same rate certainty as a forward, but settlement timing flexes across a
+  // window — most valuable when exposure timing is uncertain (payroll,
+  // payables, collections). Only offered when policy permits window forwards.
+  const share     = metrics.timingUncertaintyShare ?? 0
+  const D_tenor   = Math.min(estimatedTenorMonths, 9) // window forwards work best ≤9m
+  const D_target  = Math.min(Math.max(targetPct, 85), 100)
+  const D_costBps = (fwdPremiumPct / 12) * D_tenor * 100 + 5 // small premium for flexibility
+  const D_costUsd = additionalHedgeNeeded * (fwdPremiumPct / 100 / 12) * D_tenor
+  const D_volRed  = (D_target / 100) * 0.90
+  const D_score   = policyScore(D_target, D_tenor, ['window_forward'])
+  // Timing-uncertainty boost: up to +25 when fully uncertain, −10 when fully certain.
+  const D_timingBoost = 25 * share - 10 * (1 - share)
+  const D_overall = overallScore(D_volRed, D_costBps, D_score, 85) + D_timingBoost
+  const policyAllowsWindow = (policy?.allowed_instruments ?? []).includes('window_forward')
+
   const strategies: Strategy[] = ([ // cast needed: TS won't narrow literal id union to Strategy[]
     {
       id: 'A',
@@ -365,6 +400,25 @@ export function rankStrategies(
       backtestPnlUsd:      0,
       backtestWinRatePct:  0,
     },
+    // Strategy D is only surfaced when policy permits window forwards.
+    ...(policyAllowsWindow ? [{
+      id: 'D' as const,
+      name: 'Flex-Timing Window Forwards',
+      tagline: 'Lock the rate, keep settlement timing flexible for variable cash flows',
+      instruments: [{ type: 'Window Forward', pct: 100 }],
+      targetHedgeRatioPct: Math.round(D_target),
+      coverageGainPct:     Math.max(0, D_target - metrics.currentHedgeRatioPct),
+      estimatedCostBps:    Math.round(D_costBps),
+      estimatedCostUsd:    D_costUsd,
+      volatilityReductionPct: Math.round(D_volRed * 100),
+      var95AfterUsd:       var95Usd * (1 - D_volRed),
+      policyComplianceScore: D_score,
+      executionComplexity: 'low' as const,
+      recommendedTenorMonths: D_tenor,
+      overallScore:        D_overall,
+      backtestPnlUsd:      0,
+      backtestWinRatePct:  0,
+    }] : []),
   ] as Strategy[]).sort((a, b) => b.overallScore - a.overallScore)
 
   return strategies
