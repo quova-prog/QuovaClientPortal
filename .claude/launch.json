@@ -30,6 +30,17 @@
         "--root", "/Users/stevenlabella/Git/orbit-mvp"
       ],
       "port": 4173
+    },
+    {
+      "name": "WF Worktree",
+      "runtimeExecutable": "/Users/stevenlabella/.nvm/versions/node/v20.18.3/bin/node",
+      "runtimeArgs": [
+        "/Users/stevenlabella/Git/orbit-mvp/node_modules/vite/bin/vite.js",
+        "/Users/stevenlabella/Git/orbit-mvp/.claude/worktrees/goofy-raman-4e16b3",
+        "--port", "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }

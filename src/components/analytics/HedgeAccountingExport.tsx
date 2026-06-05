@@ -22,6 +22,7 @@ import {
 import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useEntity } from '@/context/EntityContext'
 import { csvEscape } from '@/lib/csv/escape'
+import { windowForwardMtm } from '@/lib/windowForward'
 import type { HedgePosition } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -128,6 +129,13 @@ function computeFairValue(
   position: HedgePosition,
   spotRates: Record<string, number>,
 ): number {
+  // Window forwards: only the UNDRAWN residual floats. Route through the
+  // shared indicative-MTM helper so the existing CFH/FVH AOCI machinery
+  // below values the residual, not the full notional. (Indicative — bank
+  // MTM is the accounting source of truth; see windowForward.ts.)
+  if (position.instrument_type === 'window_forward') {
+    return windowForwardMtm(position, [], spotRates).floatingMtmUsd
+  }
   const spot = spotRates[position.currency_pair] ?? spotRates[`${position.base_currency}/USD`] ?? 1
   const contracted = position.contracted_rate
   const notional   = position.notional_base

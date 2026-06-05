@@ -22,6 +22,7 @@ function triggerDownload(filename: string, content: string) {
 }
 
 import { toUsd } from '@/lib/fx'
+import { windowForwardMtm } from '@/lib/windowForward'
 
 // MTM P&L in quote currency (e.g. USD for EUR/USD)
 function getMtmPnl(notional: number, direction: string, contracted: number, spot: number): number {
@@ -139,9 +140,15 @@ export function TradePage() {
   // Enrich active positions with live MTM data
   const positionsWithMtm = activePositions.map(p => {
     const spot = liveRatesMap[p.currency_pair] ?? p.contracted_rate
+    const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
+    // Window forwards float only on their undrawn residual (indicative).
+    if (p.instrument_type === 'window_forward') {
+      const wf = windowForwardMtm(p, [], liveRatesMap)
+      const mtmQuote = getMtmPnl(wf.remaining, p.direction, p.contracted_rate, spot)
+      return { ...p, spot, mtmUsd: wf.floatingMtmUsd, mtmQuote, quoteCcy }
+    }
     const mtmQuote = getMtmPnl(p.notional_base, p.direction, p.contracted_rate, spot)
     // Convert MTM from quote currency to USD
-    const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
     const mtmUsd = toUsd(Math.abs(mtmQuote), quoteCcy, fxRates) * (mtmQuote >= 0 ? 1 : -1)
     return { ...p, spot, mtmUsd, mtmQuote, quoteCcy }
   })
