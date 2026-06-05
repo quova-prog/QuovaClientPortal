@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useHedgeCoverage, useExposures, useHedgePositions } from './useData'
 import { useDerivedExposures, DerivedExposureSource } from './useDerivedExposures'
 import { useEntity } from '@/context/EntityContext'
+import { effectiveHedgedNotional } from '@/lib/windowForward'
 
 export interface CombinedCoverage {
   // All fields from HedgeCoverage:
@@ -49,10 +50,12 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     const sellByPair: Record<string, number> = {}
     const buyByPair: Record<string, number> = {}
     for (const p of positions) {
+      // Window forwards contribute only their undrawn residual to coverage.
+      const eff = effectiveHedgedNotional(p)
       if (p.direction === 'sell') {
-        sellByPair[p.currency_pair] = (sellByPair[p.currency_pair] ?? 0) + p.notional_base
+        sellByPair[p.currency_pair] = (sellByPair[p.currency_pair] ?? 0) + eff
       } else {
-        buyByPair[p.currency_pair] = (buyByPair[p.currency_pair] ?? 0) + p.notional_base
+        buyByPair[p.currency_pair] = (buyByPair[p.currency_pair] ?? 0) + eff
       }
     }
     const hedgedByPair: Record<string, number> = {}
@@ -181,10 +184,12 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     const sellByPair2: Record<string, number> = {}
     const buyByPair2: Record<string, number> = {}
     for (const p of allPositions) {
+      // Window forwards contribute only their undrawn residual to coverage.
+      const eff = effectiveHedgedNotional(p)
       if (p.direction === 'sell') {
-        sellByPair2[p.currency_pair] = (sellByPair2[p.currency_pair] ?? 0) + p.notional_base
+        sellByPair2[p.currency_pair] = (sellByPair2[p.currency_pair] ?? 0) + eff
       } else {
-        buyByPair2[p.currency_pair] = (buyByPair2[p.currency_pair] ?? 0) + p.notional_base
+        buyByPair2[p.currency_pair] = (buyByPair2[p.currency_pair] ?? 0) + eff
       }
     }
     const hedgedByPair: Record<string, number> = {}
