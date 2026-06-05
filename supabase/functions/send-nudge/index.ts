@@ -220,7 +220,7 @@ Deno.serve(async (req: Request) => {
     .single()
 
   if (!grant) {
-    return jsonResponse({ error: 'Forbidden: no active JIT access grant for this organisation' }, 403, req)
+    return jsonResponse({ error: 'Forbidden: no active JIT access grant for this organization' }, 403, req)
   }
 
   // ── Fetch org name ─────────────────────────────────────────
@@ -230,7 +230,7 @@ Deno.serve(async (req: Request) => {
     .eq('id', org_id)
     .single()
 
-  const orgName = org?.name ?? 'your organisation'
+  const orgName = org?.name ?? 'your organization'
 
   // ── Fetch admin/editor profiles for email ──────────────────
   // profiles.email is currently never populated by any signup or invite
