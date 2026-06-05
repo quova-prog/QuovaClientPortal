@@ -8,6 +8,7 @@ import type { CombinedCoverage } from '@/hooks/useCombinedCoverage'
 import type { CashFlowEntry } from '@/hooks/useCashFlows'
 import type { HedgePosition } from '@/types'
 import { toUsd } from '@/lib/fx'
+import { windowForwardMtm } from '@/lib/windowForward'
 import type {
   BoardReportData,
   CoveragePairRow,
@@ -116,14 +117,19 @@ export function BoardReportPanel({
         (fxRates[reversedPair] ? 1 / fxRates[reversedPair] : undefined) ??
         p.contracted_rate
 
-      // rawMtm is in the quote currency of the pair (e.g. USD for EUR/USD, JPY for USD/JPY, CAD for EUR/CAD)
-      const rawMtm = p.direction === 'buy'
-        ? (currentRate - p.contracted_rate) * p.notional_base
-        : (p.contracted_rate - currentRate) * p.notional_base
-
-      // Convert from quote currency to USD
+      // Window forwards float only on their undrawn residual (indicative).
       const quoteCcy = pair.split('/')[1] ?? 'USD'
-      const mtmUsd = toUsd(Math.abs(rawMtm), quoteCcy, fxRates) * (rawMtm >= 0 ? 1 : -1)
+      let mtmUsd: number
+      if (p.instrument_type === 'window_forward') {
+        mtmUsd = windowForwardMtm(p, [], fxRates).floatingMtmUsd
+      } else {
+        // rawMtm is in the quote currency of the pair (e.g. USD for EUR/USD, JPY for USD/JPY, CAD for EUR/CAD)
+        const rawMtm = p.direction === 'buy'
+          ? (currentRate - p.contracted_rate) * p.notional_base
+          : (p.contracted_rate - currentRate) * p.notional_base
+        // Convert from quote currency to USD
+        mtmUsd = toUsd(Math.abs(rawMtm), quoteCcy, fxRates) * (rawMtm >= 0 ? 1 : -1)
+      }
 
       return {
         pair,
