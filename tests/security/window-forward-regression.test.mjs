@@ -81,3 +81,23 @@ test('Migration C: draw→exposure allocation linkage + settled_amount on fx_exp
   assert.match(sql, /FOR SELECT USING \(org_id = current_user_org_id\(\)\)/s)
   assert.match(sql, /FOR INSERT TO authenticated WITH CHECK \(false\)/s)
 })
+
+test('Migration D: policy window controls (idempotent) + hedge_policies audit coverage', () => {
+  const sql = read('supabase/migrations/20260604000004_window_forward_policy.sql')
+
+  // new policy columns added idempotently (allowed_instruments already exists from v2)
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS window_forward_pairs\s+TEXT\[\] NOT NULL DEFAULT '\{\}'::TEXT\[\]/s)
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS max_window_days\s+INTEGER NOT NULL DEFAULT 90/s)
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS max_draws_per_window\s+INTEGER NOT NULL DEFAULT 8/s)
+
+  // bounded
+  assert.match(sql, /max_window_days > 0 AND max_window_days <= 365/s)
+  assert.match(sql, /max_draws_per_window > 0 AND max_draws_per_window <= 50/s)
+
+  // careful backfill: NULL allowed_instruments → classic four, NEVER auto-enable window_forward
+  assert.match(sql, /SET allowed_instruments = ARRAY\['forward','swap','option','spot'\]::TEXT\[\]\s*WHERE allowed_instruments IS NULL/s)
+  assert.doesNotMatch(sql, /allowed_instruments[\s\S]*'window_forward'/s)
+
+  // hedge_policies now audit-covered (compliance-sensitive allowlist)
+  assert.match(sql, /trg_audit_hedge_policies[\s\S]*audit_trigger_func\(\)/s)
+})
