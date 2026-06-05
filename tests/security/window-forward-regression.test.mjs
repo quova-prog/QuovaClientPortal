@@ -101,3 +101,21 @@ test('Migration D: policy window controls (idempotent) + hedge_policies audit co
   // hedge_policies now audit-covered (compliance-sensitive allowlist)
   assert.match(sql, /trg_audit_hedge_policies[\s\S]*audit_trigger_func\(\)/s)
 })
+
+test('Migration E: validate_window_forward enforces policy invariants server-side', () => {
+  const sql = read('supabase/migrations/20260604000005_window_forward_validation.sql')
+
+  assert.match(sql, /CREATE OR REPLACE FUNCTION validate_window_forward/s)
+  // SECURITY DEFINER with locked search_path (SOC2 requirement)
+  assert.match(sql, /SECURITY DEFINER\s+SET search_path = public/s)
+
+  // each policy gate raises rather than silently passing
+  assert.match(sql, /Policy does not allow window forwards/s)
+  assert.match(sql, /not eligible for window forwards under policy/s)
+  assert.match(sql, /exceeds policy max/s)
+  assert.match(sql, /Max draws per window/s)
+
+  // uses array membership against the policy controls from Migration D
+  assert.match(sql, /'window_forward' = ANY\(/s)
+  assert.match(sql, /= ANY\(COALESCE\(v_policy\.window_forward_pairs/s)
+})
