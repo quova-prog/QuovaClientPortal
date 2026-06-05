@@ -35,8 +35,8 @@ M&A escrow releases, and capex draw schedules.
 This spec makes window forwards a primary instrument choice throughout Quova: data
 model, policy controls, hedge entry, draw recording, **draw-to-exposure allocation**,
 **mandatory end-of-window settlement**, advisor recommendations (a new Strategy D),
-coverage analytics, MTM, hedge-effectiveness testing, hedge-accounting export, board
-reporting, lifecycle (roll/amend/close), onboarding capture, tier gating, audit, and
+coverage analytics, indicative MTM, board reporting, lifecycle (roll/amend/close),
+onboarding capture, tier gating, audit, and
 tests.
 
 ---
@@ -49,14 +49,14 @@ tests.
 | **Pricing method (v1)** | `fixed_worst_rate` only; `pricing_method` enum reserves `pro_rata_points` for a later variant |
 | **Draw rate authority** | **Server sets `draw_rate` from `hedge_positions.contracted_rate`** for `fixed_worst_rate`; client never supplies it |
 | **Settlement model** | Multiple partial draws across the window; **residual force-settles at window end** |
-| **Draw economics** | Each draw records `spot_rate_at_draw`, `realized_pnl_quote`, `realized_pnl_usd`, settlement amount, bank-confirmation fields — **stored, never recomputed from mutable spot** |
+| **Draw economics (treasury, not accounting)** | Each draw records `spot_rate_at_draw`, `realized_pnl_quote`, `realized_pnl_usd`, settlement amount, bank-confirmation fields — **stored, never recomputed from mutable spot**. This is **Economic P&L** for treasury analytics only — *not* an accounting recognition event |
 | **Exposure linkage** | Each draw **allocates against `fx_exposures` / derived source rows** so coverage and exposure move together |
 | **Policy controls** | Full: instrument allowlist + eligible pairs + max window length + max draws per window |
 | **Policy UI home** | **`StrategyPage.tsx`** (existing policy workbench) — *not* Settings |
 | **Advisor surfacing** | New **Strategy D — Flex-Timing Hedge** (`Strategy.id` extended to include `'D'`) |
 | **Tier gating** | Pro / Enterprise only (Exposure tier sees it locked) |
-| **Effectiveness model** | Window-aware, per-draw hypothetical derivative **at each draw's actual date**, with buy/sell signs + USD conversion + recorded spot/forward inputs |
-| **MTM status** | **Indicative** (interest-rate-differential curve), clearly labeled; bank MTM is authoritative |
+| **Hedge accounting** | **Out of scope for this spec.** Window forwards plug into the *existing* CFH/FVH/undesignated MTM→AOCI export machinery for the undrawn residual (indicative). Full designation, AOCI allocation, reclassification, probability/failure, dedesignation, and the ASC 815 ↔ IFRS 9 split are a separate cross-cutting spec: `2026-06-04-hedge-accounting-redesign-design.md` |
+| **MTM status** | **Indicative** (interest-rate-differential curve), clearly labeled; **bank MTM is the accounting source of truth** (ASC 820 exit price) |
 | **Data model** | Approach 1 — discriminated subtype on `hedge_positions` + `hedge_position_draws` + `draw_exposure_allocations` |
 | **Residual MTM mark** | Mark undrawn notional to the **window-end date** (conservative, matches bank convention) |
 | **Coverage treatment** | Effective notional = `notional_base − drawn_notional`; centralized in one helper used by view + client |
@@ -143,9 +143,14 @@ CREATE INDEX        idx_draws_position  ON hedge_position_draws(position_id);
 CREATE INDEX        idx_draws_org_date  ON hedge_position_draws(org_id, draw_date);
 ```
 
-> **Realized P&L is recorded at draw time and never recomputed** from later (mutable)
-> spot data. `spot_rate_at_draw`, `realized_pnl_quote`, `realized_pnl_usd`, and
-> `settlement_quote` are write-once economic facts for audit.
+> **These are ECONOMIC P&L facts for treasury analytics — not accounting recognition.**
+> `spot_rate_at_draw`, `realized_pnl_quote`, `realized_pnl_usd`, and `settlement_quote`
+> are recorded at draw time and never recomputed from later (mutable) spot data. They
+> drive the blotter, board analytics, and the draw ledger. They do **not** by themselves
+> produce journal entries. For a designated cash flow hedge, the derivative's gain/loss
+> sits in AOCI and reclassifies to earnings only when the hedged forecast transaction
+> affects earnings — which is the job of the separate hedge-accounting-redesign spec, not
+> this one. This spec emits **no** draw-level accounting journal entries.
 
 Recalc + auto-close trigger:
 
@@ -442,46 +447,57 @@ const mtmUsd   = toUsd(Math.abs(rawMtm), quoteCcy, fxRates) * (rawMtm >= 0 ? 1 :
 Call sites branch on `instrument_type === 'window_forward'` → helper; all else keeps
 existing inline math (`TradePage`, `HedgePage` tiles, `BoardReportPanel`, `AnalyticsPage`).
 
-### 5.3 Window-aware hedge effectiveness (`hedgeEffectiveness.ts`)
+### 5.3 Hedge effectiveness — deferred to the hedge-accounting-redesign spec
 
-Per-draw hypothetical derivative **at each draw's actual date**, with proper buy/sell
-signs and USD conversion, using recorded inputs:
+**Hedge effectiveness for window forwards is NOT in this spec.** A correct measurement
+requires the actual-derivative-versus-hypothetical-derivative apparatus with consistent
+current market inputs, a chosen designation method (spot vs all-in forward), excluded
+components, discounting/materiality policy, and — critically — the ASC 815 dollar-offset/
+regression approach kept *separate* from the IFRS 9 qualitative model (which has no
+80–125% bright line). That apparatus is instrument-agnostic and belongs in the dedicated
+spec `2026-06-04-hedge-accounting-redesign-design.md`, which redesigns designation, AOCI
+allocation, reclassification, probability/failure, and dedesignation for **all**
+instruments, window forwards included.
 
-```
-direction sign s = (+1 for sell, −1 for buy)   // applied consistently to both legs
-For each draw i (recorded spot_at_draw_i, draw_rate_i):
-  hyp_derivative_i = s · (spot_at_draw_i − spot_at_trade) × draw_amount_i   // hedged item proxy
-  actual_deriv_i   = s · (draw_rate_i    − spot_at_trade) × draw_amount_i   // instrument
-Residual (undrawn, marked to window end at currentSpot):
-  hyp_derivative_r = s · (currentSpot   − spot_at_trade) × remaining
-  actual_deriv_r   = s · (contracted_rate − spot_at_trade) × remaining
+> The earlier draft of this section contained a per-draw "dollar-offset ⇒ ASC 815 pass"
+> formula whose residual leg (`contracted_rate − spot_at_trade`) was internally
+> inconsistent with the §5.2 MTM residual (`contracted_rate − currentFwd`) and conflated
+> accounting effectiveness with an economic-offset heuristic. It is removed. Do not
+> reintroduce an effectiveness formula here; the accounting spec owns it.
 
-All legs USD-converted via toUsd(quoteCcy).
-Dollar-offset ratio = Σ actual_deriv / Σ hyp_derivative   (80–125% ⇒ ASC 815 pass)
-```
-
-Each draw locks its own basis (forward points consumed at the draw date differ from
-inception), which is the real source of ineffectiveness a window-aware model captures.
-New result fields: `drawEvents[]`, `residualEffectiveness`, `blendedDollarOffset`.
-
-> **Accounting framing:** Quova's effectiveness output is **indicative / preparatory**.
-> The XLSX export states the per-draw hypothetical-derivative method, the spot/forward
-> inputs used, and a disclosure that final ASC 815 / IFRS 9 designation and effectiveness
-> conclusions must be reviewed by the customer's auditor using authoritative bank rates.
-> We do not assert "ASC 815-ready" output.
+What this spec *may* surface for treasury (clearly labeled **economic, not accounting**):
+an optional **economic-offset indicator** = how closely the window forward's indicative
+MTM offsets the marked change in the linked exposure. This is a treasury-analytics signal,
+not an ASC 815 / IFRS 9 effectiveness assessment, and produces no journal entries.
 
 ---
 
 ## 6. Reporting, Lifecycle, Audit
 
-### 6.1 Hedge accounting export (`HedgeAccountingExport.tsx`)
+### 6.1 Hedge accounting export (`HedgeAccountingExport.tsx`) — minimal, indicative
 
-- Per-draw settlement journal entries using **stored** realized P&L, dated at each draw,
-  plus the standing MTM JE for the residual.
-- Per-draw effectiveness sub-table (§5.3) + blended dollar-offset verdict, with the
-  indicative-output disclosure.
-- New XLSX sheet "Window Forward Draws" (seq, date, pair, amount, draw-rate,
-  spot-at-draw, realized P&L, final-flag, bank ref) for the audit trail.
+The existing export already routes cash-flow-hedge MTM to AOCI (Dr Derivative Asset /
+Cr AOCI) and fair-value-hedge MTM to earnings, keyed off `hedge_position.hedge_type`. For
+this spec, window forwards do exactly two things in the existing export — **no new
+accounting logic**:
+
+1. **The undrawn residual** is fed to the existing CFH/FVH/undesignated MTM machinery via
+   `computeFairValue()`, which for a window forward calls `windowForwardMtm()` (§5.2,
+   indicative). It produces the same kind of MTM→AOCI (CFH) or MTM→earnings (FVH) entry
+   the export already generates for vanilla forwards — clearly labeled **indicative**.
+2. **An informational "Window Forward Draws" XLSX sheet** lists the economic draw ledger
+   (seq, date, pair, amount, draw-rate, spot-at-draw, realized economic P&L, final-flag,
+   bank ref). This sheet is **treasury analytics, explicitly marked "not journal
+   entries."**
+
+**This spec does NOT emit:** per-draw settlement journal entries, AOCI
+allocation/reclassification across forecast transactions, dedesignation events, or any
+ASC 815 / IFRS 9 effectiveness verdict. All of that — the correct accounting recognition
+that reclassifies AOCI to earnings only when the hedged forecast transaction affects
+earnings — is owned by the separate **`2026-06-04-hedge-accounting-redesign-design.md`**
+spec, which reworks designation, AOCI, reclassification, probability/failure, and
+dedesignation for every instrument. Until that ships, the export's window-forward output
+is indicative/preparatory and says so on its face.
 
 ### 6.2 Board reporting
 
@@ -498,6 +514,14 @@ New result fields: `drawEvents[]`, `residualEffectiveness`, `blendedDollarOffset
   shrink below drawn; can't move start past an existing draw). Server-validated.
 - **Close (early):** the §3.6 "settle remaining now" path — settles residual at
   `contracted_rate`, records final economics, status → `closed`.
+
+> **Accounting events (flag only, in this spec).** Roll/amend/close that change critical
+> terms (notional, rate, window, counterparty) can require **dedesignation and a new hedge
+> relationship** under ASC 815 / IFRS 9. This spec emits the **economic** position change
+> *and* a structured "critical-term-change" marker on the audit record; it does **not**
+> perform the dedesignation/redesignation accounting itself. Consuming those markers to
+> drive dedesignation, AOCI treatment of the discontinued relationship, and a fresh
+> designation is the job of the hedge-accounting-redesign spec.
 
 ### 6.4 Audit & security
 
@@ -526,14 +550,15 @@ New result fields: `drawEvents[]`, `residualEffectiveness`, `blendedDollarOffset
 - Regenerate `database.types.ts` (`npm run types:db`) after migrations.
 - New hooks: `useWindowDraws(positionId)` (CRUD incl. allocations); `useHedgePositions`
   hydrates draws + allocations for window positions.
-- vitest `windowForward.test.ts` (~30 cases):
+- vitest `windowForward.test.ts` (~25 cases, **economic only — no accounting/effectiveness
+  assertions**):
   - Effective-notional helper parity with the view fixture
   - Fully-undrawn window MTM == vanilla forward MTM (parity)
-  - Fully-drawn window MTM == 0 floating (uses stored realized P&L)
-  - Partial draw reduces floating MTM proportionally
+  - Fully-drawn window MTM == 0 floating (uses stored realized economic P&L)
+  - Partial draw reduces floating MTM proportionally; USD conversion correct for CCY/USD
+    and cross pairs
   - Coverage + exposure fall **together** when a draw allocates to an exposure
-  - Per-draw effectiveness at actual draw dates, buy and sell signs, divergent basis →
-    realistic <100% offset; USD conversion correct for CCY/USD and cross pairs
+  - Economic realized P&L sign correct for buy and sell draws
   - Final-settlement draw forced at window end; status → closed
   - Draw exceeding remaining notional rejected; draw outside window rejected; draw on a
     non-business day rejected
@@ -567,33 +592,49 @@ Per expert recommendation, build the financial model **before** wiring it into t
    settlement.
 3. **Phase 3 — Coverage & exposure allocation.** `draw_exposure_allocations`, centralized
    `effectiveHedgedNotional`, view update, both `useCombinedCoverage` blocks, parity test.
-4. **Phase 4 — Valuation & effectiveness.** `windowForward.ts` MTM (indicative labeling),
-   window-aware effectiveness, hedge-accounting export, board reporting.
+4. **Phase 4 — Indicative valuation & reporting.** `windowForward.ts` MTM (indicative
+   labeling), the minimal hedge-accounting export plug-in (§6.1 — undrawn residual through
+   existing CFH/FVH machinery + informational draws sheet), board reporting. **No
+   effectiveness engine, no per-draw JEs** — those are the accounting-redesign spec.
 5. **Phase 5 — Advisor & entry/policy UI.** Strategy D (type + scoring + card), StrategyPage
    policy controls, HedgePage entry form, TradePage draw + allocation modal, onboarding
    capture.
 
-Each phase is independently testable and reviewable.
+Each phase is independently testable and reviewable. **Hedge accounting (designation,
+AOCI allocation, reclassification, probability/failure, dedesignation, ASC 815 ↔ IFRS 9)
+is a separate project** — see `2026-06-04-hedge-accounting-redesign-design.md` — and is a
+prerequisite before any window-forward output may be called auditor-ready.
 
 ---
 
 ## 10. Surface count
 
-~26 files across 6 layers: 4 migrations + audit-trigger extension, 1 new pure-TS module,
-2 new hooks, 2 new tables (`hedge_position_draws`, `draw_exposure_allocations`), entry
-form, blotter draw + allocation modal, advisor engine + Strategy D, **StrategyPage** policy
-controls, onboarding capture, MTM at 4 call sites, coverage view + 2 client blocks (via one
-helper), effectiveness engine, hedge accounting export, board reporting, lifecycle guards,
-end-of-window settlement job, types, and tests.
+~24 files across 6 layers: 4 migrations + audit-trigger extension, 1 new pure-TS module
+(`windowForward.ts` — indicative MTM + effective-notional helper), 2 new hooks, 2 new
+tables (`hedge_position_draws`, `draw_exposure_allocations`), entry form, blotter draw +
+allocation modal, advisor engine + Strategy D, **StrategyPage** policy controls, onboarding
+capture, MTM at 4 call sites, coverage view + 2 client blocks (via one helper), the
+**minimal** hedge-accounting export plug-in (§6.1), board reporting, lifecycle guards
+(+ critical-term-change markers), end-of-window settlement job, types, and tests. **No
+effectiveness engine and no accounting recognition logic** — those live in the separate
+hedge-accounting-redesign spec.
 
 ---
 
 ## 11. Out of scope (explicitly deferred)
 
+- **The entire hedge-accounting subsystem** — designation records, AOCI allocation across
+  forecast transactions, reclassification when the hedged item affects earnings,
+  probability/failure handling, dedesignation/redesignation, and the separate ASC 815 vs
+  IFRS 9 effectiveness methods. Covered by **`2026-06-04-hedge-accounting-redesign-design.md`**
+  (its own spec → plan → build cycle), which applies to **all** instruments, not just
+  window forwards. This window-forward spec emits no journal entries and no effectiveness
+  verdicts.
 - `pro_rata_points` pricing variant (schema reserves `pricing_method`; v1 ships
   `fixed_worst_rate` only).
 - Real forward-curve market-data feed (v1 uses `buildForwardCurve()` IR-differential
   approximation; MTM labeled indicative).
 - Probability-weighted expected-draw-date MTM (v1 marks residual to window end).
 - Window forwards on the commodity-risk module (FX only for v1).
-- Authoritative bank MTM ingestion (when added, supersedes the indicative figure).
+- Authoritative bank MTM ingestion (when added, supersedes the indicative figure and
+  becomes the accounting source of truth).
