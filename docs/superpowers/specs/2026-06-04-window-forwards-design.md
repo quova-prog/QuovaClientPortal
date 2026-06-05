@@ -337,6 +337,15 @@ preview (min of the forward curve across the window for a sell, max for a buy; e
 beyond 12 months with a footnote). The contracted rate is the worst-rate quote; the client
 does not type a rate. Review step shows a "Window Forward" badge + summary.
 
+> **Forward-compat with the accounting redesign (inception documentation).** Window-forward
+> booking must **preserve the existing session-11 designation step** (hedge_type +
+> auto-generated designation summary in position notes), capturing the hedged item, the
+> forecast window (= the window itself), and the risk at **inception**. Hedge-accounting
+> designation must be contemporaneous and cannot be backfilled, so even though this spec
+> performs no accounting, it must not *lose* the inception data the future
+> hedge-accounting-redesign engine will need. This is capture-only; no new accounting
+> behavior. It is the one piece that would be unrecoverable if dropped.
+
 **Record-a-draw flow (`TradePage` blotter):** new "Record draw" action on active window
 forwards. Two-step modal (form → review):
 - Form: draw date (default today, must be a business day in the window), draw amount
