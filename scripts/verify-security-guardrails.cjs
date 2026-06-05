@@ -29,7 +29,7 @@ const contentChecks = [
   },
   {
     file: '.github/workflows/security.yml',
-    includes: ['npm audit --omit=dev --audit-level=high', 'dependency-review-action'],
+    includes: ['npm audit --omit=dev --audit-level=moderate', 'dependency-review-action'],
   },
   {
     file: '.github/dependabot.yml',
