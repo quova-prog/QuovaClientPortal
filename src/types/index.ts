@@ -81,6 +81,10 @@ export interface HedgePolicy {
   coverage_horizon_months: number          // rolling horizon in months: 3, 6, 12, 18, 24
   base_currency: string
   active: boolean
+  // Window-forward policy controls (20260604000004_window_forward_policy.sql)
+  window_forward_pairs: string[]            // eligible pairs; empty = none allowed
+  max_window_days: number                   // cap on window span (default 90, ≤365)
+  max_draws_per_window: number              // cap on partial draws (default 8, ≤50)
   created_at: string
   updated_at: string
 }

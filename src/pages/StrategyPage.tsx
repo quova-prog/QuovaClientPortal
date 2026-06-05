@@ -20,12 +20,13 @@ const fmtPct = (n: number) => `${Math.round(n)}%`
 const fmtDate = (s: string) => new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 const daysUntil = (s: string) => Math.ceil((new Date(s).getTime() - Date.now()) / 86_400_000)
 
-const INSTRUMENTS = ['forward', 'swap', 'option', 'spot'] as const
+const INSTRUMENTS = ['forward', 'window_forward', 'swap', 'option', 'spot'] as const
 const INSTRUMENT_LABELS: Record<string, string> = {
-  forward: 'Forwards',
-  swap:    'Swaps',
-  option:  'Options',
-  spot:    'Spot',
+  forward:        'Forwards',
+  window_forward: 'Window Forwards',
+  swap:           'Swaps',
+  option:         'Options',
+  spot:           'Spot',
 }
 const HORIZON_OPTIONS = [3, 6, 12, 18, 24]
 const REBALANCE_OPTIONS = [
@@ -43,6 +44,10 @@ type PolicyForm = {
   rebalance_frequency: 'monthly' | 'quarterly' | 'on_trigger'
   allowed_instruments: string[]
   min_notional_threshold: number
+  // Window-forward policy controls (see 20260604000004_window_forward_policy.sql)
+  window_forward_pairs: string[]
+  max_window_days: number
+  max_draws_per_window: number
 }
 
 function defaultForm(policy: HedgePolicy | null): PolicyForm {
@@ -57,6 +62,9 @@ function defaultForm(policy: HedgePolicy | null): PolicyForm {
     rebalance_frequency: policy?.rebalance_frequency ?? 'quarterly',
     allowed_instruments: policy?.allowed_instruments ?? ['forward', 'swap', 'option'],
     min_notional_threshold: policy?.min_notional_threshold ?? 500_000,
+    window_forward_pairs: policy?.window_forward_pairs ?? [],
+    max_window_days: policy?.max_window_days ?? 90,
+    max_draws_per_window: policy?.max_draws_per_window ?? 8,
   }
 }
 
@@ -187,6 +195,16 @@ export function StrategyPage() {
     })
   }
 
+  function toggleWindowPair(pair: string) {
+    setForm(f => {
+      const cur = f.window_forward_pairs
+      return {
+        ...f,
+        window_forward_pairs: cur.includes(pair) ? cur.filter(p => p !== pair) : [...cur, pair],
+      }
+    })
+  }
+
   async function handleSave() {
     setSaveError(null)
     const { error } = await savePolicy({
@@ -198,6 +216,9 @@ export function StrategyPage() {
       rebalance_frequency:     form.rebalance_frequency,
       allowed_instruments:     form.allowed_instruments,
       min_notional_threshold:  form.min_notional_threshold,
+      window_forward_pairs:    form.window_forward_pairs,
+      max_window_days:         form.max_window_days,
+      max_draws_per_window:    form.max_draws_per_window,
     })
     if (error) { setSaveError(error); return }
     setSavedOk(true)
@@ -660,6 +681,61 @@ export function StrategyPage() {
                     )
                   })}
                 </div>
+
+                {/* Window-forward controls — only when the instrument is enabled */}
+                {form.allowed_instruments.includes('window_forward') && (
+                  <div style={{
+                    marginTop: 10, padding: '12px', borderRadius: 8,
+                    background: 'rgba(0,200,160,0.05)', border: '1px solid var(--teal)',
+                  }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--teal)',
+                      textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                      Window Forward Controls
+                    </div>
+
+                    <label style={{ ...labelStyle, fontSize: '0.75rem' }}>Eligible Currency Pairs</label>
+                    {combinedCoverage.length === 0 ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+                        Upload exposure data to choose eligible pairs.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '6px 0 12px' }}>
+                        {combinedCoverage.map(c => {
+                          const on = form.window_forward_pairs.includes(c.currency_pair)
+                          return (
+                            <button key={c.currency_pair} onClick={() => toggleWindowPair(c.currency_pair)}
+                              style={{
+                                padding: '3px 10px', borderRadius: 999, cursor: 'pointer',
+                                fontSize: '0.75rem', fontWeight: 600,
+                                background: on ? 'var(--teal)' : 'var(--bg-surface)',
+                                color: on ? '#fff' : 'var(--text-secondary)',
+                                border: `1px solid ${on ? 'var(--teal)' : 'var(--border)'}`,
+                              }}>
+                              {c.currency_pair}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ ...labelStyle, fontSize: '0.75rem' }}>Max Window (days)</label>
+                        <input className="input" type="number" min={1} max={365}
+                          value={form.max_window_days}
+                          onChange={e => setForm(f => ({ ...f, max_window_days: Math.max(1, Math.min(365, Number(e.target.value) || 0)) }))}
+                          style={{ width: '100%' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ ...labelStyle, fontSize: '0.75rem' }}>Max Draws / Window</label>
+                        <input className="input" type="number" min={1} max={50}
+                          value={form.max_draws_per_window}
+                          onChange={e => setForm(f => ({ ...f, max_draws_per_window: Math.max(1, Math.min(50, Number(e.target.value) || 0)) }))}
+                          style={{ width: '100%' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
