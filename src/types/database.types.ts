@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          org_id: string
+          period: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          org_id: string
+          period: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          org_id?: string
+          period?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_periods_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_periods_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_periods_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_logs: {
         Row: {
           actual_cost_micros: number | null
@@ -147,6 +208,80 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aoci_ledger: {
+        Row: {
+          amount_usd: number
+          balance_after_usd: number
+          bucket: string
+          created_at: string
+          designation_id: string
+          event_type: string
+          hedged_item_id: string | null
+          id: string
+          org_id: string
+          period: string
+          source_event_ref: string | null
+          superseded_by_id: string | null
+        }
+        Insert: {
+          amount_usd: number
+          balance_after_usd: number
+          bucket?: string
+          created_at?: string
+          designation_id: string
+          event_type: string
+          hedged_item_id?: string | null
+          id?: string
+          org_id: string
+          period: string
+          source_event_ref?: string | null
+          superseded_by_id?: string | null
+        }
+        Update: {
+          amount_usd?: number
+          balance_after_usd?: number
+          bucket?: string
+          created_at?: string
+          designation_id?: string
+          event_type?: string
+          hedged_item_id?: string | null
+          id?: string
+          org_id?: string
+          period?: string
+          source_event_ref?: string | null
+          superseded_by_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aoci_ledger_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aoci_ledger_hedged_item_id_fkey"
+            columns: ["hedged_item_id"]
+            isOneToOne: false
+            referencedRelation: "hedged_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aoci_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aoci_ledger_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "aoci_ledger"
             referencedColumns: ["id"]
           },
         ]
@@ -1098,6 +1233,97 @@ export type Database = {
           },
         ]
       }
+      derivative_accounting_ledger: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          derivative_balance_after_usd: number
+          designation_id: string
+          draw_id: string | null
+          event_type: string
+          fair_value_measurement_id: string | null
+          id: string
+          org_id: string
+          period: string
+          position_id: string
+          source_event_ref: string | null
+          superseded_by_id: string | null
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          derivative_balance_after_usd: number
+          designation_id: string
+          draw_id?: string | null
+          event_type: string
+          fair_value_measurement_id?: string | null
+          id?: string
+          org_id: string
+          period: string
+          position_id: string
+          source_event_ref?: string | null
+          superseded_by_id?: string | null
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          derivative_balance_after_usd?: number
+          designation_id?: string
+          draw_id?: string | null
+          event_type?: string
+          fair_value_measurement_id?: string | null
+          id?: string
+          org_id?: string
+          period?: string
+          position_id?: string
+          source_event_ref?: string | null
+          superseded_by_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "derivative_accounting_ledger_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "derivative_accounting_ledger_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_position_draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "derivative_accounting_ledger_fair_value_measurement_id_fkey"
+            columns: ["fair_value_measurement_id"]
+            isOneToOne: false
+            referencedRelation: "fair_value_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "derivative_accounting_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "derivative_accounting_ledger_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "derivative_accounting_ledger_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "derivative_accounting_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       draw_exposure_allocations: {
         Row: {
           allocated_amount: number
@@ -1149,6 +1375,91 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      effectiveness_assessments: {
+        Row: {
+          actual_derivative_fv: number | null
+          assessed_at: string
+          credit_risk_dominates: boolean | null
+          designation_id: string
+          dollar_offset_ratio: number | null
+          framework: string
+          hypothetical_derivative_fv: number | null
+          id: string
+          ifrs9_economic_relationship: boolean | null
+          ifrs9_hedge_ratio: string | null
+          method: string
+          org_id: string
+          period: string
+          rationale: string
+          regression_r2: number | null
+          regression_slope: number | null
+          superseded_by_id: string | null
+          verdict: string
+        }
+        Insert: {
+          actual_derivative_fv?: number | null
+          assessed_at?: string
+          credit_risk_dominates?: boolean | null
+          designation_id: string
+          dollar_offset_ratio?: number | null
+          framework: string
+          hypothetical_derivative_fv?: number | null
+          id?: string
+          ifrs9_economic_relationship?: boolean | null
+          ifrs9_hedge_ratio?: string | null
+          method: string
+          org_id: string
+          period: string
+          rationale: string
+          regression_r2?: number | null
+          regression_slope?: number | null
+          superseded_by_id?: string | null
+          verdict: string
+        }
+        Update: {
+          actual_derivative_fv?: number | null
+          assessed_at?: string
+          credit_risk_dominates?: boolean | null
+          designation_id?: string
+          dollar_offset_ratio?: number | null
+          framework?: string
+          hypothetical_derivative_fv?: number | null
+          id?: string
+          ifrs9_economic_relationship?: boolean | null
+          ifrs9_hedge_ratio?: string | null
+          method?: string
+          org_id?: string
+          period?: string
+          rationale?: string
+          regression_r2?: number | null
+          regression_slope?: number | null
+          superseded_by_id?: string | null
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "effectiveness_assessments_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "effectiveness_assessments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "effectiveness_assessments_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "effectiveness_assessments"
             referencedColumns: ["id"]
           },
         ]
@@ -1330,6 +1641,79 @@ export type Database = {
           },
         ]
       }
+      fair_value_measurements: {
+        Row: {
+          designation_id: string
+          fair_value_hierarchy: string
+          fair_value_usd: number
+          forward_rate: number | null
+          id: string
+          inputs: Json
+          measured_at: string
+          org_id: string
+          period: string
+          source: string
+          source_document_ref: string | null
+          spot: number | null
+          superseded_by_id: string | null
+          valuation_provider: string | null
+        }
+        Insert: {
+          designation_id: string
+          fair_value_hierarchy: string
+          fair_value_usd: number
+          forward_rate?: number | null
+          id?: string
+          inputs?: Json
+          measured_at?: string
+          org_id: string
+          period: string
+          source: string
+          source_document_ref?: string | null
+          spot?: number | null
+          superseded_by_id?: string | null
+          valuation_provider?: string | null
+        }
+        Update: {
+          designation_id?: string
+          fair_value_hierarchy?: string
+          fair_value_usd?: number
+          forward_rate?: number | null
+          id?: string
+          inputs?: Json
+          measured_at?: string
+          org_id?: string
+          period?: string
+          source?: string
+          source_document_ref?: string | null
+          spot?: number | null
+          superseded_by_id?: string | null
+          valuation_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fair_value_measurements_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fair_value_measurements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fair_value_measurements_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "fair_value_measurements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_mappings: {
         Row: {
           ai_reasoning: string | null
@@ -1496,6 +1880,110 @@ export type Database = {
           source?: string | null
         }
         Relationships: []
+      }
+      hedge_designations: {
+        Row: {
+          accounting_status: string
+          assessment_method: string | null
+          basis_adjustment_usd: number
+          created_at: string
+          created_by: string | null
+          dedesignated_at: string | null
+          dedesignation_reason: string | null
+          designated_at: string | null
+          designation_type: string
+          excluded_components: Json
+          framework: string
+          functional_currency: string | null
+          hedged_risk: string
+          id: string
+          inception_doc: string | null
+          inception_doc_status: string
+          method: string
+          org_id: string
+          position_id: string
+          probability_status: string
+          superseded_by_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          accounting_status?: string
+          assessment_method?: string | null
+          basis_adjustment_usd?: number
+          created_at?: string
+          created_by?: string | null
+          dedesignated_at?: string | null
+          dedesignation_reason?: string | null
+          designated_at?: string | null
+          designation_type: string
+          excluded_components?: Json
+          framework: string
+          functional_currency?: string | null
+          hedged_risk?: string
+          id?: string
+          inception_doc?: string | null
+          inception_doc_status?: string
+          method: string
+          org_id: string
+          position_id: string
+          probability_status?: string
+          superseded_by_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accounting_status?: string
+          assessment_method?: string | null
+          basis_adjustment_usd?: number
+          created_at?: string
+          created_by?: string | null
+          dedesignated_at?: string | null
+          dedesignation_reason?: string | null
+          designated_at?: string | null
+          designation_type?: string
+          excluded_components?: Json
+          framework?: string
+          functional_currency?: string | null
+          hedged_risk?: string
+          id?: string
+          inception_doc?: string | null
+          inception_doc_status?: string
+          method?: string
+          org_id?: string
+          position_id?: string
+          probability_status?: string
+          superseded_by_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hedge_designations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedge_designations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedge_designations_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedge_designations_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hedge_policies: {
         Row: {
@@ -1787,6 +2275,89 @@ export type Database = {
             columns: ["rolled_from_id"]
             isOneToOne: false
             referencedRelation: "hedge_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hedged_items: {
+        Row: {
+          affects_earnings_on: string | null
+          created_at: string
+          created_by: string | null
+          derived_ref: string | null
+          derived_source: string | null
+          designation_id: string
+          earnings_event_source: string | null
+          exposure_id: string | null
+          forecast_amount: number
+          forecast_window_end: string | null
+          forecast_window_start: string | null
+          id: string
+          lifecycle_settlement_date: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          affects_earnings_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          derived_ref?: string | null
+          derived_source?: string | null
+          designation_id: string
+          earnings_event_source?: string | null
+          exposure_id?: string | null
+          forecast_amount: number
+          forecast_window_end?: string | null
+          forecast_window_start?: string | null
+          id?: string
+          lifecycle_settlement_date?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          affects_earnings_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          derived_ref?: string | null
+          derived_source?: string | null
+          designation_id?: string
+          earnings_event_source?: string | null
+          exposure_id?: string | null
+          forecast_amount?: number
+          forecast_window_end?: string | null
+          forecast_window_start?: string | null
+          id?: string
+          lifecycle_settlement_date?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hedged_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedged_items_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "hedge_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedged_items_exposure_id_fkey"
+            columns: ["exposure_id"]
+            isOneToOne: false
+            referencedRelation: "fx_exposures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hedged_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -2201,6 +2772,75 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_accounting_config: {
+        Row: {
+          aoci_allocation: string
+          assessment_frequency: string
+          created_at: string
+          designation_method: string
+          effectiveness_method: string
+          fair_value_hierarchy: string
+          fair_value_source: string
+          forward_points_to: string
+          framework: string
+          id: string
+          journal_output_mode: string
+          org_id: string
+          reporting_currency: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          aoci_allocation?: string
+          assessment_frequency?: string
+          created_at?: string
+          designation_method?: string
+          effectiveness_method?: string
+          fair_value_hierarchy?: string
+          fair_value_source?: string
+          forward_points_to?: string
+          framework?: string
+          id?: string
+          journal_output_mode?: string
+          org_id: string
+          reporting_currency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          aoci_allocation?: string
+          assessment_frequency?: string
+          created_at?: string
+          designation_method?: string
+          effectiveness_method?: string
+          fair_value_hierarchy?: string
+          fair_value_source?: string
+          forward_points_to?: string
+          framework?: string
+          id?: string
+          journal_output_mode?: string
+          org_id?: string
+          reporting_currency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_accounting_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_accounting_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3160,6 +3800,75 @@ export type Database = {
         Args: { p_new_status: string; p_reason?: string; p_session_id: string }
         Returns: undefined
       }
+      append_aoci_ledger_entry: {
+        Args: {
+          p_amount_usd: number
+          p_balance_after_usd: number
+          p_bucket: string
+          p_designation_id: string
+          p_event_type: string
+          p_hedged_item_id: string
+          p_period: string
+          p_source_event_ref?: string
+        }
+        Returns: string
+      }
+      append_derivative_accounting_entry: {
+        Args: {
+          p_amount_usd: number
+          p_derivative_balance_after_usd: number
+          p_designation_id: string
+          p_draw_id: string
+          p_event_type: string
+          p_fair_value_measurement_id?: string
+          p_period: string
+          p_position_id: string
+          p_source_event_ref?: string
+        }
+        Returns: string
+      }
+      append_effectiveness_assessment: {
+        Args: {
+          p_actual_derivative_fv?: number
+          p_credit_risk_dominates?: boolean
+          p_designation_id: string
+          p_dollar_offset_ratio?: number
+          p_framework: string
+          p_hypothetical_derivative_fv?: number
+          p_ifrs9_economic_relationship?: boolean
+          p_ifrs9_hedge_ratio?: string
+          p_method: string
+          p_period: string
+          p_rationale: string
+          p_regression_r2?: number
+          p_regression_slope?: number
+          p_verdict: string
+        }
+        Returns: string
+      }
+      append_fair_value_measurement: {
+        Args: {
+          p_designation_id: string
+          p_fair_value_hierarchy: string
+          p_fair_value_usd: number
+          p_forward_rate?: number
+          p_inputs?: Json
+          p_period: string
+          p_source: string
+          p_source_document_ref?: string
+          p_spot?: number
+          p_valuation_provider?: string
+        }
+        Returns: string
+      }
+      assert_accounting_period_writable: {
+        Args: { p_org_id: string; p_period: string }
+        Returns: undefined
+      }
+      assert_final_journal_allowed: {
+        Args: { p_org_id: string; p_period: string }
+        Returns: undefined
+      }
       assert_support_can_act_on_org: {
         Args: { p_org_id: string }
         Returns: undefined
@@ -3170,14 +3879,24 @@ export type Database = {
           p_counterparty_bank?: string
           p_currency_pair: string
           p_direction: string
+          p_entity_id?: string
           p_hedge_type?: string
           p_notes?: string
-          p_entity_id?: string | null
           p_notional_base: number
           p_reference_number?: string
           p_trade_date: string
           p_window_end: string
           p_window_start: string
+        }
+        Returns: string
+      }
+      check_and_log_ai_usage: {
+        Args: {
+          p_estimated_cost_micros: number
+          p_estimated_input_tokens: number
+          p_model: string
+          p_request_bytes: number
+          p_reserved_output_tokens: number
         }
         Returns: string
       }
@@ -3190,13 +3909,11 @@ export type Database = {
         }
         Returns: Json
       }
-      check_and_log_ai_usage: {
+      complete_hedge_designation: {
         Args: {
-          p_estimated_cost_micros: number
-          p_estimated_input_tokens: number
-          p_model: string
-          p_request_bytes: number
-          p_reserved_output_tokens: number
+          p_designation_id: string
+          p_functional_currency?: string
+          p_inception_doc: string
         }
         Returns: string
       }
@@ -3230,6 +3947,34 @@ export type Database = {
         Args: { p_status: string }
         Returns: boolean
       }
+      record_designation: {
+        Args: {
+          p_assessment_method?: string
+          p_designation_type: string
+          p_functional_currency?: string
+          p_hedged_risk?: string
+          p_inception_doc?: string
+          p_inception_doc_status?: string
+          p_method?: string
+          p_position_id: string
+        }
+        Returns: string
+      }
+      record_hedged_item: {
+        Args: {
+          p_affects_earnings_on?: string
+          p_derived_ref?: string
+          p_derived_source?: string
+          p_designation_id: string
+          p_earnings_event_source?: string
+          p_exposure_id?: string
+          p_forecast_amount?: number
+          p_forecast_window_end?: string
+          p_forecast_window_start?: string
+          p_lifecycle_settlement_date?: string
+        }
+        Returns: string
+      }
       record_window_draw: {
         Args: {
           p_allocations?: Json
@@ -3244,6 +3989,10 @@ export type Database = {
         Returns: Json
       }
       remove_member: { Args: { p_target_user_id: string }; Returns: undefined }
+      set_accounting_period_status: {
+        Args: { p_period: string; p_status: string }
+        Returns: string
+      }
       settle_expired_windows: { Args: never; Returns: number }
       submit_policy_change: {
         Args: {
@@ -3343,6 +4092,7 @@ export type Database = {
       validate_window_forward: {
         Args: {
           p_currency_pair: string
+          p_entity_id?: string
           p_notional: number
           p_org_id: string
           p_position_id?: string
