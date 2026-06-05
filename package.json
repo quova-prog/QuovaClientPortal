@@ -11,6 +11,7 @@
     "test:security": "node --test tests/security/*.test.mjs",
     "types:db": "supabase gen types typescript --project-id vmtwojalyzvmdpldgabi > src/types/database.types.ts",
     "verify:guardrails": "node scripts/verify-security-guardrails.cjs",
+    "sync:security-headers": "node scripts/sync-security-headers.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx"
   },

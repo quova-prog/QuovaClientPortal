@@ -2,7 +2,7 @@
 // Orbit Edge Function: send-team-invite
 // Sends an organization invite email for pending team invites
 // ============================================================
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts';
+import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts';
 import { sendEmail } from '../_shared/sendgrid.ts';
 import { teamInviteEmail } from '../_shared/emailTemplates.ts';
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.quovaos.com';
@@ -10,7 +10,7 @@ Deno.serve(async (req)=>{
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: corsHeaders(req)
     });
   }
   if (req.method !== 'POST') {
@@ -18,11 +18,11 @@ Deno.serve(async (req)=>{
       error: 'Method not allowed'
     }, 405);
   }
-  const auth = await authenticateRequest(req);
-  if (!auth.authenticated || !auth.user) {
+  const auth = await authenticateUserAal2(req);
+  if (!auth.authenticated) {
     return jsonResponse({
       error: auth.error ?? 'Unauthorized'
-    }, 401);
+    }, 401, req);
   }
   let body;
   try {

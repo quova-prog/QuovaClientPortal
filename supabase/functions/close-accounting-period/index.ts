@@ -6,7 +6,7 @@
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
+import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import {
   closeAccountingPeriod,
   createSupabaseCloseAccountingRepository,
@@ -37,12 +37,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
-  const auth = await authenticateRequest(req)
-  if (!auth.authenticated || !auth.user) {
+  const auth = await authenticateUserAal2(req)
+  if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
-  }
-  if (auth.isServiceRole) {
-    return jsonResponse({ error: 'Service-role calls not permitted on this endpoint' }, 403, req)
   }
 
   let body: CloseAccountingPeriodBody

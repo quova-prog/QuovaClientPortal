@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { authenticateRequest, corsHeaders, createAdminClient, jsonResponse } from '../_shared/auth.ts'
+import { authenticateUserAal2, corsHeaders, createAdminClient, jsonResponse } from '../_shared/auth.ts'
 
 const ALLOWED_MODELS = ['claude-haiku-4-5', 'claude-sonnet-4-20250514'] as const
 type AllowedModel = typeof ALLOWED_MODELS[number]
@@ -207,18 +207,11 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
-  // Centralised auth: validates the JWT signature AND enforces AAL2.
-  // Service-role callers (DB triggers via pg_net) are not expected here
-  // and would only receive AI access if they passed their own key,
-  // which they don't and shouldn't.
-  const auth = await authenticateRequest(req)
-  if (!auth.authenticated || !auth.user) {
+  // User-only auth: validates the JWT signature and enforces AAL2.
+  // Service-role keys are not accepted by this helper.
+  const auth = await authenticateUserAal2(req)
+  if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
-  }
-  if (auth.isServiceRole) {
-    // Service role hitting the AI proxy would charge against no specific
-    // user's quota and bypass the per-user rate limit. Block explicitly.
-    return jsonResponse({ error: 'Service-role calls not permitted on this endpoint' }, 403, req)
   }
 
   // We need the user-scoped Supabase client below for the rate-limit

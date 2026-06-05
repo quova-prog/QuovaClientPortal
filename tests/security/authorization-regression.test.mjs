@@ -147,10 +147,54 @@ test('email templates validate app CTA paths and escape URL attributes', () => {
   assert.doesNotMatch(nudge, /href="\$\{opts\.unsubscribeUrl\}"/s)
 })
 
-test('vercel CSP keeps core browser hardening directives', () => {
-  const content = readRepoFile('vercel.json')
-  const config = JSON.parse(content)
-  const csp = config.headers?.[0]?.headers?.find(header => header.key === 'Content-Security-Policy')?.value ?? ''
+test('Edge auth helpers keep user AAL2 and service-role auth explicitly split', () => {
+  const helper = readRepoFile('supabase/functions/_shared/auth.ts')
+  assert.match(helper, /export async function authenticateUserAal2\(req: Request\)/s)
+  assert.match(helper, /export function authenticateServiceRole\(req: Request\)/s)
+  assert.doesNotMatch(helper, /export async function authenticateRequest/s)
+
+  const userOnlyEdges = [
+    'supabase/functions/anthropic-proxy/index.ts',
+    'supabase/functions/close-accounting-period/index.ts',
+    'supabase/functions/send-nudge/index.ts',
+    'supabase/functions/send-team-invite/index.ts',
+  ]
+  for (const filePath of userOnlyEdges) {
+    const content = readRepoFile(filePath)
+    assert.match(content, /authenticateUserAal2\(req\)/s, `${filePath} should require user AAL2 auth`)
+    assert.doesNotMatch(content, /authenticateRequest\(req\)/s, `${filePath} should not use generic mixed auth`)
+  }
+
+  const serviceOnlyEdges = [
+    'supabase/functions/compute-health-scores/index.ts',
+    'supabase/functions/send-daily-digest/index.ts',
+    'supabase/functions/settle-expired-windows/index.ts',
+  ]
+  for (const filePath of serviceOnlyEdges) {
+    const content = readRepoFile(filePath)
+    assert.match(content, /authenticateServiceRole\(req\)/s, `${filePath} should opt into service-role auth`)
+    assert.doesNotMatch(content, /authenticateRequest\(req\)/s, `${filePath} should not use generic mixed auth`)
+  }
+
+  const mixed = readRepoFile('supabase/functions/send-urgent-email/index.ts')
+  assert.match(mixed, /authenticateServiceRole\(req\)/s)
+  assert.match(mixed, /authenticateUserAal2\(req\)/s)
+  assert.doesNotMatch(mixed, /authenticateRequest\(req\)/s)
+})
+
+test('security headers are generated from one source and every production target has CSP', () => {
+  const source = JSON.parse(readRepoFile('config/security-headers.json'))
+  const config = JSON.parse(readRepoFile('vercel.json'))
+  const publicHeaders = readRepoFile('public/_headers')
+
+  assert.deepEqual(config.headers?.[0]?.headers, source.headers)
+
+  for (const { key, value } of source.headers) {
+    assert.match(publicHeaders, new RegExp(escapeRegExp(`${key}: ${value}`)), `public/_headers should include ${key}`)
+  }
+
+  const csp = source.headers.find(header => header.key === 'Content-Security-Policy')?.value ?? ''
+  assert.match(publicHeaders, /Content-Security-Policy:/s)
 
   for (const directive of [
     "default-src 'self'",

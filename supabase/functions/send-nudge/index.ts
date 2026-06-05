@@ -4,7 +4,7 @@
 // when support staff detect data gaps.
 // ============================================================
 
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
+import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { signUnsubscribeToken } from '../_shared/crypto.ts'
 import { escapeHtmlAttr, joinAppUrl, safeHttpUrl } from '../_shared/url.ts'
@@ -170,8 +170,8 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Auth ───────────────────────────────────────────────────
-  const auth = await authenticateRequest(req)
-  if (!auth.authenticated || !auth.user) {
+  const auth = await authenticateUserAal2(req)
+  if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
   }
 

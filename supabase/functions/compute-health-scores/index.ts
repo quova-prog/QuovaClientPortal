@@ -5,7 +5,7 @@
 // Triggered by pg_cron or manual invocation (service role only).
 // ============================================================
 
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
+import { createAdminClient, authenticateServiceRole, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -53,13 +53,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
-  const auth = await authenticateRequest(req)
+  const auth = await authenticateServiceRole(req)
   if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
-  }
-
-  if (!auth.isServiceRole) {
-    return jsonResponse({ error: 'Forbidden: Service Role required' }, 403, req)
   }
 
   // Optional: target a specific org

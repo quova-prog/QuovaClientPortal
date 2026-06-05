@@ -11,9 +11,9 @@ const EDGE = 'supabase/functions/close-accounting-period/index.ts'
 test('Close accounting period Edge Function: requires AAL2 user auth and admin role', () => {
   const ts = read(EDGE)
 
-  assert.match(ts, /authenticateRequest\(req\)/s)
-  assert.match(ts, /auth\.isServiceRole/s)
-  assert.match(ts, /Service-role calls not permitted/s)
+  assert.match(ts, /authenticateUserAal2\(req\)/s)
+  assert.doesNotMatch(ts, /authenticateRequest\(req\)/s)
+  assert.doesNotMatch(ts, /auth\.isServiceRole/s)
   assert.match(ts, /from\('profiles'\)[\s\S]*select\('org_id, role'\)[\s\S]*eq\('id', auth\.user\.id\)/s)
   assert.match(ts, /profile\?\.role !== 'admin'/s)
   assert.match(ts, /Forbidden: Admin role required/s)

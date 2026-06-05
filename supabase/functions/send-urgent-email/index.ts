@@ -4,7 +4,7 @@
 // Triggered by DB trigger via pg_net or manual invocation
 // ============================================================
 
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
+import { createAdminClient, authenticateServiceRole, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { urgentAlertEmail } from '../_shared/emailTemplates.ts'
 import { signUnsubscribeToken } from '../_shared/crypto.ts'
@@ -20,10 +20,18 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
-  // Authenticate
-  const auth = await authenticateRequest(req)
-  if (!auth.authenticated) {
-    return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
+  // Authenticate. DB-trigger calls must use service-role auth; manual user
+  // calls must be AAL2 and are role-checked below.
+  const serviceAuth = authenticateServiceRole(req)
+  const isServiceRole = serviceAuth.authenticated
+  let userId: string | null = null
+
+  if (!isServiceRole) {
+    const userAuth = await authenticateUserAal2(req)
+    if (!userAuth.authenticated) {
+      return jsonResponse({ error: userAuth.error ?? 'Unauthorized' }, 401, req)
+    }
+    userId = userAuth.user.id
   }
 
   // Parse body
@@ -42,14 +50,14 @@ Deno.serve(async (req: Request) => {
   const admin = createAdminClient()
 
   // Guard: Logical access control — admin/editor only (viewers cannot trigger email blasts)
-  if (!auth.isServiceRole) {
-    if (!auth.user) {
+  if (!isServiceRole) {
+    if (!userId) {
       return jsonResponse({ error: 'Unauthorized: User required' }, 401, req)
     }
     const { data: profile } = await admin
       .from('profiles')
       .select('org_id, role')
-      .eq('id', auth.user.id)
+      .eq('id', userId)
       .single()
 
     if (profile?.org_id !== org_id) {
@@ -174,5 +182,5 @@ Deno.serve(async (req: Request) => {
     alert_id,
     sent: sentCount,
     errors: errors.length > 0 ? errors : undefined,
-  }, 200)
+  }, 200, req)
 })

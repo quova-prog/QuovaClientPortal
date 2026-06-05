@@ -1,9 +1,10 @@
 // ============================================================
 // Auth helpers for Deno Edge Functions
-// Supports service role key (server-to-server) and user JWT
+// User AAL2 and service-role authentication are intentionally split:
+// service-role access must be explicitly opted into by each endpoint.
 // ============================================================
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient, type User } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // ── CORS allowlist ───────────────────────────────────────────
 // Origins permitted to call Edge Functions from a browser.
@@ -28,6 +29,14 @@ const ENV_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .filter(Boolean)
 
 const ALLOWED_ORIGINS: string[] = ENV_ORIGINS.length > 0 ? ENV_ORIGINS : FALLBACK_ORIGINS
+
+export type UserAal2AuthResult =
+  | { authenticated: true; user: User }
+  | { authenticated: false; error: string }
+
+export type ServiceRoleAuthResult =
+  | { authenticated: true }
+  | { authenticated: false; error: string }
 
 /**
  * Build CORS headers for a specific request.
@@ -73,48 +82,68 @@ export function createAdminClient(): SupabaseClient {
   )
 }
 
-/** Authenticate request — accepts service role key or user JWT */
-export async function authenticateRequest(req: Request): Promise<{ authenticated: boolean; isServiceRole?: boolean; user?: any; error?: string }> {
+function bearerToken(req: Request): string | null {
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) return null
+  return authHeader.slice('Bearer '.length)
+}
+
+function parseJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const payloadB64Url = token.split('.')[1] ?? ''
+    const payloadB64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = payloadB64 + '='.repeat((4 - payloadB64.length % 4) % 4)
+    return JSON.parse(atob(padded)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Authenticate an end-user JWT and require AAL2/MFA.
+ * Does NOT accept service-role keys. Use authenticateServiceRole() for cron,
+ * database trigger, or other server-to-server endpoints.
+ */
+export async function authenticateUserAal2(req: Request): Promise<UserAal2AuthResult> {
+  const token = bearerToken(req)
+  if (!token) {
     return { authenticated: false, error: 'Missing Authorization header' }
   }
 
-  const token = authHeader.replace('Bearer ', '')
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const edgeServiceRoleKey = Deno.env.get('EDGE_SERVICE_ROLE_KEY')
-
-  // Service role key auth (used by DB triggers via pg_net)
-  if (token === serviceRoleKey || (edgeServiceRoleKey && token === edgeServiceRoleKey)) {
-    return { authenticated: true, isServiceRole: true }
-  }
-
-  // User JWT auth
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   })
+
   const { data: { user }, error } = await supabase.auth.getUser(token)
   if (error || !user) {
     return { authenticated: false, error: 'Invalid token' }
   }
 
-  // Enforce AAL2 (MFA). JWT payloads are base64url-encoded, not
-  // standard base64 — convert before atob() so payloads containing
-  // '-' or '_' aren't falsely rejected with InvalidCharacterError.
-  try {
-    const payloadB64Url = token.split('.')[1] ?? ''
-    const payloadB64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = payloadB64 + '='.repeat((4 - payloadB64.length % 4) % 4)
-    const payloadStr = atob(padded)
-    const payload = JSON.parse(payloadStr)
-    if (payload.aal !== 'aal2') {
-      return { authenticated: false, error: 'MFA required (AAL2)' }
-    }
-  } catch (e) {
-    return { authenticated: false, error: 'Invalid token payload or missing AAL' }
+  const payload = parseJwtPayload(token)
+  if (!payload || payload.aal !== 'aal2') {
+    return { authenticated: false, error: 'MFA required (AAL2)' }
   }
 
-  return { authenticated: true, isServiceRole: false, user }
+  return { authenticated: true, user }
+}
+
+/**
+ * Authenticate a service-role bearer token. This is intentionally separate
+ * from user authentication so service-role access is opt-in per endpoint.
+ */
+export function authenticateServiceRole(req: Request): ServiceRoleAuthResult {
+  const token = bearerToken(req)
+  if (!token) {
+    return { authenticated: false, error: 'Missing Authorization header' }
+  }
+
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const edgeServiceRoleKey = Deno.env.get('EDGE_SERVICE_ROLE_KEY')
+  if ((serviceRoleKey && token === serviceRoleKey) || (edgeServiceRoleKey && token === edgeServiceRoleKey)) {
+    return { authenticated: true }
+  }
+
+  return { authenticated: false, error: 'Invalid service-role token' }
 }

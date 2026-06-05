@@ -4,7 +4,7 @@
 // Triggered by pg_cron (hourly) or manual invocation
 // ============================================================
 
-import { createAdminClient, authenticateRequest, jsonResponse, corsHeaders } from '../_shared/auth.ts'
+import { createAdminClient, authenticateServiceRole, jsonResponse, corsHeaders } from '../_shared/auth.ts'
 import { sendEmail } from '../_shared/sendgrid.ts'
 import { dailyDigestEmail } from '../_shared/emailTemplates.ts'
 import { generateDigestPdf, type DigestPdfData } from '../_shared/digestPdf.ts'
@@ -21,13 +21,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, req)
   }
 
-  const auth = await authenticateRequest(req)
+  const auth = await authenticateServiceRole(req)
   if (!auth.authenticated) {
     return jsonResponse({ error: auth.error ?? 'Unauthorized' }, 401, req)
-  }
-  
-  if (!auth.isServiceRole) {
-    return jsonResponse({ error: 'Forbidden: Service Role required for mass digest operations' }, 403, req)
   }
 
   // Optional: target a specific org
