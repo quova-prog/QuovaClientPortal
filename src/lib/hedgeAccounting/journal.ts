@@ -85,6 +85,7 @@ export interface AociLedgerRow {
 export interface LedgerJournalMetadata {
   hedgeType: string
   positionId: string
+  entityId?: string | null
   referenceNumber?: string | null
   currencyPair?: string | null
   instrumentType?: string | null

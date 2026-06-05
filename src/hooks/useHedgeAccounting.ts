@@ -36,6 +36,7 @@ interface RawAociLedgerRow {
 
 interface RawHedgePositionMetadata {
   id: string
+  entity_id: string | null
   reference_number: string | null
   currency_pair: string | null
   instrument_type: string | null
@@ -108,6 +109,7 @@ function mapDesignationMetadata(row: RawDesignationMetadata): LedgerJournalMetad
   return {
     hedgeType: row.designation_type,
     positionId: row.position_id,
+    entityId: position?.entity_id ?? null,
     referenceNumber: position?.reference_number ?? null,
     currencyPair: position?.currency_pair ?? null,
     instrumentType: position?.instrument_type ?? null,
@@ -119,7 +121,7 @@ function mapDesignationMetadata(row: RawDesignationMetadata): LedgerJournalMetad
   }
 }
 
-export function useHedgeAccountingLedgers(period: string): HedgeAccountingLedgers {
+export function useHedgeAccountingLedgers(period: string, entityId?: string | null): HedgeAccountingLedgers {
   const { user, db } = useAuth()
   const [derivativeRows, setDerivativeRows] = useState<DerivativeAccountingLedgerRow[]>([])
   const [aociRows, setAociRows] = useState<AociLedgerRow[]>([])
@@ -181,6 +183,7 @@ export function useHedgeAccountingLedgers(period: string): HedgeAccountingLedger
           position_id,
           hedge_positions (
             id,
+            entity_id,
             reference_number,
             currency_pair,
             instrument_type,
@@ -203,18 +206,34 @@ export function useHedgeAccountingLedgers(period: string): HedgeAccountingLedger
         return
       }
 
+      const designationRows = (designationResult.data ?? []) as RawDesignationMetadata[]
+      const allowedDesignationIds = new Set(
+        designationRows
+          .filter((row) => {
+            if (!entityId) return true
+            const position = firstPosition(row.hedge_positions)
+            return position?.entity_id === entityId || !position?.entity_id
+          })
+          .map((row) => row.id),
+      )
+
       metadata = Object.fromEntries(
-        ((designationResult.data ?? []) as RawDesignationMetadata[])
+        designationRows
+          .filter((row) => allowedDesignationIds.has(row.id))
           .map((row) => [row.id, mapDesignationMetadata(row)] as const),
       )
+
+      setDerivativeRows(mappedDerivativeRows.filter((row) => allowedDesignationIds.has(row.designationId)))
+      setAociRows(mappedAociRows.filter((row) => allowedDesignationIds.has(row.designationId)))
+    } else {
+      setDerivativeRows(mappedDerivativeRows)
+      setAociRows(mappedAociRows)
     }
 
-    setDerivativeRows(mappedDerivativeRows)
-    setAociRows(mappedAociRows)
     setMetadataByDesignationId(metadata)
     setError(null)
     setLoading(false)
-  }, [db, period, user?.profile?.org_id])
+  }, [db, entityId, period, user?.profile?.org_id])
 
   useEffect(() => { refresh() }, [refresh])
 

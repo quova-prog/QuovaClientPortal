@@ -208,7 +208,7 @@ export function HedgeAccountingExport() {
     aociRows,
     metadataByDesignationId,
     loading: ledgerLoading,
-  } = useHedgeAccountingLedgers(periodKey)
+  } = useHedgeAccountingLedgers(periodKey, isConsolidated ? null : currentEntityId)
 
   const scopedDrawLedgerPositions = useMemo(() =>
     isConsolidated

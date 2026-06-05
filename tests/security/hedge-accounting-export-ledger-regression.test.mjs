@@ -14,7 +14,7 @@ test('Hedge accounting export builds journal entries from accounting ledgers', (
 
   assert.match(tsx, /useHedgeAccountingLedgers/s)
   assert.match(tsx, /generateLedgerJournalLines/s)
-  assert.match(componentBody, /useHedgeAccountingLedgers\(periodKey\)/s)
+  assert.match(componentBody, /useHedgeAccountingLedgers\(periodKey, isConsolidated \? null : currentEntityId\)/s)
   assert.match(componentBody, /generateLedgerJournalLines\(\{/s)
   assert.match(componentBody, /derivativeRows/s)
   assert.match(componentBody, /aociRows/s)
