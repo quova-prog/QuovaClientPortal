@@ -762,10 +762,10 @@ export function AdvisorPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem' }}>
             <Zap size={13} color="var(--teal)" />
-            <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>3 Ranked Strategies</span>
+            <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{strategies.length} Ranked {strategies.length === 1 ? 'Strategy' : 'Strategies'}</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>— scored by risk reduction, cost, policy fit &amp; execution</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(strategies.length, 4)}, 1fr)`, gap: '0.75rem' }}>
             {strategies.map((s, i) => (
               <StrategyCard
                 key={s.id}
