@@ -61,3 +61,23 @@ test('Migration B: draws table stores write-once economics with invariant trigge
   assert.match(sql, /FOR UPDATE TO authenticated USING \(false\)/s)
   assert.match(sql, /FOR DELETE TO authenticated USING \(false\)/s)
 })
+
+test('Migration C: draw→exposure allocation linkage + settled_amount on fx_exposures', () => {
+  const sql = read('supabase/migrations/20260604000003_draw_exposure_allocations.sql')
+
+  // fx_exposures gains a bounded settled_amount
+  assert.match(sql, /ALTER TABLE fx_exposures[\s\S]*ADD COLUMN IF NOT EXISTS settled_amount\s+NUMERIC\(20,2\) NOT NULL DEFAULT 0/s)
+  assert.match(sql, /settled_amount >= 0 AND settled_amount <= notional_base/s)
+
+  // allocation table with exactly-one-target invariant
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS draw_exposure_allocations/s)
+  assert.match(sql, /one_target CHECK/s)
+  assert.match(sql, /exposure_id IS NOT NULL AND derived_source IS NULL/s)
+  assert.match(sql, /exposure_id IS NULL AND derived_source IS NOT NULL/s)
+
+  // audit + RLS (read-only to clients; RPC is the write path)
+  assert.match(sql, /trg_audit_draw_exposure_allocations[\s\S]*audit_trigger_func\(\)/s)
+  assert.match(sql, /ALTER TABLE draw_exposure_allocations ENABLE ROW LEVEL SECURITY/s)
+  assert.match(sql, /FOR SELECT USING \(org_id = current_user_org_id\(\)\)/s)
+  assert.match(sql, /FOR INSERT TO authenticated WITH CHECK \(false\)/s)
+})
