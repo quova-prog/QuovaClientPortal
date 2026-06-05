@@ -16,30 +16,60 @@ export type Database = {
     Tables: {
       ai_usage_logs: {
         Row: {
+          actual_cost_micros: number | null
+          actual_input_tokens: number | null
+          actual_output_tokens: number | null
           bank_id: string
+          completed_at: string | null
           cost_tokens: number
           created_at: string
+          error_message: string | null
+          estimated_cost_micros: number
+          estimated_input_tokens: number
           id: string
           model: string
           org_id: string
+          request_bytes: number
+          reserved_output_tokens: number
+          status: string
           user_id: string
         }
         Insert: {
+          actual_cost_micros?: number | null
+          actual_input_tokens?: number | null
+          actual_output_tokens?: number | null
           bank_id: string
+          completed_at?: string | null
           cost_tokens?: number
           created_at?: string
+          error_message?: string | null
+          estimated_cost_micros?: number
+          estimated_input_tokens?: number
           id?: string
           model: string
           org_id: string
+          request_bytes?: number
+          reserved_output_tokens?: number
+          status?: string
           user_id: string
         }
         Update: {
+          actual_cost_micros?: number | null
+          actual_input_tokens?: number | null
+          actual_output_tokens?: number | null
           bank_id?: string
+          completed_at?: string | null
           cost_tokens?: number
           created_at?: string
+          error_message?: string | null
+          estimated_cost_micros?: number
+          estimated_input_tokens?: number
           id?: string
           model?: string
           org_id?: string
+          request_bytes?: number
+          reserved_output_tokens?: number
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -3160,7 +3190,16 @@ export type Database = {
         }
         Returns: Json
       }
-      check_and_log_ai_usage: { Args: { p_model: string }; Returns: boolean }
+      check_and_log_ai_usage: {
+        Args: {
+          p_estimated_cost_micros: number
+          p_estimated_input_tokens: number
+          p_model: string
+          p_request_bytes: number
+          p_reserved_output_tokens: number
+        }
+        Returns: string
+      }
       current_support_bank_id: { Args: never; Returns: string }
       current_user_bank_id: { Args: never; Returns: string }
       current_user_org_id: { Args: never; Returns: string }
