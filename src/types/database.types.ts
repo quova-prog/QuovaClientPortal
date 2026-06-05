@@ -3142,6 +3142,7 @@ export type Database = {
           p_direction: string
           p_hedge_type?: string
           p_notes?: string
+          p_entity_id?: string | null
           p_notional_base: number
           p_reference_number?: string
           p_trade_date: string
@@ -3149,6 +3150,15 @@ export type Database = {
           p_window_start: string
         }
         Returns: string
+      }
+      close_window_forward: {
+        Args: {
+          p_close_date: string
+          p_close_rate: number
+          p_notes?: string
+          p_position_id: string
+        }
+        Returns: Json
       }
       check_and_log_ai_usage: { Args: { p_model: string }; Returns: boolean }
       current_support_bank_id: { Args: never; Returns: string }

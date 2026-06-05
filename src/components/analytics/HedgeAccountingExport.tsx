@@ -23,6 +23,7 @@ import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useEntity } from '@/context/EntityContext'
 import { csvEscape } from '@/lib/csv/escape'
 import { windowForwardMtm } from '@/lib/windowForward'
+import { useWindowDrawLedger, type WindowDraw } from '@/hooks/useWindowForward'
 import type { HedgePosition } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -94,6 +95,8 @@ const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December',
 ]
+const JOURNAL_POSITION_STATUSES = ['active', 'expired'] as const
+const DRAW_LEDGER_POSITION_STATUSES = ['active', 'expired', 'closed'] as const
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -447,6 +450,13 @@ const CSV_HEADERS = [
   'Memo','Entity','Period','ASC815_Reference',
 ]
 
+const DRAW_CSV_HEADERS = [
+  'Draw_Date','Position_ID','Currency_Pair','Counterparty','Draw_Seq',
+  'Draw_Amount','Base_Currency','Draw_Rate','Spot_Rate_At_Draw',
+  'Settlement_Quote','Quote_Currency','Realized_PnL_Quote','Realized_PnL_USD',
+  'Final_Settlement','Bank_Confirmation','Reference_Number','Memo','Entity','ASC815_Note',
+]
+
 function toCSV(lines: JournalLine[]): string {
   const rows = [
     CSV_HEADERS.join(','),
@@ -459,6 +469,41 @@ function toCSV(lines: JournalLine[]): string {
       l.fairValueUsd.toFixed(2),
       l.memo, l.entity, l.period, l.asc815Note,
     ].map(csvEscape).join(',')),
+  ]
+  return rows.join('\n')
+}
+
+function drawsToCSV(
+  draws: WindowDraw[],
+  positionsById: Map<string, HedgePosition>,
+  entityName: string,
+): string {
+  const rows = [
+    DRAW_CSV_HEADERS.join(','),
+    ...draws.map(d => {
+      const p = positionsById.get(d.position_id)
+      return [
+        d.draw_date,
+        p?.reference_number ?? d.position_id.slice(0, 8).toUpperCase(),
+        p?.currency_pair ?? '',
+        p?.counterparty_bank ?? '',
+        d.draw_seq,
+        d.draw_amount.toFixed(2),
+        p?.base_currency ?? '',
+        d.draw_rate.toFixed(6),
+        d.spot_rate_at_draw.toFixed(6),
+        d.settlement_quote.toFixed(2),
+        p?.quote_currency ?? '',
+        d.realized_pnl_quote.toFixed(2),
+        d.realized_pnl_usd.toFixed(2),
+        d.is_final_settlement ? 'Yes' : 'No',
+        d.bank_confirmation ?? '',
+        d.reference_number ?? '',
+        d.notes ?? '',
+        entityName,
+        'ASC 815 support schedule: window-forward draw economics for settlement/audit review; journal entries remain in the balanced JE export.',
+      ].map(csvEscape).join(',')
+    }),
   ]
   return rows.join('\n')
 }
@@ -496,8 +541,10 @@ export function HedgeAccountingExport() {
   })
   const [accountSaved, setAccountSaved] = useState(false)
 
-  // Include expired positions so Settlement entries cover positions that settled this period
-  const { positions } = useHedgePositions(['active', 'expired'])
+  // Include expired positions so Settlement entries cover positions that settled this period.
+  // Closed positions are loaded separately for the non-journal window-forward draw ledger.
+  const { positions } = useHedgePositions(JOURNAL_POSITION_STATUSES)
+  const { positions: drawLedgerPositions } = useHedgePositions(DRAW_LEDGER_POSITION_STATUSES)
   const { rates: spotRates } = useFxRates()
   const { currentEntityId, isConsolidated, entities } = useEntity()
 
@@ -512,9 +559,27 @@ export function HedgeAccountingExport() {
       ? positions
       : positions.filter(p => p.entity_id === currentEntityId || !p.entity_id),
   [positions, isConsolidated, currentEntityId])
+  const scopedDrawLedgerPositions = useMemo(() =>
+    isConsolidated
+      ? drawLedgerPositions
+      : drawLedgerPositions.filter(p => p.entity_id === currentEntityId || !p.entity_id),
+  [drawLedgerPositions, isConsolidated, currentEntityId])
+  const windowPositionIds = useMemo(() =>
+    scopedDrawLedgerPositions.filter(p => p.instrument_type === 'window_forward').map(p => p.id),
+  [scopedDrawLedgerPositions])
+  const { draws: windowDraws } = useWindowDrawLedger(windowPositionIds)
+  const positionsById = useMemo(
+    () => new Map(scopedDrawLedgerPositions.map(p => [p.id, p] as const)),
+    [scopedDrawLedgerPositions],
+  )
 
   const periodDate = lastDayOfMonth(year, month)
   const periodLbl  = periodLabel(year, month)
+  const periodStart = `${year}-${String(month).padStart(2, '0')}-01`
+
+  const periodWindowDraws = useMemo(() =>
+    windowDraws.filter(d => d.draw_date >= periodStart && d.draw_date <= periodDate),
+  [windowDraws, periodStart, periodDate])
 
   // Generate all journal entries
   const mtmLines = useMemo(() =>
@@ -564,6 +629,12 @@ export function HedgeAccountingExport() {
     const suffix = subset === 'all' ? 'Full_Package' : subset.toUpperCase()
     const csv  = toCSV(lines)
     const name = `Hedge_Accounting_${suffix}_${periodLbl.replace(' ', '_')}.csv`
+    downloadCSV(csv, name)
+  }
+
+  function handleDrawLedgerExport() {
+    const csv = drawsToCSV(periodWindowDraws, positionsById, entityName)
+    const name = `Window_Forward_Draws_${periodLbl.replace(' ', '_')}.csv`
     downloadCSV(csv, name)
   }
 
@@ -646,6 +717,7 @@ export function HedgeAccountingExport() {
           <span style={{ color: 'var(--text-muted)' }}>|</span>
           <span style={{ color: 'var(--text-muted)' }}>
             MTM: {mtmLines.length / 2} &nbsp;·&nbsp; Settlements: {settlementLines.length / 2} &nbsp;·&nbsp; OCI Reclass: {reclassLines.length / 2}
+            {periodWindowDraws.length > 0 && <>&nbsp;·&nbsp; Window Draws: {periodWindowDraws.length}</>}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
             <button className="btn btn-primary btn-sm"
@@ -665,6 +737,12 @@ export function HedgeAccountingExport() {
               disabled={settlementLines.length === 0}
               style={{ border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
               Settlements
+            </button>
+            <button className="btn btn-sm"
+              onClick={handleDrawLedgerExport}
+              disabled={periodWindowDraws.length === 0}
+              style={{ border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+              Window Draws
             </button>
           </div>
         </div>
@@ -727,6 +805,8 @@ export function HedgeAccountingExport() {
               interest rate differentials and time value. Confirm with your auditor for
               longer-dated positions. MTM entries show <strong>cumulative</strong> fair
               value; period change = this month's entry minus prior month's entry per position.
+              Window-forward draw economics are available as a separate audit ledger export
+              and are not mixed into the balanced journal-entry CSV.
             </span>
           </div>
         </div>

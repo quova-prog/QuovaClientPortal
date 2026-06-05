@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { CheckCircle, Download, Shield, Search, X, AlertTriangle, Clock } from 'lucide-react'
-import { useHedgePositions, useFxRates } from '@/hooks/useData'
+import { useExposures, useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useEntity } from '@/context/EntityContext'
@@ -57,7 +57,7 @@ function positionStatusLabel(s: string): { label: string; cls: string } {
 }
 
 function instrumentLabel(t: string) {
-  return { forward: 'Forward', swap: 'FX Swap', option: 'Option', spot: 'Spot' }[t] ?? t
+  return { forward: 'Forward', window_forward: 'Window Forward', swap: 'FX Swap', option: 'Option', spot: 'Spot' }[t] ?? t
 }
 
 function settlementDaysBadge(valueDate: string) {
@@ -107,7 +107,10 @@ export function TradePage() {
   const [drawEconomics, setDrawEconomics] = useState<DrawEconomics | null>(null)
   const [drawError, setDrawError] = useState<string | null>(null)
   const [drawSubmitting, setDrawSubmitting] = useState(false)
-  const { draws: drawLedger, recordDraw } = useWindowDraws(drawPosition?.id ?? null)
+  const [drawExposureId, setDrawExposureId] = useState('')
+  const windowLifecyclePositionId = drawPosition?.id
+    ?? (actionModal?.position?.instrument_type === 'window_forward' ? actionModal.position.id : null)
+  const { draws: drawLedger, recordDraw, closeWindowForward } = useWindowDraws(windowLifecyclePositionId)
 
   function openDrawModal(p: any) {
     setDrawPosition(p)
@@ -119,12 +122,21 @@ export function TradePage() {
       draw_amount: remaining,
       bank_confirmation: '', reference_number: '', notes: '',
     })
+    setDrawExposureId(eligibleExposuresFor(p)[0]?.id ?? '')
   }
 
   async function handleRecordDraw() {
     setDrawError(null)
     if (!drawForm.draw_amount || drawForm.draw_amount <= 0) { setDrawError('Enter a draw amount'); return }
     if (!drawForm.draw_date) { setDrawError('Draw date is required'); return }
+    const selectedExposure = drawExposureId ? eligibleExposuresFor(drawPosition).find(e => e.id === drawExposureId) : null
+    const selectedRemaining = selectedExposure
+      ? Math.max(0, selectedExposure.notional_base - (selectedExposure.settled_amount ?? 0))
+      : 0
+    if (selectedExposure && drawForm.draw_amount > selectedRemaining) {
+      setDrawError(`Draw amount exceeds linked exposure remaining (${formatCurrency(selectedRemaining, selectedExposure.base_currency)})`)
+      return
+    }
     setDrawSubmitting(true)
     const { economics, error } = await recordDraw({
       drawDate: drawForm.draw_date,
@@ -132,6 +144,9 @@ export function TradePage() {
       bankConfirmation: drawForm.bank_confirmation || undefined,
       referenceNumber: drawForm.reference_number || undefined,
       notes: drawForm.notes || undefined,
+      allocations: selectedExposure
+        ? [{ exposure_id: selectedExposure.id, allocated_amount: drawForm.draw_amount }]
+        : undefined,
     })
     setDrawSubmitting(false)
     if (error) { setDrawError(error); return }
@@ -141,12 +156,24 @@ export function TradePage() {
 
   const ALL_STATUSES = ['active', 'expired', 'cancelled', 'rolled', 'closed'] as const
   const { positions, loading: positionsLoading, addPosition, rollPosition, amendPosition, closePosition, refresh: refreshPositions } = useHedgePositions(ALL_STATUSES)
+  const { exposures } = useExposures()
   const { currentEntityId } = useEntity()
   const { ratesMap: liveRatesMap, lastUpdated: ratesLastUpdated } = useLiveFxRates()
   const { combinedCoverage } = useCombinedCoverage()
   const { rates: dbFxRates } = useFxRates()
   // Prefer live rates; fall back to Supabase stored rates
   const fxRates = Object.keys(liveRatesMap).length > 0 ? liveRatesMap : dbFxRates
+
+  function eligibleExposuresFor(p: any) {
+    if (!p) return []
+    const expectedDirection = p.direction === 'sell' ? 'receivable' : 'payable'
+    return exposures.filter(e =>
+      e.currency_pair === p.currency_pair &&
+      e.direction === expectedDirection &&
+      (e.status === 'open' || e.status === 'partially_hedged') &&
+      Math.max(0, e.notional_base - (e.settled_amount ?? 0)) > 0
+    )
+  }
 
   // Auto-open roll modal when navigating from StrategyPage
   useEffect(() => {
@@ -379,7 +406,14 @@ export function TradePage() {
     if (!actionModal || saving) return
     setSaving(true)
     setSaveError(null)
-    const result = await closePosition(actionModal.position, closeForm)
+    const pos = actionModal.position
+    const result = pos.instrument_type === 'window_forward'
+      ? await closeWindowForward({
+          closeDate: closeForm.close_date,
+          closeRate: closeForm.close_rate,
+          notes: 'Early close from Trade blotter',
+        })
+      : await closePosition(pos, closeForm)
     setSaving(false)
     if (result.error) { setSaveError(result.error); return }
     setModalStep('success')
@@ -1038,16 +1072,20 @@ export function TradePage() {
                             <div style={{ display: 'flex', gap: '0.375rem' }}>
                               {p.status === 'active' && (
                                 <>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
-                                  title="Roll forward to a new settlement date"
-                                  onClick={() => openRollModal(p)}>
-                                  Roll
-                                </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
-                                  title="Amend notional or rate"
-                                  onClick={() => openAmendModal(p)}>
-                                  Amend
-                                </button>
+                                {p.instrument_type !== 'window_forward' && (
+                                  <>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                      title="Roll forward to a new settlement date"
+                                      onClick={() => openRollModal(p)}>
+                                      Roll
+                                    </button>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                      title="Amend notional or rate"
+                                      onClick={() => openAmendModal(p)}>
+                                      Amend
+                                    </button>
+                                  </>
+                                )}
                                 {p.instrument_type === 'window_forward' && (
                                   <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'var(--teal)', borderColor: 'var(--teal)' }}
                                     title="Record a draw against this window forward"
@@ -1084,7 +1122,13 @@ export function TradePage() {
       const pos = actionModal.position
       const posRef = pos.reference_number || `ORB-${pos.id.slice(0, 8).toUpperCase()}`
       const spotForClose = liveRatesMap[pos.currency_pair] ?? pos.contracted_rate
-      const closeMtm = getMtmPnl(pos.notional_base, pos.direction, pos.contracted_rate, closeForm.close_rate || spotForClose)
+      const closeNotional = pos.instrument_type === 'window_forward'
+        ? Math.max(0, Number(pos.notional_base) - Number(pos.drawn_notional ?? 0))
+        : Number(pos.notional_base)
+      const closeSettlementRate = pos.instrument_type === 'window_forward'
+        ? Number(pos.contracted_rate)
+        : Number(closeForm.close_rate || 0)
+      const closeMtm = getMtmPnl(closeNotional, pos.direction, pos.contracted_rate, closeForm.close_rate || spotForClose)
       const quoteCcy = pos.currency_pair.split('/')[1] ?? 'USD'
       const closeMtmUsd = toUsd(Math.abs(closeMtm), quoteCcy, fxRates) * (closeMtm >= 0 ? 1 : -1)
       const inputStyle = { width: '100%', padding: '0.5rem 0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', background: 'var(--bg-card)' }
@@ -1324,9 +1368,9 @@ export function TradePage() {
                   </div>
                 </div>
                 <div>
-                  <label style={labelStyle}>Settlement Amount ({quoteCcy})</label>
+                  <label style={labelStyle}>{pos.instrument_type === 'window_forward' ? 'Residual Contract Settlement' : 'Settlement Amount'} ({quoteCcy})</label>
                   <div style={{ ...inputStyle, background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
-                    {formatCurrency(pos.notional_base * (closeForm.close_rate || 0), quoteCcy)}
+                    {formatCurrency(closeNotional * closeSettlementRate, quoteCcy)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
@@ -1361,6 +1405,7 @@ export function TradePage() {
     {/* Window-forward draw modal */}
     {drawPosition && (() => {
       const remaining = Number(drawPosition.notional_base) - Number(drawPosition.drawn_notional ?? 0)
+      const eligibleExposures = eligibleExposuresFor(drawPosition)
       const labelStyle = { fontSize: '0.75rem', fontWeight: 600 as const, color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }
       const inputStyle = { width: '100%', padding: '0.5rem 0.625rem', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }
       return (
@@ -1389,6 +1434,30 @@ export function TradePage() {
                   <input type="number" style={inputStyle} value={drawForm.draw_amount || ''}
                     min={0} max={remaining} step="1"
                     onChange={e => setDrawForm(f => ({ ...f, draw_amount: Number(e.target.value) }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Settle Exposure</label>
+                  {eligibleExposures.length > 0 ? (
+                    <select style={inputStyle} value={drawExposureId}
+                      onChange={e => setDrawExposureId(e.target.value)}>
+                      <option value="">Unallocated treasury draw</option>
+                      {eligibleExposures.map(e => {
+                        const expRemaining = Math.max(0, e.notional_base - (e.settled_amount ?? 0))
+                        return (
+                          <option key={e.id} value={e.id}>
+                            {e.entity} · {formatDate(e.settlement_date)} · {formatCurrency(expRemaining, e.base_currency)} remaining
+                          </option>
+                        )
+                      })}
+                    </select>
+                  ) : (
+                    <div style={{ ...inputStyle, background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+                      No matching open exposure found
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Linked exposure amounts are reduced with the draw so coverage stays aligned.
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Bank Confirmation (optional)</label>

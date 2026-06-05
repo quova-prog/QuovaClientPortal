@@ -11,6 +11,7 @@ import { useDerivedExposures } from '@/hooks/useDerivedExposures'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
 import { useWindowForwardBooking } from '@/hooks/useWindowForward'
+import { useEntity } from '@/context/EntityContext'
 import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag, formatPnl } from '@/lib/utils'
 
 import { toUsd } from '@/lib/fx'
@@ -33,6 +34,29 @@ function buildForwardCurve(pair: string, liveSpot: number): { month: string; spo
     const forward = +(liveSpot * (1 + premium / 100 * (i + 1) / 12)).toFixed(4)
     return { month, spot: +liveSpot.toFixed(4), forward }
   })
+}
+
+function estimateForwardRate(pair: string, liveSpot: number, monthsAhead: number): number {
+  const premium = FORWARD_PREMIUM[pair] ?? 0.40
+  return +(liveSpot * (1 + premium / 100 * monthsAhead / 12)).toFixed(6)
+}
+
+function estimateWorstRateInWindow(
+  pair: string,
+  liveSpot: number,
+  direction: 'buy' | 'sell',
+  startDate?: string,
+  endDate?: string,
+): number {
+  if (!startDate || !endDate || liveSpot <= 0) return 0
+  const now = Date.now()
+  const startMonths = Math.max(0, (new Date(startDate).getTime() - now) / 86_400_000 / 30)
+  const endMonths = Math.max(startMonths, (new Date(endDate).getTime() - now) / 86_400_000 / 30)
+  const rates = [
+    estimateForwardRate(pair, liveSpot, startMonths),
+    estimateForwardRate(pair, liveSpot, endMonths),
+  ]
+  return direction === 'sell' ? Math.min(...rates) : Math.max(...rates)
 }
 
 // Live rate metadata per pair (spot, 1M forward, daily change pips, annualised fwd premium %)
@@ -105,6 +129,7 @@ function RiskBadge({ level }: { level: string }) {
 export function HedgePage() {
   const { positions, loading, addPosition, deletePosition } = useHedgePositions()
   const { bookWindowForward } = useWindowForwardBooking()
+  const { currentEntityId } = useEntity()
   const location = useLocation()
   const [showForm, setShowForm] = useState(false)
   const [formStep, setFormStep] = useState<FormStep>('select-strategy')
@@ -180,6 +205,8 @@ export function HedgePage() {
         ...(p.direction       && { direction: p.direction }),
         ...(p.notional_base   && { notional_base: p.notional_base }),
         ...(p.value_date      && { value_date: p.value_date }),
+        ...(p.window_start_date && { window_start_date: p.window_start_date }),
+        ...(p.window_end_date   && { window_end_date: p.window_end_date, value_date: p.window_end_date }),
         ...(p.contracted_rate && p.contracted_rate > 0 && { contracted_rate: p.contracted_rate }),
         ...(p.base_currency   && { base_currency: p.base_currency }),
         ...(p.quote_currency  && { quote_currency: p.quote_currency }),
@@ -193,6 +220,7 @@ export function HedgePage() {
   // hadn't loaded yet when the effect ran), backfill with the live spot once available.
   useEffect(() => {
     if (!showForm || formStep !== 'entry') return
+    if (form.instrument_type === 'window_forward') return
     if (form.contracted_rate && form.contracted_rate > 0) return  // already set
     const pair = form.currency_pair
     const live = ratesMap[pair]
@@ -200,9 +228,23 @@ export function HedgePage() {
           ? 1 / ratesMap[pair.split('/').reverse().join('/')]
           : 0)
     if (live > 0) set('contracted_rate', parseFloat(live.toFixed(6)))
-  }, [ratesMap, showForm, formStep, form.currency_pair, form.contracted_rate])
+  }, [ratesMap, showForm, formStep, form.currency_pair, form.contracted_rate, form.instrument_type])
 
   const [baseCcy, quoteCcy] = form.currency_pair.split('/')
+  const isWindowForward = form.instrument_type === 'window_forward'
+  const liveFormRate = ratesMap[form.currency_pair]
+    ?? (ratesMap[form.currency_pair.split('/').reverse().join('/')]
+        ? 1 / ratesMap[form.currency_pair.split('/').reverse().join('/')]
+        : 0)
+  const worstWindowRate = isWindowForward
+    ? estimateWorstRateInWindow(
+        form.currency_pair,
+        liveFormRate,
+        form.direction,
+        form.window_start_date,
+        form.window_end_date,
+      )
+    : 0
   const quotedNotional = form.notional_base && form.contracted_rate ? form.notional_base * form.contracted_rate : 0
 
   const filtered = positions.filter(p =>
@@ -219,7 +261,12 @@ export function HedgePage() {
   const byPair: Record<string, number> = {}
   positions.forEach(p => { byPair[p.currency_pair] = (byPair[p.currency_pair] ?? 0) + p.notional_base })
 
-  const isWindowForward = form.instrument_type === 'window_forward'
+  useEffect(() => {
+    if (!isWindowForward || !worstWindowRate) return
+    if (Math.abs((form.contracted_rate ?? 0) - worstWindowRate) < 0.0000005) return
+    set('contracted_rate', worstWindowRate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWindowForward, worstWindowRate])
 
   async function handleSubmit() {
     setFormError('')
@@ -257,6 +304,7 @@ export function HedgePage() {
         referenceNumber: form.reference_number,
         hedgeType: form.hedge_type,
         notes,
+        entityId: currentEntityId,
       })
       setSubmitting(false)
       if (error) { setFormError(error); return }
@@ -862,17 +910,32 @@ export function HedgePage() {
 
                 <div>
                   <label className="label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>RFQ Rate</span>
+                    <span>{isWindowForward ? 'Worst Rate in Window' : 'RFQ Rate'}</span>
                     {quotedNotional > 0 && <span style={{ color: 'var(--teal-dark)', fontWeight: 400, fontSize: '0.75rem' }}>≈ {formatCurrency(quotedNotional, quoteCcy, true)} {quoteCcy}</span>}
                   </label>
-                  <div style={{ position: 'relative' }}>
-                    <input className="input" type="number" step="0.0001" placeholder="e.g. 1.3625" value={form.contracted_rate || ''} onChange={e => set('contracted_rate', parseFloat(e.target.value) || 0)} style={{ paddingRight: '2.5rem' }} />
-                    <button
-                      title="Fill live spot rate"
-                      style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal)' }}
-                      onClick={() => { const r = ratesMap[form.currency_pair]; if (r) set('contracted_rate', parseFloat(r.toFixed(4))) }}
-                    ><RefreshCw size={13} /></button>
-                  </div>
+                  {isWindowForward ? (
+                    <>
+                      <input
+                        className="input"
+                        type="number"
+                        readOnly
+                        value={form.contracted_rate || ''}
+                        style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
+                      />
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                        Estimated from the forward curve across the selected window and stored as the locked window-forward rate.
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <input className="input" type="number" step="0.0001" placeholder="e.g. 1.3625" value={form.contracted_rate || ''} onChange={e => set('contracted_rate', parseFloat(e.target.value) || 0)} style={{ paddingRight: '2.5rem' }} />
+                      <button
+                        title="Fill live spot rate"
+                        style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal)' }}
+                        onClick={() => { const r = ratesMap[form.currency_pair]; if (r) set('contracted_rate', parseFloat(r.toFixed(4))) }}
+                      ><RefreshCw size={13} /></button>
+                    </div>
+                  )}
                 </div>
 
                 <div>

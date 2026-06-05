@@ -615,6 +615,8 @@ export function AdvisorPage() {
     const pair = cr?.pair ?? riskMetrics.primaryPair
     const valueDate = new Date()
     valueDate.setMonth(valueDate.getMonth() + top.recommendedTenorMonths)
+    const windowStart = new Date()
+    windowStart.setDate(windowStart.getDate() + 1)
     // Look up live spot rate for this pair (try both directions)
     const liveRate = ratesMap[pair]
       ?? (ratesMap[pair.split('/').reverse().join('/')]
@@ -627,8 +629,10 @@ export function AdvisorPage() {
       ? Math.round(gapUsd)
       : Math.round(gapUsd / liveRate)
     // Use the strategy's primary instrument type
-    const instrumentType = top.instruments[0]?.type.toLowerCase().includes('option') ? 'option'
-      : top.instruments[0]?.type.toLowerCase().includes('swap') ? 'swap'
+    const primaryInstrument = top.instruments[0]?.type.toLowerCase() ?? ''
+    const instrumentType = primaryInstrument.includes('window') ? 'window_forward'
+      : primaryInstrument.includes('option') ? 'option'
+      : primaryInstrument.includes('swap') ? 'swap'
       : 'forward'
     navigate('/hedge', {
       state: {
@@ -639,6 +643,10 @@ export function AdvisorPage() {
           direction:        'sell',
           notional_base:    baseNotional,
           value_date:       valueDate.toISOString().split('T')[0],
+          ...(instrumentType === 'window_forward' && {
+            window_start_date: windowStart.toISOString().split('T')[0],
+            window_end_date:   valueDate.toISOString().split('T')[0],
+          }),
           contracted_rate:  liveRate > 0 ? parseFloat(liveRate.toFixed(6)) : 0,
         },
       },

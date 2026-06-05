@@ -175,7 +175,7 @@ export function useExposures() {
       .from('fx_exposures')
       .select('*')
       .eq('org_id', user.profile.org_id)
-      .eq('status', 'open')
+      .in('status', ['open', 'partially_hedged'])
       .order('settlement_date', { ascending: true })
     if (currentEntityId) query = query.eq('entity_id', currentEntityId)
     const { data, error } = await query

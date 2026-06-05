@@ -41,10 +41,12 @@ export function useCombinedCoverage(): { combinedCoverage: CombinedCoverage[]; l
     if (isConsolidated) return null
     const expByPair: Record<string, { net: number; base: string; quote: string }> = {}
     for (const exp of exposures) {
+      const residual = Math.max(0, exp.notional_base - (exp.settled_amount ?? 0))
+      if (residual <= 0) continue
       if (!expByPair[exp.currency_pair]) {
         expByPair[exp.currency_pair] = { net: 0, base: exp.base_currency, quote: exp.quote_currency }
       }
-      expByPair[exp.currency_pair].net += exp.direction === 'receivable' ? exp.notional_base : -exp.notional_base
+      expByPair[exp.currency_pair].net += exp.direction === 'receivable' ? residual : -residual
     }
     // Net hedged = |sell − buy| per pair (consistent with v_hedge_coverage and computeHedgeCoverage)
     const sellByPair: Record<string, number> = {}

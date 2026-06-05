@@ -63,6 +63,7 @@ export interface BookWindowForwardInput {
   referenceNumber?: string
   hedgeType?: string
   notes?: string
+  entityId?: string | null
 }
 
 /** Booking path for window forwards — calls book_window_forward(). */
@@ -83,6 +84,7 @@ export function useWindowForwardBooking() {
         p_reference_number: input.referenceNumber ?? null,
         p_hedge_type: input.hedgeType ?? 'cash_flow',
         p_notes: input.notes ?? null,
+        p_entity_id: input.entityId ?? null,
       })
       if (error) return { error: error.message }
       return { positionId: data as unknown as string }
@@ -133,5 +135,47 @@ export function useWindowDraws(positionId: string | null) {
     [db, positionId, refresh],
   )
 
-  return { draws, loading, refresh, recordDraw }
+  const closeWindowForward = useCallback(
+    async (input: { closeDate: string; closeRate: number; notes?: string }): Promise<{ economics?: DrawEconomics; error?: string }> => {
+      if (!positionId) return { error: 'No position selected' }
+      const { data, error } = await db.rpc('close_window_forward', {
+        p_position_id: positionId,
+        p_close_date: input.closeDate,
+        p_close_rate: input.closeRate,
+        p_notes: input.notes ?? null,
+      })
+      if (error) return { error: error.message }
+      await refresh()
+      return { economics: data as unknown as DrawEconomics }
+    },
+    [db, positionId, refresh],
+  )
+
+  return { draws, loading, refresh, recordDraw, closeWindowForward }
+}
+
+/** Draw ledger for a set of window-forward positions, used by reporting/export surfaces. */
+export function useWindowDrawLedger(positionIds: string[]) {
+  const { db } = useAuth()
+  const [draws, setDraws] = useState<WindowDraw[]>([])
+  const [loading, setLoading] = useState(true)
+  const idsKey = [...positionIds].sort().join(',')
+
+  const refresh = useCallback(async () => {
+    const ids = idsKey ? idsKey.split(',') : []
+    if (ids.length === 0) { setDraws([]); setLoading(false); return }
+    setLoading(true)
+    const { data } = await db
+      .from('hedge_position_draws')
+      .select('*')
+      .in('position_id', ids)
+      .order('draw_date', { ascending: true })
+      .order('draw_seq', { ascending: true })
+    setDraws((data ?? []) as unknown as WindowDraw[])
+    setLoading(false)
+  }, [db, idsKey])
+
+  useEffect(() => { refresh() }, [refresh])
+
+  return { draws, loading, refresh }
 }

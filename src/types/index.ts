@@ -101,6 +101,7 @@ export interface FxExposure {
   direction: 'receivable' | 'payable'
   notional_base: number
   notional_usd: number | null
+  settled_amount: number
   settlement_date: string
   description: string | null
   source_system: string
