@@ -50,6 +50,7 @@ describe('closeAccountingPeriod', () => {
       },
       rpc: async (fn, args) => {
         calls.push({ fn, args })
+        if (fn === 'append_fair_value_measurement') return 'fair-value-1'
       },
     }
 
@@ -71,6 +72,27 @@ describe('closeAccountingPeriod', () => {
       p_period: '2026-06',
       p_status: 'closed',
     })
+  })
+
+  it('threads fair-value measurement ids into derivative ledger writes', async () => {
+    const derivativeCalls: Record<string, unknown>[] = []
+    const repo: CloseAccountingRepository = {
+      loadCloseInput: async () => closeInput(),
+      rpc: async (fn, args) => {
+        if (fn === 'append_fair_value_measurement') return 'fair-value-1'
+        if (fn === 'append_derivative_accounting_entry') {
+          derivativeCalls.push(args)
+        }
+      },
+    }
+
+    await closeAccountingPeriod(repo, '2026-06')
+
+    expect(derivativeCalls).toHaveLength(2)
+    expect(derivativeCalls.map((args) => args.p_fair_value_measurement_id)).toEqual([
+      'fair-value-1',
+      'fair-value-1',
+    ])
   })
 
   it('rejects mismatched repository periods before writing RPC calls', async () => {
