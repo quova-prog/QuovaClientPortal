@@ -1138,6 +1138,95 @@ Cleanup: removed 1 truly-fixable `as any` in `HedgeAccountingExport` (now native
 
 ---
 
+## Session 17 — Window Forwards: First-Class Hedging Instrument (2026-06-04)
+
+Added **window forwards** as a primary instrument alongside forwards, swaps, options, and
+spot — built brainstorm → spec → plan → TDD across **5 phases** (PRs #17–#22, all merged +
+deployed). A window forward is a binding, deliverable forward whose settlement may occur on
+one or more business days inside a window, with any residual force-settled at the window
+end. Fortune-500 treasury teams use them for timing-uncertain cash flows (payroll, payables,
+collections).
+
+**Design docs:** `docs/superpowers/specs/2026-06-04-window-forwards-design.md` (economic
+instrument) and `docs/superpowers/plans/2026-06-04-window-forwards-phase1-schema.md`. Hedge
+accounting was deliberately **carved into a separate scoping spec**
+(`2026-06-04-hedge-accounting-redesign-design.md`) after a specialist review — this feature
+emits **no journal entries and no effectiveness verdicts**; MTM is labeled indicative.
+
+### Data model (Approach 1 — discriminated subtype)
+- `hedge_positions`: `instrument_type` CHECK adds `window_forward`; new `window_start_date`,
+  `window_end_date`, `pricing_method` (`fixed_worst_rate` v1; `pro_rata_points` reserved),
+  `drawn_notional` + consistency/bounded CHECKs.
+- `hedge_position_draws` (NEW): draw ledger with **write-once economics** (`spot_rate_at_draw`,
+  `settlement_quote`, `realized_pnl_quote`, `realized_pnl_usd`, `is_final_settlement`,
+  `bank_confirmation`). Org-match BEFORE-INSERT trigger; concurrency-safe recalc/auto-close
+  trigger (parent `FOR UPDATE` lock → `drawn_notional`, status→`closed` when fully drawn);
+  mandatory audit; RLS makes the RPC the only write path.
+- `draw_exposure_allocations` (NEW) + `fx_exposures.settled_amount`: link draws to the
+  exposures they settle so coverage and exposure fall **together**.
+- `hedge_policies`: `window_forward_pairs`, `max_window_days` (≤365), `max_draws_per_window`
+  (≤50). `allowed_instruments` already existed (`20260330_hedge_policy_v2.sql`) — idempotent
+  add + careful NULL backfill that never auto-enables window forwards. `hedge_policies` added
+  to the mandatory audit trigger (compliance-sensitive allowlist).
+
+### Server-side (all economics server-computed; client never supplies a rate or P&L)
+- `validate_window_forward()` — fail-closed policy gate (pair eligible, span ≤ max, draw cap).
+- `book_window_forward()` — the **only** write path for the instrument (direct
+  `window_forward` inserts are RLS-blocked); validates policy, inserts the position.
+- `record_window_draw()` — sets `draw_rate` from `contracted_rate`, looks up spot from
+  `fx_rates`, computes direction-aware realized P&L + USD conversion (`fx_quote_to_usd()`,
+  mirrors `toUsd` direct/inverse), writes the draw + optional allocations, returns economics.
+- `settle_expired_windows()` — force-settles residuals at window end (final draw).
+- `settle-expired-windows` Edge Function (daily **pg_cron** at 06:00 UTC) — calls the RPC +
+  fires T-7/T-2 expiry alerts.
+
+### Valuation & coverage (`src/lib/windowForward.ts` — pure-TS, vitest-locked)
+- `effectiveHedgedNotional(position)` — single source of truth: window forwards contribute
+  only the **undrawn residual** (`max(0, notional_base − drawn_notional)`) to coverage; all
+  other instruments contribute full notional. Mirrored in the `v_hedge_coverage` view and
+  **both** `useCombinedCoverage` blocks (was triplicated — now one helper).
+- `windowForwardMtm(position, draws, ratesMap)` — **indicative** MTM: drawn = stored realized
+  (never recomputed), undrawn floats against `contracted_rate` (direction-aware, USD via
+  canonical `toUsd(abs)*sign`). Wired into `computeFairValue` (hedge accounting export →
+  existing CFH/FVH AOCI machinery on the residual only), TradePage blotter, BoardReportPanel.
+
+### UI
+- **StrategyPage** — Window Forwards in the allowed-instruments toggles; controls sub-panel
+  (eligible pairs from coverage, max window days, max draws).
+- **HedgePage** — Window Forward instrument; window start/end pickers + span readout +
+  worst-rate note; books via `book_window_forward` RPC.
+- **TradePage** — "Draw" action on active window forwards → two-state modal (form → server
+  economics) via `record_window_draw`; draw history.
+- **Advisor Strategy D — Flex-Timing** — `Strategy.id` extended to `'D'`;
+  `computeRiskMetrics` derives `timingUncertaintyShare` from derived-exposure sources
+  (`payroll`, `cash_flow`, `supplier_contract`, `customer_contract`); `rankStrategies`
+  surfaces D only when policy allows window forwards, +25/−10 timing boost so it outranks the
+  vanilla forward for recurring exposure. Renders as a 4th advisor card automatically.
+- **SetupWizard** — "Hedging instruments you currently use" capture →
+  `organization_profiles.instruments_used`.
+
+### Tests
+- vitest: `windowForward.test.ts` (11), `advisorEngine.test.ts` (4 — NEW, first advisor tests).
+- security regressions (static SQL assertions): `window-forward-regression.test.mjs` (5),
+  `…-rpc-regression` (7), `…-coverage-regression` (3), `…-onboarding-regression` (1),
+  `…-cron-regression` (1). Suite: **30 security, 96 vitest, tsc clean, build passing**.
+
+### Migrations (orbit-mvp, applied via dashboard SQL editor)
+`20260604000001`–`09`: positions, draws, allocations, policy, validation, RPCs, coverage
+view, onboarding column, settlement cron.
+
+### Known follow-ups
+- **Type discriminated union** for `HedgePosition` not done (kept flat optional fields +
+  `'window_forward'` literal); the spec's `OutrightForward | WindowForward | …` union is deferred.
+- **Hedge accounting** (designation records, AOCI allocation/reclassification, probability/
+  failure, dedesignation, ASC 815 ↔ IFRS 9) — separate project; see the redesign spec.
+- **Migration-history desync (pre-existing):** ~60 prod migrations are absent from
+  orbit-mvp's `schema_migrations`, so `supabase db push` is unsafe — every migration this
+  session was applied via the dashboard. A `supabase migration repair` pass would restore it.
+- **Manual QA:** authed flow (policy → book → draw → coverage) not yet exercised end-to-end.
+
+---
+
 ## Business Context
 
 - **CEO:** Steve LaBella
