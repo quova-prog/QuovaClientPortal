@@ -10,6 +10,7 @@ import { useHedgePositions, useFxRates } from '@/hooks/useData'
 import { useDerivedExposures } from '@/hooks/useDerivedExposures'
 import { useLiveFxRates } from '@/hooks/useLiveFxRates'
 import { useCombinedCoverage } from '@/hooks/useCombinedCoverage'
+import { useWindowForwardBooking } from '@/hooks/useWindowForward'
 import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag, formatPnl } from '@/lib/utils'
 
 import { toUsd } from '@/lib/fx'
@@ -76,14 +77,15 @@ const CURRENCY_PAIRS = [
   'KRW/USD', 'INR/USD', 'BRL/USD', 'ZAR/USD', 'TRY/USD',
   'IDR/USD', 'PHP/USD', 'THB/USD', 'MYR/USD',
 ]
-const INSTRUMENT_TYPES = [{ value: 'forward', label: 'Forward' }, { value: 'swap', label: 'FX Swap' }, { value: 'option', label: 'Option' }, { value: 'spot', label: 'Spot' }]
+const INSTRUMENT_TYPES = [{ value: 'forward', label: 'Forward' }, { value: 'window_forward', label: 'Window Forward' }, { value: 'swap', label: 'FX Swap' }, { value: 'option', label: 'Option' }, { value: 'spot', label: 'Spot' }]
 const BANKS = ['JPMorgan Chase', 'Goldman Sachs', 'Citibank', 'BMO Capital Markets', 'TD Securities', 'RBC Capital Markets', 'HSBC', 'Barclays', 'Deutsche Bank', 'BNP Paribas', 'Other']
 
 function freshForm(): HedgePositionForm {
   return {
     instrument_type: 'forward', hedge_type: 'cash_flow', currency_pair: 'EUR/CAD', direction: 'sell',
     notional_base: 150000, contracted_rate: 1.362514, trade_date: new Date().toISOString().split('T')[0],
-    value_date: '', counterparty_bank: 'BMO Capital Markets', reference_number: '', notes: '',
+    value_date: '', window_start_date: '', window_end_date: '',
+    counterparty_bank: 'BMO Capital Markets', reference_number: '', notes: '',
   }
 }
 
@@ -102,6 +104,7 @@ function RiskBadge({ level }: { level: string }) {
 
 export function HedgePage() {
   const { positions, loading, addPosition, deletePosition } = useHedgePositions()
+  const { bookWindowForward } = useWindowForwardBooking()
   const location = useLocation()
   const [showForm, setShowForm] = useState(false)
   const [formStep, setFormStep] = useState<FormStep>('select-strategy')
@@ -216,18 +219,51 @@ export function HedgePage() {
   const byPair: Record<string, number> = {}
   positions.forEach(p => { byPair[p.currency_pair] = (byPair[p.currency_pair] ?? 0) + p.notional_base })
 
+  const isWindowForward = form.instrument_type === 'window_forward'
+
   async function handleSubmit() {
     setFormError('')
     if (!form.notional_base || form.notional_base <= 0) { setFormError('Enter a valid notional amount'); return }
     if (!form.contracted_rate || form.contracted_rate <= 0) { setFormError('Enter a valid contracted rate'); return }
-    if (!form.value_date) { setFormError('Settlement date is required'); return }
-    if (new Date(form.value_date) <= new Date(form.trade_date)) { setFormError('Settlement date must be after trade date'); return }
+
+    if (isWindowForward) {
+      if (!form.window_start_date || !form.window_end_date) { setFormError('Window start and end dates are required'); return }
+      if (new Date(form.window_end_date) < new Date(form.window_start_date)) { setFormError('Window end must be on or after window start'); return }
+      if (new Date(form.window_start_date) < new Date(form.trade_date)) { setFormError('Window start must be on or after the trade date'); return }
+    } else {
+      if (!form.value_date) { setFormError('Settlement date is required'); return }
+      if (new Date(form.value_date) <= new Date(form.trade_date)) { setFormError('Settlement date must be after trade date'); return }
+    }
+
     if (formStep === 'entry') { setFormStep('review'); return }
     setSubmitting(true)
     const [base, quote] = form.currency_pair.split('/')
     const hedgeTypeLabel = form.hedge_type === 'cash_flow' ? 'cash flow' : form.hedge_type === 'fair_value' ? 'fair value' : 'net investment'
     const designationNote = `${hedgeTypeLabel} hedge — FX rate risk on ${form.currency_pair} exposure`
     const notes = form.notes ? `${form.notes}\n${designationNote}` : designationNote
+
+    if (isWindowForward) {
+      // Window forwards must go through the server RPC (RLS blocks direct
+      // inserts). The server validates policy and stores the position.
+      const { error } = await bookWindowForward({
+        currencyPair: form.currency_pair,
+        direction: form.direction,
+        notionalBase: form.notional_base,
+        windowStart: form.window_start_date!,
+        windowEnd: form.window_end_date!,
+        contractedRate: form.contracted_rate,
+        tradeDate: form.trade_date,
+        counterpartyBank: form.counterparty_bank,
+        referenceNumber: form.reference_number,
+        hedgeType: form.hedge_type,
+        notes,
+      })
+      setSubmitting(false)
+      if (error) { setFormError(error); return }
+      setFormStep('success')
+      return
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- form payload is broader than addPosition's inferred Insert shape
     const { error } = await addPosition({ ...form, notes, base_currency: base, quote_currency: quote, notional_usd: null, status: 'active' } as any)
     setSubmitting(false)
@@ -850,11 +886,46 @@ export function HedgePage() {
                     <label className="label">Trade Date</label>
                     <input className="input" type="date" value={form.trade_date} onChange={e => set('trade_date', e.target.value)} />
                   </div>
-                  <div>
-                    <label className="label">Settlement Date</label>
-                    <input className="input" type="date" value={form.value_date} onChange={e => set('value_date', e.target.value)} />
-                  </div>
+                  {!isWindowForward && (
+                    <div>
+                      <label className="label">Settlement Date</label>
+                      <input className="input" type="date" value={form.value_date} onChange={e => set('value_date', e.target.value)} />
+                    </div>
+                  )}
                 </div>
+
+                {isWindowForward && (
+                  <div style={{ padding: '0.75rem', borderRadius: 8, background: 'var(--teal-dim)', border: '1px solid var(--teal)' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+                      Settlement Window
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label className="label">Window Start</label>
+                        <input className="input" type="date" value={form.window_start_date ?? ''}
+                          onChange={e => set('window_start_date', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Window End</label>
+                        <input className="input" type="date" value={form.window_end_date ?? ''}
+                          onChange={e => { set('window_end_date', e.target.value); set('value_date', e.target.value) }} />
+                      </div>
+                    </div>
+                    {form.window_start_date && form.window_end_date && (
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        Window span:{' '}
+                        <strong>
+                          {Math.max(0, Math.round((new Date(form.window_end_date).getTime() - new Date(form.window_start_date).getTime()) / 86_400_000))} days
+                        </strong>
+                        {' · '}draw any business day in range until fully settled.
+                      </div>
+                    )}
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      The contracted rate is the bank's worst-rate-in-window quote. Pairs and limits are
+                      governed by your hedge policy.
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="label">Counterparty Bank</label>
