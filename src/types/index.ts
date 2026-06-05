@@ -121,7 +121,7 @@ export interface HedgePosition {
   org_id: string
   entity_id: string | null
   created_by: string | null
-  instrument_type: 'forward' | 'swap' | 'option' | 'spot'
+  instrument_type: 'forward' | 'window_forward' | 'swap' | 'option' | 'spot'
   hedge_type: 'cash_flow' | 'fair_value' | 'net_investment'  // ASC 815 designation
   currency_pair: string
   base_currency: string
@@ -141,6 +141,12 @@ export interface HedgePosition {
   close_date: string | null
   close_rate: number | null
   amended_at: string | null
+  // Window-forward fields (null for all other instrument types — see
+  // 20260604000001_window_forward_positions.sql).
+  window_start_date: string | null
+  window_end_date: string | null
+  pricing_method: 'fixed_worst_rate' | 'pro_rata_points' | null
+  drawn_notional: number
   created_at: string
   updated_at: string
 }
