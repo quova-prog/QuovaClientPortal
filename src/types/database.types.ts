@@ -3131,6 +3131,22 @@ export type Database = {
         Args: { p_org_id: string }
         Returns: undefined
       }
+      book_window_forward: {
+        Args: {
+          p_contracted_rate: number
+          p_counterparty_bank?: string
+          p_currency_pair: string
+          p_direction: string
+          p_hedge_type?: string
+          p_notes?: string
+          p_notional_base: number
+          p_reference_number?: string
+          p_trade_date: string
+          p_window_end: string
+          p_window_start: string
+        }
+        Returns: string
+      }
       check_and_log_ai_usage: { Args: { p_model: string }; Returns: boolean }
       current_support_bank_id: { Args: never; Returns: string }
       current_user_bank_id: { Args: never; Returns: string }
@@ -3138,6 +3154,10 @@ export type Database = {
       current_user_role: { Args: never; Returns: string }
       delete_organisation: { Args: never; Returns: undefined }
       dump_schema_introspection: { Args: never; Returns: Json }
+      fx_quote_to_usd: {
+        Args: { p_date: string; p_quote_ccy: string }
+        Returns: number
+      }
       get_support_user_role: { Args: never; Returns: string }
       has_support_access_to: { Args: { p_org_id: string }; Returns: boolean }
       has_support_access_to_bank: {
@@ -3158,7 +3178,21 @@ export type Database = {
         Args: { p_status: string }
         Returns: boolean
       }
+      record_window_draw: {
+        Args: {
+          p_allocations?: Json
+          p_bank_confirmation?: string
+          p_draw_amount: number
+          p_draw_date: string
+          p_is_final?: boolean
+          p_notes?: string
+          p_position_id: string
+          p_reference_number?: string
+        }
+        Returns: Json
+      }
       remove_member: { Args: { p_target_user_id: string }; Returns: undefined }
+      settle_expired_windows: { Args: never; Returns: number }
       submit_policy_change: {
         Args: {
           p_approval_reason: string
