@@ -741,6 +741,9 @@ save `WORKOS_API_KEY` in that gitignored file and run:
 node scripts/workos/phase0-capture-workos-token.mjs
 ```
 
+If testing a newly invited user, also save the email link's
+`invitation_token` query parameter as `WORKOS_PHASE0_INVITATION_TOKEN`.
+
 Expected: the helper prints a WorkOS AuthKit URL. Complete the browser login
 for the expected organization, then the helper saves
 `WORKOS_PHASE0_ACCESS_TOKEN` to `.env.phase0.local` without printing the token.

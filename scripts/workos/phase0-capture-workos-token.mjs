@@ -105,6 +105,7 @@ const env = parseEnvFile(ENV_FILE)
 const clientId = envValue(env, 'WORKOS_CLIENT_ID')
 const apiKey = envValue(env, 'WORKOS_API_KEY')
 const expectedOrgId = envValue(env, 'WORKOS_PHASE0_EXPECTED_ORG_ID')
+const invitationToken = process.env.WORKOS_PHASE0_INVITATION_TOKEN?.trim() || env.WORKOS_PHASE0_INVITATION_TOKEN
 const redirectUri = process.env.WORKOS_PHASE0_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI
 const state = randomBytes(24).toString('base64url')
 
@@ -115,6 +116,9 @@ authorizationUrl.searchParams.set('redirect_uri', redirectUri)
 authorizationUrl.searchParams.set('response_type', 'code')
 authorizationUrl.searchParams.set('organization_id', expectedOrgId)
 authorizationUrl.searchParams.set('state', state)
+if (invitationToken) {
+  authorizationUrl.searchParams.set('invitation_token', invitationToken)
+}
 
 const redirectUrl = new URL(redirectUri)
 const server = createServer(async (request, response) => {
