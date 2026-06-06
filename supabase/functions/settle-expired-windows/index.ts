@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
           alert_key: alertKey,
           type: 'maturing_position',
           severity,
-          title: `Window forward ${ref} settles in ${d} day${d === 1 ? '' : 's'}`,
+          title: `Window forward ${ref} settles in ${d} days`,
           body: `${p.currency_pair} window forward ${ref} has ${remaining.toLocaleString()} `
             + `${p.currency_pair.split('/')[0]} undrawn. It auto-settles at the window end on `
             + `${p.window_end_date} if not drawn before then.`,

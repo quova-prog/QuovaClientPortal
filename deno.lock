@@ -1,0 +1,48 @@
+{
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.107.0"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.107.0": "8caa09b0223684d83cfa273de2946af25430d7ca8e5320b721226a0c7a8c6e98",
+    "https://esm.sh/jose@4.14.4": "6e949b6ae42db9a99a0b95f03a26de0720a712b655554c383d58d8cb9f983468",
+    "https://esm.sh/jspdf-autotable@3.8.2": "7d6bcbee408015edc51b3b0dfd0eff0d52c97f1b3d7839884647d4ed4ae4eb04",
+    "https://esm.sh/jspdf@2.5.1": "c07581dbd904c5f4347d0ae882a204e4b398d78fbd75b04e67ffa1c9269be362"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@anthropic-ai/sdk@0.94",
+        "npm:@supabase/supabase-js@^2.39.0",
+        "npm:@types/file-saver@^2.0.7",
+        "npm:@types/papaparse@^5.3.14",
+        "npm:@types/react-dom@^18.3.7",
+        "npm:@types/react@^18.3.28",
+        "npm:@typescript-eslint/eslint-plugin@^8.58.1",
+        "npm:@typescript-eslint/parser@^8.58.1",
+        "npm:@vitejs/plugin-react@^4.7.0",
+        "npm:date-fns@^3.0.6",
+        "npm:eslint-plugin-react-hooks@^7.0.1",
+        "npm:eslint@^8.56.0",
+        "npm:exceljs@^4.4.0",
+        "npm:file-saver@^2.0.5",
+        "npm:jspdf-autotable@^5.0.7",
+        "npm:jspdf@^4.2.1",
+        "npm:lucide-react@0.303",
+        "npm:papaparse@^5.4.1",
+        "npm:pptxgenjs@^4.0.1",
+        "npm:qrcode.react@^4.2.0",
+        "npm:react-dom@^18.2.0",
+        "npm:react-router-dom@^6.21.0",
+        "npm:react@^18.2.0",
+        "npm:recharts@^2.10.0",
+        "npm:typescript@^5.3.0",
+        "npm:vite@^6.4.3",
+        "npm:vitest@^4.1.5"
+      ],
+      "overrides": {
+        "uuid": "11.1.1"
+      }
+    }
+  }
+}
