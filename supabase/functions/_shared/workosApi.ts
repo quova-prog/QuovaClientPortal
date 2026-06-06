@@ -19,6 +19,16 @@ export type WorkosInvitation = {
   createdAt?: string
 }
 
+export type WorkosUser = {
+  id: string
+  email: string
+  first_name?: string | null
+  firstName?: string | null
+  last_name?: string | null
+  lastName?: string | null
+  name?: string | null
+}
+
 export type WorkosOrganizationMembership = {
   id: string
   user_id?: string
@@ -124,6 +134,17 @@ export async function listWorkosOrganizationMemberships(input: {
     limit: '100',
   })
   const body = await workosFetch<{ data?: WorkosOrganizationMembership[] }>(`/user_management/organization_memberships?${params.toString()}`)
+  return body.data ?? []
+}
+
+export async function listWorkosUsers(input: {
+  email: string
+}): Promise<WorkosUser[]> {
+  const params = new URLSearchParams({
+    email: input.email,
+    limit: '10',
+  })
+  const body = await workosFetch<{ data?: WorkosUser[] }>(`/user_management/users?${params.toString()}`)
   return body.data ?? []
 }
 

@@ -107,3 +107,19 @@ test('Edge Function CORS trusts Quova Vercel preview deployment origins', () => 
   assert.match(auth, /originHostname\.endsWith\(TRUSTED_VERCEL_PREVIEW_SUFFIX\)/s)
   assert.match(auth, /ALLOWED_ORIGINS\.includes\(origin\) \|\| isTrustedVercelPreviewOrigin\(origin\)/s)
 })
+
+test('WorkOS invite send reconciles already-active WorkOS members into local profiles', () => {
+  const fn = readRepoFile('supabase/functions/workos-team-invites/index.ts')
+  const api = readRepoFile('supabase/functions/_shared/workosApi.ts')
+
+  assert.match(api, /type WorkosUser/s)
+  assert.match(api, /listWorkosUsers/s)
+  assert.match(api, /\/user_management\/users\?\$\{params\.toString\(\)\}/s)
+  assert.match(fn, /resolveExistingWorkosMemberByEmail/s)
+  assert.match(fn, /ensureLocalWorkosMemberProfile/s)
+  assert.match(fn, /const existingMember = await resolveExistingWorkosMemberByEmail/s)
+  assert.match(fn, /await updateWorkosOrganizationMembershipRole\(existingMember\.membership\.id, role\)/s)
+  assert.match(fn, /User already belongs to the organization; member synced/s)
+  assert.match(fn, /workos_user_id:\s*existingMember\.user\.id/s)
+  assert.match(fn, /membership_status:\s*'active'/s)
+})

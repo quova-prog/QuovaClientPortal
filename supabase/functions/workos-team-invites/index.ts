@@ -4,11 +4,13 @@ import {
   deactivateWorkosOrganizationMembership,
   listWorkosOrganizationMemberships,
   listWorkosInvitations,
+  listWorkosUsers,
   revokeWorkosInvitation,
   sendWorkosInvitation,
   updateWorkosOrganizationMembershipRole,
   type WorkosOrganizationMembership,
   type WorkosInvitation,
+  type WorkosUser,
 } from '../_shared/workosApi.ts'
 
 type InviteAction = {
@@ -27,6 +29,19 @@ type TargetProfile = {
   workos_user_id: string | null
   membership_status: string | null
   deactivated_at: string | null
+}
+
+type SyncedMemberProfile = {
+  id: string
+  email: string | null
+  full_name: string | null
+  role: 'admin' | 'editor' | 'viewer'
+  created_at: string
+}
+
+type ExistingWorkosMember = {
+  user: WorkosUser
+  membership: WorkosOrganizationMembership
 }
 
 function cleanEmail(value: unknown): string | null {
@@ -105,6 +120,23 @@ function activeMembership(memberships: WorkosOrganizationMembership[]): WorkosOr
   return memberships.find(membership => (membership.status ?? 'active') === 'active') ?? null
 }
 
+function workosUserFullName(user: WorkosUser): string | null {
+  const name = typeof user.name === 'string' ? user.name.trim() : ''
+  if (name) return name
+
+  const firstName = typeof user.first_name === 'string'
+    ? user.first_name.trim()
+    : typeof user.firstName === 'string'
+      ? user.firstName.trim()
+      : ''
+  const lastName = typeof user.last_name === 'string'
+    ? user.last_name.trim()
+    : typeof user.lastName === 'string'
+      ? user.lastName.trim()
+      : ''
+  return [firstName, lastName].filter(Boolean).join(' ') || null
+}
+
 function actionErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) return error.message
   if (typeof error === 'string' && error.trim()) return error
@@ -119,6 +151,129 @@ async function resolveActiveWorkosMembership(workosOrgId: string, workosUserId: 
   const membership = activeMembership(memberships)
   if (!membership) throw new Error('Active WorkOS membership not found')
   return membership
+}
+
+async function resolveExistingWorkosMemberByEmail(
+  workosOrgId: string,
+  email: string,
+): Promise<ExistingWorkosMember | null> {
+  const users = await listWorkosUsers({ email })
+  const user = users.find(candidate => candidate.email.trim().toLowerCase() === email)
+  if (!user) return null
+
+  const memberships = await listWorkosOrganizationMemberships({
+    organization_id: workosOrgId,
+    user_id: user.id,
+  })
+  const membership = activeMembership(memberships)
+  if (!membership) return null
+
+  return { user, membership }
+}
+
+async function ensureLocalWorkosMemberProfile(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    existingMember: ExistingWorkosMember
+    orgId: string
+    role: 'admin' | 'editor' | 'viewer'
+  },
+): Promise<SyncedMemberProfile> {
+  const { existingMember, orgId, role } = input
+  const email = cleanEmail(existingMember.user.email)
+  if (!email) throw new Error('Existing WorkOS member has an invalid email')
+
+  const now = new Date().toISOString()
+  const fullName = workosUserFullName(existingMember.user)
+  const profilePayload = (existingFullName: string | null = null) => ({
+    workos_user_id: existingMember.user.id,
+    email,
+    full_name: fullName ?? existingFullName,
+    role,
+    membership_status: 'active',
+    deactivated_at: null,
+    updated_at: now,
+  })
+
+  const { data: crossOrgProfile, error: crossOrgError } = await admin
+    .from('profiles')
+    .select('id, org_id')
+    .eq('workos_user_id', existingMember.user.id)
+    .neq('org_id', orgId)
+    .is('deactivated_at', null)
+    .maybeSingle()
+
+  if (crossOrgError) throw new Error('Unable to verify existing WorkOS profile')
+  if (crossOrgProfile) throw new Error('WorkOS user is already linked to another organization')
+
+  const { data: existingByWorkos, error: existingByWorkosError } = await admin
+    .from('profiles')
+    .select('id, full_name')
+    .eq('workos_user_id', existingMember.user.id)
+    .eq('org_id', orgId)
+    .maybeSingle()
+
+  if (existingByWorkosError) throw new Error('Unable to resolve local WorkOS profile')
+  if (existingByWorkos) {
+    const { data: updatedProfile, error: updateError } = await admin
+      .from('profiles')
+      .update(profilePayload(existingByWorkos.full_name))
+      .eq('id', existingByWorkos.id)
+      .eq('org_id', orgId)
+      .select('id, email, full_name, role, created_at')
+      .single()
+
+    if (updateError || !updatedProfile) throw new Error('Unable to refresh existing member profile')
+    return updatedProfile as SyncedMemberProfile
+  }
+
+  const { data: existingByEmail, error: existingByEmailError } = await admin
+    .from('profiles')
+    .select('id, full_name')
+    .eq('org_id', orgId)
+    .ilike('email', email)
+    .maybeSingle()
+
+  if (existingByEmailError) throw new Error('Unable to resolve local email profile')
+  if (existingByEmail) {
+    const { data: linkedProfile, error: linkError } = await admin
+      .from('profiles')
+      .update(profilePayload(existingByEmail.full_name))
+      .eq('id', existingByEmail.id)
+      .eq('org_id', orgId)
+      .select('id, email, full_name, role, created_at')
+      .single()
+
+    if (linkError || !linkedProfile) throw new Error('Unable to link existing member profile')
+    return linkedProfile as SyncedMemberProfile
+  }
+
+  const { data: insertedProfile, error: insertError } = await admin
+    .from('profiles')
+    .insert({
+      id: crypto.randomUUID(),
+      org_id: orgId,
+      created_at: now,
+      ...profilePayload(),
+    })
+    .select('id, email, full_name, role, created_at')
+    .single()
+
+  if (insertError || !insertedProfile) throw new Error('Unable to create existing member profile')
+  return insertedProfile as SyncedMemberProfile
+}
+
+async function syncExistingWorkosMember(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    existingMember: ExistingWorkosMember
+    orgId: string
+    role: 'admin' | 'editor' | 'viewer'
+  },
+): Promise<SyncedMemberProfile> {
+  const { existingMember, orgId, role } = input
+  await updateWorkosOrganizationMembershipRole(existingMember.membership.id, role)
+  return ensureLocalWorkosMemberProfile(admin, { existingMember, orgId, role })
 }
 
 Deno.serve(async (req: Request) => {
@@ -168,15 +323,49 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: 'Valid email and role are required' }, 400, req)
       }
 
-      const invitation = await sendWorkosInvitation({
-        email,
-        organization_id: auth.context.workosOrgId,
-        role_slug: role,
-        expires_in_days: 7,
-        inviter_user_id: auth.context.workosUserId,
-      })
-
       const admin = createAdminClient()
+      const existingMember = await resolveExistingWorkosMemberByEmail(auth.context.workosOrgId, email)
+      if (existingMember) {
+        const member = await syncExistingWorkosMember(admin, {
+          existingMember,
+          orgId: auth.context.orgId,
+          role,
+        })
+        return jsonResponse({
+          message: 'User already belongs to the organization; member synced',
+          already_member: true,
+          member,
+        }, 200, req)
+      }
+
+      let invitation: WorkosInvitation
+      try {
+        invitation = await sendWorkosInvitation({
+          email,
+          organization_id: auth.context.workosOrgId,
+          role_slug: role,
+          expires_in_days: 7,
+          inviter_user_id: auth.context.workosUserId,
+        })
+      } catch (error) {
+        if (/already.*member/i.test(actionErrorMessage(error))) {
+          const existingMember = await resolveExistingWorkosMemberByEmail(auth.context.workosOrgId, email)
+          if (existingMember) {
+            const member = await syncExistingWorkosMember(admin, {
+              existingMember,
+              orgId: auth.context.orgId,
+              role,
+            })
+            return jsonResponse({
+              message: 'User already belongs to the organization; member synced',
+              already_member: true,
+              member,
+            }, 200, req)
+          }
+        }
+        throw error
+      }
+
       await admin.from('email_logs').insert({
         org_id: auth.context.orgId,
         user_id: auth.context.profileId,
