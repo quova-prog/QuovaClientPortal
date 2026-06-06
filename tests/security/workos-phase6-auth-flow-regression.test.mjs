@@ -41,7 +41,7 @@ test('WorkOS login and signup pages redirect through AuthKit instead of renderin
   assert.match(signup, /beginWorkosAuthRedirect/s)
   assert.match(signup, /continueWorkosRedirect/s)
   assert.match(signup, /startWorkosAuthRedirect/s)
-  assert.match(signup, /inviteToken\s*\?\s*signIn\('', '', inviteToken\)\s*:\s*signUp\('', '', '', '', null\)/s)
+  assert.match(signup, /inviteToken\s*\?\s*signUp\('', '', '', '', inviteToken\)\s*:\s*signIn\('', '', null\)/s)
   assert.match(signup, /Redirecting to sign up/s)
   assert.match(guard, /WORKOS_REDIRECT_GUARD_PREFIX/s)
   assert.match(guard, /WORKOS_REDIRECT_GUARD_TTL_MS/s)
@@ -72,11 +72,12 @@ test('WorkOS invite tokens are detected separately from legacy Supabase UUID inv
   assert.doesNotMatch(signup, /readRememberedWorkosInviteToken/s)
   assert.match(signup, /const inviteToken = inviteParams\.workosInviteToken/s)
   assert.match(signup, /clearRememberedWorkosInviteToken\(\)/s)
-  assert.match(signup, /inviteToken\s*\?\s*signIn\('', '', inviteToken\)\s*:\s*signUp\('', '', '', '', null\)/s)
+  assert.match(signup, /inviteToken\s*\?\s*signUp\('', '', '', '', inviteToken\)\s*:\s*signIn\('', '', null\)/s)
   assert.doesNotMatch(login, /readRememberedWorkosInviteToken/s)
   assert.match(login, /const inviteToken = inviteParams\.workosInviteToken/s)
   assert.match(login, /clearRememberedWorkosInviteToken\(\)/s)
   assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
+  assert.match(auth, /await authKitSignUp\(options\)/s)
 })
 
 test('Protected routes send signed-in WorkOS users without org_id to provisioning', () => {

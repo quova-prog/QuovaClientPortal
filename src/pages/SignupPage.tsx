@@ -23,7 +23,7 @@ export function SignupPage() {
   const [cooldownLeft, setCooldownLeft] = useState(0)
 
   function startWorkosAuthRedirect() {
-    void (inviteToken ? signIn('', '', inviteToken) : signUp('', '', '', '', null))
+    void (inviteToken ? signUp('', '', '', '', inviteToken) : signIn('', '', null))
   }
 
   useEffect(() => {
