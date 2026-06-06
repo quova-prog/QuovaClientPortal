@@ -14,6 +14,7 @@ test('WorkOS mode exposes provisioning state and keeps Supabase mode as the defa
 
   assert.match(auth, /provider:\s*AuthProviderKind/s)
   assert.match(auth, /workosProvisionRequired:\s*boolean/s)
+  assert.match(auth, /authError:\s*AuthDiagnostic \| null/s)
   assert.match(auth, /provisionOrg:\s*\(orgName: string\)/s)
   assert.match(auth, /acceptInvite:\s*\(inviteToken: string\)/s)
   assert.match(auth, /provider:\s*'supabase'/s)
@@ -71,6 +72,8 @@ test('WorkOS callback path completes AuthKit redirects without falling through t
   assert.match(callbackRoute, /if \(workosProvisionRequired\) return <Navigate to="\/provision-org" replace \/>/s)
   assert.match(callbackRoute, /if \(user\) return <Navigate to="\/" replace \/>/s)
   assert.match(callbackRoute, /Sign-in could not be completed/s)
+  assert.match(callbackRoute, /Diagnostic: \{diagnostic\}/s)
+  assert.match(callbackRoute, /workos_callback_verifier_missing/s)
   assert.match(callbackRoute, /window\.sessionStorage\.removeItem\('workos:code-verifier'\)/s)
   assert.match(callbackRoute, /window\.location\.assign\('\/login\?retry=1'\)/s)
   assert.doesNotMatch(callbackRoute, /return <Navigate to="\/login" replace \/>/s)

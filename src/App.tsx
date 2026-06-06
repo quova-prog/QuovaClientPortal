@@ -85,7 +85,21 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function WorkosCallbackRoute() {
-  const { user, loading, workosProvisionRequired } = useAuth()
+  const { user, loading, authError, workosProvisionRequired } = useAuth()
+  const hasCallbackCode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).has('code')
+    : false
+  const hasCodeVerifier = typeof window !== 'undefined'
+    ? Boolean(window.sessionStorage.getItem('workos:code-verifier'))
+    : true
+  const verifierMissing = hasCallbackCode && !hasCodeVerifier
+  const message = authError?.message
+    ?? (verifierMissing
+      ? 'The browser no longer has the WorkOS callback verifier for this sign-in attempt.'
+      : 'Your WorkOS session did not finish connecting to Quova.')
+  const diagnostic = authError
+    ? `${authError.code}${authError.detail ? `: ${authError.detail}` : ''}`
+    : (verifierMissing ? 'workos_callback_verifier_missing' : null)
 
   if (loading) return <RouteSpinner />
   if (workosProvisionRequired) return <Navigate to="/provision-org" replace />
@@ -104,8 +118,19 @@ function WorkosCallbackRoute() {
           Sign-in could not be completed
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-          Your WorkOS session did not finish connecting to Quova.
+          {message}
         </p>
+        {diagnostic ? (
+          <p style={{
+            color: 'var(--text-muted)',
+            fontSize: '0.75rem',
+            lineHeight: 1.5,
+            marginBottom: '1.25rem',
+            wordBreak: 'break-word',
+          }}>
+            Diagnostic: {diagnostic}
+          </p>
+        ) : null}
         <button
           type="button"
           className="btn-primary"

@@ -16,6 +16,7 @@ interface AuthContextType {
   provider: AuthProviderKind
   user: AuthUser | null
   loading: boolean
+  authError: AuthDiagnostic | null
   workosProvisionRequired: boolean
   db: DbClient
   signIn: (email: string, password: string, inviteToken?: string | null) => Promise<{
@@ -46,7 +47,51 @@ type SyncCurrentUserResult = {
   org_id: string
 }
 
+type AuthDiagnostic = {
+  code: string
+  message: string
+  detail?: string
+}
+
+class AuthBootstrapError extends Error {
+  code: string
+  detail?: string
+
+  constructor(code: string, message: string, detail?: string) {
+    super(message)
+    this.name = 'AuthBootstrapError'
+    this.code = code
+    this.detail = detail
+  }
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
+
+function errorDetail(error: unknown): string | undefined {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  return undefined
+}
+
+function toAuthDiagnostic(error: unknown, fallbackCode: string, fallbackMessage: string): AuthDiagnostic {
+  if (error instanceof AuthBootstrapError) {
+    return {
+      code: error.code,
+      message: error.message,
+      ...(error.detail ? { detail: error.detail } : {}),
+    }
+  }
+
+  return {
+    code: fallbackCode,
+    message: fallbackMessage,
+    ...(errorDetail(error) ? { detail: errorDetail(error) } : {}),
+  }
+}
 
 async function sessionSatisfiesRequiredAal(_session: Session): Promise<boolean> {
   const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -125,14 +170,26 @@ async function buildSupabaseAuthUser(session: Session): Promise<AuthUser | null>
   }
 }
 
-async function buildWorkosAuthUser(authKitUser: WorkosUser, syncResult: SyncCurrentUserResult): Promise<AuthUser | null> {
+async function buildWorkosAuthUser(authKitUser: WorkosUser, syncResult: SyncCurrentUserResult): Promise<AuthUser> {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', syncResult.profile_id)
     .single()
 
-  if (profileError || !profile) return null
+  if (profileError) {
+    throw new AuthBootstrapError(
+      'workos_profile_read_failed',
+      'The synced profile could not be loaded.',
+      profileError.message,
+    )
+  }
+  if (!profile) {
+    throw new AuthBootstrapError(
+      'workos_profile_missing',
+      'The WorkOS sync finished, but no local profile was returned.',
+    )
+  }
 
   const { data: organisation, error: orgError } = await supabase
     .from('organisations')
@@ -140,11 +197,24 @@ async function buildWorkosAuthUser(authKitUser: WorkosUser, syncResult: SyncCurr
     .eq('id', (profile as Profile).org_id)
     .single()
 
-  if (orgError || !organisation) return null
+  if (orgError) {
+    throw new AuthBootstrapError(
+      'workos_organization_read_failed',
+      'The synced organization could not be loaded.',
+      orgError.message,
+    )
+  }
+  if (!organisation) {
+    throw new AuthBootstrapError(
+      'workos_organization_missing',
+      'The WorkOS sync finished, but no local organization was returned.',
+    )
+  }
 
+  const profileEmail = (profile as { email?: string | null }).email
   return {
     id: (profile as Profile).id,
-    email: authKitUser.email,
+    email: authKitUser.email ?? profileEmail ?? '',
     profile: profile as unknown as Profile,
     organisation: organisation as unknown as Organisation,
   }
@@ -370,6 +440,7 @@ function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
     provider: 'supabase' as AuthProviderKind,
     user,
     loading,
+    authError: null,
     workosProvisionRequired: false,
     db: supabase as DbClient,
     signIn,
@@ -400,6 +471,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
   } = useAuthKit()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState<AuthDiagnostic | null>(null)
   const [workosProvisionRequired, setWorkosProvisionRequired] = useState(false)
   const [dbClient, setDbClient] = useState<DbClient>(supabase as DbClient)
   const syncVersionRef = useRef(0)
@@ -429,6 +501,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!authKitUser) {
       setWorkosProvisionRequired(false)
+      setAuthError(null)
       setUser(null)
       setLoading(false)
       return
@@ -436,36 +509,67 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!authKitOrganizationId) {
       setWorkosProvisionRequired(true)
+      setAuthError(null)
       setUser(null)
       setLoading(false)
       return
     }
 
     setWorkosProvisionRequired(false)
+    setAuthError(null)
     setLoading(true)
 
     try {
       const accessToken = await getAccessToken()
+      if (!accessToken) {
+        throw new AuthBootstrapError(
+          'workos_access_token_missing',
+          'WorkOS did not return an access token for the signed-in session.',
+        )
+      }
+
       const { data, error } = await supabase.functions.invoke('sync-current-user', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
       })
 
-      if (error) throw error
-      const syncResult = data as SyncCurrentUserResult | null
-      if (!syncResult?.ok) throw new Error('WorkOS user sync failed')
+      if (error) {
+        throw new AuthBootstrapError(
+          'workos_sync_invoke_failed',
+          'Quova could not call the WorkOS user sync function.',
+          error.message,
+        )
+      }
+
+      const syncResult = data as (SyncCurrentUserResult & { error?: string }) | null
+      if (!syncResult?.ok) {
+        throw new AuthBootstrapError(
+          'workos_sync_rejected',
+          syncResult?.error ?? 'The WorkOS user sync function did not accept this session.',
+        )
+      }
 
       const authUser = await buildWorkosAuthUser(authKitUser, syncResult)
       if (syncVersionRef.current !== syncId) return
       setUser(authUser)
       setLoading(false)
     } catch (error) {
+      const diagnostic = toAuthDiagnostic(
+        error,
+        'workos_bootstrap_failed',
+        'The WorkOS session could not be connected to Quova.',
+      )
       void reportException(error, {
         category: 'auth',
         severity: 'error',
         message: 'WorkOS session bootstrap failed',
+        metadata: {
+          code: diagnostic.code,
+          detail: diagnostic.detail,
+        },
       })
       if (syncVersionRef.current !== syncId) return
+      setAuthError(diagnostic)
       setUser(null)
       setLoading(false)
     }
@@ -574,6 +678,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     provider: 'workos' as AuthProviderKind,
     user,
     loading: loading || authKitLoading,
+    authError,
     workosProvisionRequired,
     db: dbClient,
     signIn,
@@ -582,7 +687,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     acceptInvite,
     provisionOrg,
     signOut,
-  }), [user, loading, authKitLoading, workosProvisionRequired, dbClient, signIn, completeMfaSignIn, signUp, acceptInvite, provisionOrg, signOut])
+  }), [user, loading, authKitLoading, authError, workosProvisionRequired, dbClient, signIn, completeMfaSignIn, signUp, acceptInvite, provisionOrg, signOut])
 
   return (
     <AuthContext.Provider value={contextValue}>
