@@ -12,6 +12,7 @@ import { AuthKitShell } from '@/components/auth/AuthKitShell'
 
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const SignupPage = lazy(() => import('@/pages/SignupPage').then(m => ({ default: m.SignupPage })))
+const WorkosProvisionPage = lazy(() => import('@/pages/WorkosProvisionPage').then(m => ({ default: m.WorkosProvisionPage })))
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
@@ -58,12 +59,13 @@ function RouteBoundary({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, workosProvisionRequired } = useAuth()
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-app)' }}>
       <div className="spinner" style={{ width: 32, height: 32 }} />
     </div>
   )
+  if (workosProvisionRequired) return <Navigate to="/provision-org" replace />
   if (!user) return <Navigate to="/login" replace />
   return (
     <>
@@ -74,9 +76,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, workosProvisionRequired } = useAuth()
 
   if (loading) return null
+  if (workosProvisionRequired) return <Navigate to="/provision-org" replace />
   if (user) return <Navigate to="/" replace />
   return <>{children}</>
 }
@@ -136,6 +139,7 @@ export default function App() {
               {/* Public */}
               <Route path="/login"           element={<PublicRoute><RouteBoundary><LoginPage /></RouteBoundary></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><RouteBoundary><SignupPage /></RouteBoundary></PublicRoute>} />
+              <Route path="/provision-org" element={<RouteBoundary><WorkosProvisionPage /></RouteBoundary>} />
               <Route path="/mfa-setup" element={<PublicRoute><RouteBoundary><ForceMfaSetupPage /></RouteBoundary></PublicRoute>} />
               <Route path="/forgot-password" element={<PublicRoute><RouteBoundary><ForgotPasswordPage /></RouteBoundary></PublicRoute>} />
               <Route path="/reset-password"  element={<RouteBoundary><ResetPasswordPage /></RouteBoundary>} />

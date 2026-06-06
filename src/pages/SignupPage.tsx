@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
+import { readInviteParams } from '@/lib/workosInvite'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
-  const inviteId = new URLSearchParams(window.location.search).get('invite')?.trim() || null
+  const config = loadRuntimeWorkosAuthConfig()
+  const inviteParams = readInviteParams(window.location.search)
+  const inviteId = inviteParams.legacyInviteId
+  const inviteToken = inviteParams.workosInviteToken
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -14,6 +19,11 @@ export function SignupPage() {
   const [attempts, setAttempts] = useState<number[]>([])
   const [cooldownEnd, setCooldownEnd] = useState(0)
   const [cooldownLeft, setCooldownLeft] = useState(0)
+
+  useEffect(() => {
+    if (config.provider !== 'workos') return
+    void signUp('', '', '', '', inviteToken)
+  }, [config.provider, inviteToken, signUp])
 
   useEffect(() => {
     if (cooldownEnd <= 0) return
@@ -98,6 +108,22 @@ export function SignupPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
             Already confirmed? <Link to="/login">Sign in</Link>
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (config.provider === 'workos') {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: 'var(--bg-app)', padding: '1rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
+          <OrbitMark />
+          <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Redirecting to sign up</h1>
+          {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       </div>
     )

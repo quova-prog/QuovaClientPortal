@@ -36,7 +36,7 @@ test('WorkOS client mode syncs the verified WorkOS session before reading profil
 test('WorkOS client mode routes sign-in, sign-up, and sign-out through AuthKit', () => {
   const content = readRepoFile('src/hooks/useAuth.tsx')
 
-  assert.match(content, /const signIn = useCallback\(async \(email: string\)[\s\S]*authKitSignIn\(\{[\s\S]*loginHint:/s)
+  assert.match(content, /const signIn = useCallback\(async \(email: string,[\s\S]*inviteToken\?: string \| null\)[\s\S]*authKitSignIn\(\{[\s\S]*loginHint:[\s\S]*invitationToken:/s)
   assert.match(content, /const signUp = useCallback\(async \(email: string,[\s\S]*authKitSignUp\(\{[\s\S]*loginHint:[\s\S]*invitationToken:/s)
   assert.match(content, /const signOut = useCallback\(async \(\) => \{[\s\S]*authKitSignOut/s)
 })
