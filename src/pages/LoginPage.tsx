@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
-import { readInviteParams, readRememberedWorkosInviteToken, rememberWorkosInviteToken } from '@/lib/workosInvite'
+import { clearRememberedWorkosInviteToken, readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
 import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { ShieldCheck } from 'lucide-react'
 import { OrbitMark } from '@/components/ui/OrbitMark'
@@ -28,7 +28,6 @@ export function LoginPage() {
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
-  const workosInviteToken = inviteToken ?? readRememberedWorkosInviteToken()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -53,19 +52,20 @@ export function LoginPage() {
   useEffect(() => {
     if (config.provider !== 'workos') return
     if (inviteToken) rememberWorkosInviteToken(inviteToken)
-    const key = `login:${workosInviteToken ?? 'default'}`
+    else clearRememberedWorkosInviteToken()
+    const key = `login:${inviteToken ?? 'default'}`
     if (!beginWorkosAuthRedirect(key)) {
       setWorkosRedirectPaused(true)
       return
     }
-    void signIn('', '', workosInviteToken)
-  }, [config.provider, inviteToken, signIn, workosInviteToken])
+    void signIn('', '', inviteToken)
+  }, [config.provider, inviteToken, signIn])
 
   function handleContinueWorkosRedirect() {
-    const key = `login:${workosInviteToken ?? 'default'}`
+    const key = `login:${inviteToken ?? 'default'}`
     continueWorkosRedirect(key)
     setWorkosRedirectPaused(false)
-    void signIn('', '', workosInviteToken)
+    void signIn('', '', inviteToken)
   }
 
   // Countdown tickers
@@ -95,7 +95,7 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const result = await signIn(email, password, workosInviteToken)
+      const result = await signIn(email, password, inviteToken)
       if (result.error) {
         const failures = loginFailures + 1
         setLoginFailures(failures)
