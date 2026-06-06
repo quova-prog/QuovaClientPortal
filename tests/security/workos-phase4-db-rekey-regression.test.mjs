@@ -5,6 +5,10 @@ import path from 'node:path'
 
 const repoRoot = process.cwd()
 const sqlPath = path.join(repoRoot, 'docs/workos/phase4-db-rekey-cutover.sql')
+const safeSupportMigrationPath = path.join(
+  repoRoot,
+  'supabase/migrations/20260606180329_workos_safe_support_admin_helpers.sql',
+)
 
 function sql() {
   return readFileSync(sqlPath, 'utf8')
@@ -65,7 +69,13 @@ test('phase4 sql rekeys canonical customer helpers to WorkOS sub plus selected o
 test('phase4 sql keeps support access scoped to internal WorkOS org and JIT grants', () => {
   const content = sql()
 
-  for (const fn of ['is_support_user', 'get_support_user_role', 'has_support_access_to']) {
+  for (const fn of [
+    'is_support_user',
+    'get_support_user_role',
+    'has_support_access_to',
+    'current_support_bank_id',
+    'is_quova_platform_admin',
+  ]) {
     const body = functionBody(content, fn)
     assert.match(body, /current_workos_support_user_id\(\)/s)
     assert.doesNotMatch(body, /auth\.uid\(\)/s)
@@ -107,4 +117,19 @@ test('phase4 sql removes Supabase AAL2 assumptions from WorkOS cutover surface',
 
   assert.doesNotMatch(content, /aal2/s)
   assert.doesNotMatch(content, /auth\.jwt\(\)->>'aal'/s)
+})
+
+test('safe support admin bridge migration does not cast WorkOS customer subs through auth.uid', () => {
+  const content = readFileSync(safeSupportMigrationPath, 'utf8')
+
+  assert.match(content, /CREATE OR REPLACE FUNCTION public\.current_jwt_uuid_sub\(\)/s)
+  assert.doesNotMatch(content, /auth\.uid\(\)/s)
+
+  for (const fn of ['current_support_bank_id', 'is_quova_platform_admin']) {
+    const body = functionBody(content, fn)
+    assert.match(body, /current_workos_support_user_id\(\)/s)
+    assert.match(body, /current_jwt_uuid_sub\(\)/s)
+  }
+
+  assert.match(content, /auth\.jwt\(\)->>'aal' = 'aal2'/s)
 })

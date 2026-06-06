@@ -197,6 +197,50 @@ AS $$
    LIMIT 1
 $$;
 
+CREATE OR REPLACE FUNCTION public.current_jwt_uuid_sub()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT CASE
+    WHEN auth.jwt()->>'sub' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      THEN (auth.jwt()->>'sub')::UUID
+    ELSE NULL
+  END
+$$;
+
+CREATE OR REPLACE FUNCTION public.current_support_bank_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT su.bank_id
+    FROM public.support_users su
+   WHERE su.id = public.current_workos_support_user_id()
+     AND su.is_active = TRUE
+   LIMIT 1
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_quova_platform_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+      FROM public.support_users su
+     WHERE su.id = public.current_workos_support_user_id()
+       AND su.is_active = TRUE
+       AND su.bank_id IS NULL
+       AND su.role = 'support_admin'
+  )
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_support_user()
 RETURNS BOOLEAN
 LANGUAGE sql
