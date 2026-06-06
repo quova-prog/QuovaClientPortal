@@ -2,12 +2,24 @@
 import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
 
+const ORBIT_MVP_SUPABASE_PROJECT_REF = 'vmtwojalyzvmdpldgabi'
+
 function requiredEnv(name) {
   const value = process.env[name]
   if (!value || value.trim() === '') {
     throw new Error(`${name} is required`)
   }
   return value.trim()
+}
+
+function assertOrbitMvpSupabaseUrl(value) {
+  const host = new URL(value).hostname
+  const [projectRef] = host.split('.')
+  assert.equal(
+    projectRef,
+    ORBIT_MVP_SUPABASE_PROJECT_REF,
+    `SUPABASE_PHASE0_URL must point at orbit-mvp project ${ORBIT_MVP_SUPABASE_PROJECT_REF}`
+  )
 }
 
 function decodeJwtPayload(token) {
@@ -17,12 +29,21 @@ function decodeJwtPayload(token) {
 }
 
 const supabaseUrl = requiredEnv('SUPABASE_PHASE0_URL')
+assertOrbitMvpSupabaseUrl(supabaseUrl)
+
 const serviceRoleKey = requiredEnv('SUPABASE_PHASE0_SERVICE_ROLE_KEY')
 const token = requiredEnv('WORKOS_PHASE0_ACCESS_TOKEN')
 const payload = decodeJwtPayload(token)
+const serviceRolePayload = decodeJwtPayload(serviceRoleKey)
 
 assert.equal(typeof payload.sub, 'string', 'token must include sub')
 assert.equal(typeof payload.org_id, 'string', 'token must include org_id')
+assert.equal(serviceRolePayload.role, 'service_role', 'SUPABASE_PHASE0_SERVICE_ROLE_KEY must be a service-role key')
+assert.equal(
+  serviceRolePayload.ref,
+  ORBIT_MVP_SUPABASE_PROJECT_REF,
+  `SUPABASE_PHASE0_SERVICE_ROLE_KEY must belong to orbit-mvp project ${ORBIT_MVP_SUPABASE_PROJECT_REF}`
+)
 
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
