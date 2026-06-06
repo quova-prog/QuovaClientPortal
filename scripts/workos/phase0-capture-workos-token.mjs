@@ -68,6 +68,19 @@ function decodeJwtPayload(token) {
   return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
 }
 
+function normalizeInvitationToken(value) {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  try {
+    const url = new URL(trimmed)
+    return url.searchParams.get('invitation_token')
+  } catch {
+    return trimmed.split(/[&#]/)[0] || null
+  }
+}
+
 function jsonResponse(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(body, null, 2))
@@ -105,7 +118,9 @@ const env = parseEnvFile(ENV_FILE)
 const clientId = envValue(env, 'WORKOS_CLIENT_ID')
 const apiKey = envValue(env, 'WORKOS_API_KEY')
 const expectedOrgId = envValue(env, 'WORKOS_PHASE0_EXPECTED_ORG_ID')
-const invitationToken = process.env.WORKOS_PHASE0_INVITATION_TOKEN?.trim() || env.WORKOS_PHASE0_INVITATION_TOKEN
+const invitationToken = normalizeInvitationToken(
+  process.env.WORKOS_PHASE0_INVITATION_TOKEN ?? env.WORKOS_PHASE0_INVITATION_TOKEN
+)
 const redirectUri = process.env.WORKOS_PHASE0_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI
 const state = randomBytes(24).toString('base64url')
 
