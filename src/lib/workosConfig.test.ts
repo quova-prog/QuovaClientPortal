@@ -20,6 +20,7 @@ describe('WorkOS auth config', () => {
         {
           VITE_AUTH_PROVIDER: 'workos',
           VITE_WORKOS_CLIENT_ID: 'client_123',
+          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
           VITE_WORKOS_DEV_MODE: 'true',
         },
         { mode: 'production' },
@@ -40,12 +41,38 @@ describe('WorkOS auth config', () => {
     ).toBe('http://localhost:5175/callback')
   })
 
+  it('requires a custom AuthKit API hostname in production WorkOS mode', () => {
+    expect(() =>
+      loadWorkosAuthConfig(
+        {
+          VITE_AUTH_PROVIDER: 'workos',
+          VITE_WORKOS_CLIENT_ID: 'client_123',
+        },
+        { mode: 'production' },
+      ),
+    ).toThrow(/VITE_WORKOS_API_HOSTNAME/)
+  })
+
+  it('loads the custom AuthKit API hostname when provided', () => {
+    expect(
+      loadWorkosAuthConfig(
+        {
+          VITE_AUTH_PROVIDER: 'workos',
+          VITE_WORKOS_CLIENT_ID: 'client_123',
+          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
+        },
+        { mode: 'production' },
+      ).workos.apiHostname,
+    ).toBe('auth.quovaos.com')
+  })
+
   it('requires HTTPS redirects outside localhost', () => {
     expect(() =>
       loadWorkosAuthConfig(
         {
           VITE_AUTH_PROVIDER: 'workos',
           VITE_WORKOS_CLIENT_ID: 'client_123',
+          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
           VITE_WORKOS_REDIRECT_URI: 'http://app.quovaos.com/callback',
         },
         { mode: 'production' },

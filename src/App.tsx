@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { MonitoringBridge } from '@/components/app/MonitoringBridge'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { IdleTimeout } from '@/components/ui/IdleTimeout'
+import { AuthKitShell } from '@/components/auth/AuthKitShell'
 
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const SignupPage = lazy(() => import('@/pages/SignupPage').then(m => ({ default: m.SignupPage })))
@@ -123,7 +124,7 @@ function SmartRedirect() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
+      <AuthKitShell><AuthProvider>
         <ModuleProvider>
           <EntityProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -179,7 +180,7 @@ export default function App() {
           </BrowserRouter>
           </EntityProvider>
         </ModuleProvider>
-      </AuthProvider>
+      </AuthProvider></AuthKitShell>
     </ErrorBoundary>
   )
 }

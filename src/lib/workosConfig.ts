@@ -7,6 +7,7 @@ export type WorkosAuthConfig = {
   workos: {
     clientId: string | null
     redirectUri: string | null
+    apiHostname: string | null
     devMode: boolean
   }
 }
@@ -45,6 +46,23 @@ function validateRedirectUri(value: string): string {
   return parsed.toString()
 }
 
+function validateApiHostname(value: string): string {
+  if (/^https?:\/\//i.test(value)) {
+    throw new Error('VITE_WORKOS_API_HOSTNAME must be a hostname without a protocol')
+  }
+
+  try {
+    const parsed = new URL(`https://${value}`)
+    if (parsed.hostname !== value || parsed.pathname !== '/') {
+      throw new Error('invalid hostname')
+    }
+  } catch {
+    throw new Error('VITE_WORKOS_API_HOSTNAME must be a valid hostname')
+  }
+
+  return value
+}
+
 export function loadWorkosAuthConfig(env: EnvLike, options: WorkosAuthConfigOptions = {}): WorkosAuthConfig {
   const provider = envString(env, 'VITE_AUTH_PROVIDER') ?? 'supabase'
   if (provider !== 'supabase' && provider !== 'workos') {
@@ -58,10 +76,16 @@ export function loadWorkosAuthConfig(env: EnvLike, options: WorkosAuthConfigOpti
 
   const rawRedirectUri = envString(env, 'VITE_WORKOS_REDIRECT_URI')
   const redirectUri = rawRedirectUri ? validateRedirectUri(rawRedirectUri) : null
+  const rawApiHostname = envString(env, 'VITE_WORKOS_API_HOSTNAME')
+  const apiHostname = rawApiHostname ? validateApiHostname(rawApiHostname) : null
   const clientId = envString(env, 'VITE_WORKOS_CLIENT_ID') ?? null
 
   if (provider === 'workos' && !clientId) {
     throw new Error('VITE_WORKOS_CLIENT_ID is required when VITE_AUTH_PROVIDER=workos')
+  }
+
+  if (provider === 'workos' && options.mode === 'production' && !apiHostname) {
+    throw new Error('VITE_WORKOS_API_HOSTNAME is required in production WorkOS mode')
   }
 
   return {
@@ -69,6 +93,7 @@ export function loadWorkosAuthConfig(env: EnvLike, options: WorkosAuthConfigOpti
     workos: {
       clientId,
       redirectUri,
+      apiHostname,
       devMode,
     },
   }
