@@ -91,6 +91,11 @@ export function useTeamMembers() {
       role: p.role,
       created_at: p.created_at,
     }))
+    const activeMemberEmails = new Set(
+      memberList
+        .map(member => member.email.trim().toLowerCase())
+        .filter(Boolean),
+    )
 
     setMembers(memberList)
 
@@ -98,8 +103,17 @@ export function useTeamMembers() {
       const { data: inviteResult, error: inviteErr } = await db.functions.invoke('workos-team-invites', {
         body: { action: 'list' },
       })
+      if (inviteErr) {
+        setError(await describeFunctionError(inviteErr) ?? 'Pending invites could not be loaded')
+        setInvites([])
+        setLoading(false)
+        return
+      }
       if (!inviteErr && Array.isArray(inviteResult?.invites)) {
-        setInvites(inviteResult.invites as Invite[])
+        setInvites(
+          (inviteResult.invites as Invite[])
+            .filter(invite => !activeMemberEmails.has(invite.email.trim().toLowerCase())),
+        )
       }
     } else {
       // Fetch pending invites

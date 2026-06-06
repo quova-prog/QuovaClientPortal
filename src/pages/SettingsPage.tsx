@@ -158,6 +158,7 @@ export function SettingsPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null)
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -175,6 +176,14 @@ export function SettingsPage() {
     const result = await removeMember(userId)
     if (result.error) setDbError(result.error)
     setConfirmRemove(null)
+  }
+
+  async function handleRevokeInvite(inviteId: string) {
+    setDbError(null)
+    setRevokingInviteId(inviteId)
+    const result = await revokeInvite(inviteId)
+    setRevokingInviteId(null)
+    if (result.error) setDbError(result.error)
   }
 
   async function handleRoleChange(userId: string, newRole: 'admin' | 'editor' | 'viewer') {
@@ -1326,9 +1335,16 @@ export function SettingsPage() {
                             Invited as <span style={{ textTransform: 'capitalize' }}>{inv.role}</span> · Expires {new Date(inv.expires_at).toLocaleDateString()}
                           </div>
                         </div>
-                        <button className="btn btn-sm btn-ghost" onClick={() => revokeInvite(inv.id)}
-                          title="Revoke invite" style={{ color: 'var(--text-muted)' }}>
-                          <X size={13} />
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => handleRevokeInvite(inv.id)}
+                          disabled={revokingInviteId === inv.id}
+                          title="Revoke invite"
+                          style={{ color: 'var(--text-muted)', opacity: revokingInviteId === inv.id ? 0.6 : 1 }}
+                        >
+                          {revokingInviteId === inv.id
+                            ? <span className="spinner" style={{ width: 13, height: 13 }} />
+                            : <X size={13} />}
                         </button>
                       </div>
                     ))}

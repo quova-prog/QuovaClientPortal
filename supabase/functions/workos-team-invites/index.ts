@@ -48,8 +48,12 @@ function cleanProfileId(value: unknown): string | null {
   return trimmed
 }
 
+function invitationState(invitation: WorkosInvitation): string {
+  return invitation.state ?? invitation.status ?? 'pending'
+}
+
 function mapInvitation(invitation: WorkosInvitation, fallbackInviter: string) {
-  const state = invitation.state ?? invitation.status ?? 'pending'
+  const state = invitationState(invitation)
   const role = invitation.role_slug ?? invitation.roleSlug ?? 'viewer'
   return {
     id: invitation.id,
@@ -152,7 +156,7 @@ Deno.serve(async (req: Request) => {
       })
       return jsonResponse({
         invites: invitations
-          .filter(invite => (invite.state ?? invite.status ?? 'pending') !== 'revoked')
+          .filter(invite => invitationState(invite) === 'pending')
           .map(invite => mapInvitation(invite, auth.context.profileId)),
       }, 200, req)
     }
