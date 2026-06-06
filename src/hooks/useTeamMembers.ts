@@ -42,6 +42,8 @@ export function useTeamMembers() {
       .from('profiles')
       .select('id, full_name, email, role, created_at')
       .eq('org_id', orgId)
+      .eq('membership_status', 'active')
+      .is('deactivated_at', null)
       .order('created_at', { ascending: true })
 
     if (profilesErr) {
@@ -172,6 +174,17 @@ export function useTeamMembers() {
   async function updateRole(targetUserId: string, newRole: 'admin' | 'editor' | 'viewer'): Promise<{ error?: string }> {
     if (!isAdmin) return { error: 'Admin access required' }
 
+    if (isWorkos) {
+      const { data: memberResult, error: memberErr } = await db.functions.invoke('workos-team-invites', {
+        body: { action: 'update_role', profile_id: targetUserId, role: newRole },
+      })
+      if (memberErr || memberResult?.error) {
+        return { error: memberErr?.message ?? memberResult?.error ?? 'Member role could not be updated' }
+      }
+      await load()
+      return {}
+    }
+
     const { error: rpcErr } = await db.rpc('update_member_role', {
       p_target_user_id: targetUserId,
       p_new_role: newRole,
@@ -185,6 +198,17 @@ export function useTeamMembers() {
 
   async function removeMember(targetUserId: string): Promise<{ error?: string }> {
     if (!isAdmin) return { error: 'Admin access required' }
+
+    if (isWorkos) {
+      const { data: memberResult, error: memberErr } = await db.functions.invoke('workos-team-invites', {
+        body: { action: 'remove_member', profile_id: targetUserId },
+      })
+      if (memberErr || memberResult?.error) {
+        return { error: memberErr?.message ?? memberResult?.error ?? 'Member could not be removed' }
+      }
+      await load()
+      return {}
+    }
 
     const { error: rpcErr } = await db.rpc('remove_member', {
       p_target_user_id: targetUserId,

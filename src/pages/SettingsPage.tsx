@@ -10,6 +10,7 @@ import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useTeamNotificationSummary } from '@/hooks/useTeamNotificationSummary'
 import { useEmailLogs } from '@/hooks/useEmailLogs'
+import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
 
 type TabKey = 'profile' | 'notifications' | 'organisation' | 'entities' | 'security'
 
@@ -41,6 +42,8 @@ function parseTotpUri(totpUri: string): { secret: string; issuer: string; accoun
 
 export function SettingsPage() {
   const { user, db, signOut } = useAuth()
+  const config = loadRuntimeWorkosAuthConfig()
+  const isWorkos = config.provider === 'workos'
   const { log } = useAuditLog()
   const { enroll, challenge, verify, unenroll, listFactors } = useMfa()
 
@@ -394,11 +397,11 @@ export function SettingsPage() {
   }
 
   useEffect(() => {
-    if (tab === 'security') {
+    if (tab === 'security' && !isWorkos) {
       loadMfaFactors()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
+  }, [tab, isWorkos])
 
   async function handleEnroll() {
     setMfaError(null)
@@ -1419,7 +1422,7 @@ export function SettingsPage() {
             )}
 
             {/* ── Danger Zone (Organisation Teardown) ──────────────────── */}
-            {isAdmin && (
+            {isAdmin && !isWorkos && (
               <div className="card" style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
                   <ShieldAlert size={16} color="var(--red, #ef4444)" />
@@ -1515,6 +1518,20 @@ export function SettingsPage() {
 
       {/* ── Security ──────────────────────────────────────────────────────── */}
       {tab === 'security' && (
+        isWorkos ? (
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <ShieldCheck size={16} color="var(--teal)" />
+              <h3 style={{ fontWeight: 600 }}>Authentication is managed by WorkOS</h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+              WorkOS manages MFA, password reset, and active sessions for this account.
+            </p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Use the WorkOS account screens reached during sign-in for password and authentication-factor changes.
+            </p>
+          </div>
+        ) : (
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
             <ShieldCheck size={16} color="var(--teal)" />
@@ -1649,6 +1666,7 @@ export function SettingsPage() {
             </div>
           )}
         </div>
+        )
       )}
 
     </div>
