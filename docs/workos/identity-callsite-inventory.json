@@ -1,0 +1,5595 @@
+{
+  "generated_at": "2026-06-06T09:42:38.714Z",
+  "roots": [
+    "src",
+    "supabase/functions",
+    "supabase/migrations",
+    "tests"
+  ],
+  "patterns": {
+    "auth_uid": [
+      {
+        "file": "supabase/migrations/20260605172821_hedged_item_capture.sql",
+        "line": 91,
+        "category": "migration",
+        "text": "auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 65,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 106,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 149,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 191,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 227,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 282,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 340,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260429_support_modules_rpc.sql",
+        "line": 29,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260429_support_modules_rpc.sql",
+        "line": 64,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260506_ai_quota_caller_binding.sql",
+        "line": 2,
+        "category": "migration",
+        "text": "-- ORBIT: Bind check_and_log_ai_usage() identities to auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260506_ai_quota_caller_binding.sql",
+        "line": 18,
+        "category": "migration",
+        "text": "--      that derives user_id from auth.uid() and looks up org_id from"
+      },
+      {
+        "file": "supabase/migrations/20260506_ai_quota_caller_binding.sql",
+        "line": 42,
+        "category": "migration",
+        "text": "v_user_id          UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260605000003_window_forward_accounting_designation.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "v_org, p_entity_id, auth.uid(), 'window_forward', 'fixed_worst_rate',"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 58,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 31,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 80,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 122,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 167,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_onboarding_system.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "FOR INSERT WITH CHECK (org_id = current_user_org_id() AND created_by = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260404_onboarding_system.sql",
+        "line": 295,
+        "category": "migration",
+        "text": "jsonb_build_object('reason', p_reason, 'actor', auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 37,
+        "category": "migration",
+        "text": "v_user_id      UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260331_atomic_signup_onboarding.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "v_user_id UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "FOR SELECT USING (user_id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "WITH CHECK (user_id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 39,
+        "category": "migration",
+        "text": "FOR UPDATE USING (user_id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/002_fix_signup_rls.sql",
+        "line": 21,
+        "category": "migration",
+        "text": "FOR INSERT TO authenticated WITH CHECK (id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/007_bank_accounts.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/007_bank_accounts.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/007_bank_accounts.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/007_bank_accounts.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260605000001_window_forward_hardening.sql",
+        "line": 123,
+        "category": "migration",
+        "text": "v_org, p_entity_id, auth.uid(), 'window_forward', 'fixed_worst_rate',"
+      },
+      {
+        "file": "supabase/migrations/20260605000001_window_forward_hardening.sql",
+        "line": 278,
+        "category": "migration",
+        "text": "p_is_final, p_bank_confirmation, p_reference_number, p_notes, auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260605000001_window_forward_hardening.sql",
+        "line": 397,
+        "category": "migration",
+        "text": "TRUE, COALESCE(p_notes, 'Early close of undrawn residual'), auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 38,
+        "category": "migration",
+        "text": "v_uid := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "-- user_id, user_email, and created_at using auth.uid()."
+      },
+      {
+        "file": "supabase/migrations/20260604000006_window_forward_rpcs.sql",
+        "line": 82,
+        "category": "migration",
+        "text": "v_org, auth.uid(), 'window_forward', 'fixed_worst_rate',"
+      },
+      {
+        "file": "supabase/migrations/20260604000006_window_forward_rpcs.sql",
+        "line": 208,
+        "category": "migration",
+        "text": "p_is_final, p_bank_confirmation, p_reference_number, p_notes, auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260604000006_window_forward_rpcs.sql",
+        "line": 271,
+        "category": "migration",
+        "text": "-- The cron runs without an auth.uid(), so we cannot call"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 34,
+        "category": "migration",
+        "text": "v_caller_id   UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 89,
+        "category": "migration",
+        "text": "v_caller_id   UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 138,
+        "category": "migration",
+        "text": "IF auth.uid() IS NULL THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 148,
+        "category": "migration",
+        "text": "WHERE id = auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260605173120_accounting_close_idempotency.sql",
+        "line": 334,
+        "category": "migration",
+        "text": "CASE WHEN p_status IN ('closed','locked') THEN auth.uid() ELSE NULL END,"
+      },
+      {
+        "file": "supabase/migrations/20260605173120_accounting_close_idempotency.sql",
+        "line": 336,
+        "category": "migration",
+        "text": "CASE WHEN p_status = 'locked' THEN auth.uid() ELSE NULL END"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 75,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 115,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 155,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 197,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 230,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 283,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 333,
+        "category": "migration",
+        "text": "auth.uid(), v_actor_email, v_actor_role, p_org_id, v_org_name,"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 364,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 429,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 492,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 524,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_tier_system.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260404_tier_system.sql",
+        "line": 151,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260404_tier_system.sql",
+        "line": 181,
+        "category": "migration",
+        "text": "v_user_id UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260330_alerts.sql",
+        "line": 26,
+        "category": "migration",
+        "text": "FOR SELECT USING (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260330_alerts.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "WITH CHECK (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260330_alerts.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "FOR UPDATE USING (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260506_ai_usage_logs_rls.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "user_id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_add_plan_types.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 58,
+        "category": "migration",
+        "text": "IF auth.uid() IS NULL THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 85,
+        "category": "migration",
+        "text": "WHERE id = auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 55,
+        "category": "migration",
+        "text": "v_user_id UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 136,
+        "category": "migration",
+        "text": "v_caller_id   UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 194,
+        "category": "migration",
+        "text": "v_caller_id   UUID := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 21,
+        "category": "migration",
+        "text": "-- Lock down explicitly bypassed auth.uid() queries in existing policies."
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "CREATE POLICY \"profile_update_self\" ON profiles FOR UPDATE USING (id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_select\" ON notification_preferences FOR SELECT USING (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_insert\" ON notification_preferences FOR INSERT WITH CHECK (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_update\" ON notification_preferences FOR UPDATE USING (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_self_select\" ON support_users FOR SELECT USING (id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert\" ON support_audit_logs FOR INSERT WITH CHECK (actor_id = auth.uid() AND is_support_user() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "-- Connect legacy orphaned auth.uid() policies directly back to the newly hardened current_user_org_id()"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 104,
+        "category": "migration",
+        "text": "CREATE POLICY \"onboarding_sessions_insert\" ON onboarding_sessions FOR INSERT WITH CHECK (org_id = current_user_org_id() AND created_by = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260331_org_alerts_lockdown.sql",
+        "line": 16,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 10,
+        "category": "migration",
+        "text": "-- and created_at from server state (auth.uid() + profiles table)."
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "v_uid := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 191,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 218,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')"
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 223,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')"
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 228,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "-- notification_preferences row based only on user_id = auth.uid()."
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "user_id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 42,
+        "category": "migration",
+        "text": "user_id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "user_id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/004_fix_rls_for_all.sql",
+        "line": 22,
+        "category": "migration",
+        "text": "FOR INSERT TO authenticated WITH CHECK (id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_definer_search_path.sql",
+        "line": 14,
+        "category": "migration",
+        "text": "SELECT org_id FROM profiles WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_definer_search_path.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "SELECT role FROM profiles WHERE id = auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260414_organization_teardown.sql",
+        "line": 20,
+        "category": "migration",
+        "text": "WHERE id = auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 550,
+        "category": "migration",
+        "text": "VALUES (v_org, auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 562,
+        "category": "migration",
+        "text": "'probable', p_functional_currency, auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 846,
+        "category": "migration",
+        "text": "CASE WHEN p_status IN ('closed','locked') THEN auth.uid() ELSE NULL END,"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 848,
+        "category": "migration",
+        "text": "CASE WHEN p_status = 'locked' THEN auth.uid() ELSE NULL END"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 31,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 76,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 116,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 160,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 27,
+        "category": "migration",
+        "text": "FOR SELECT USING (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('admin', 'editor')"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 41,
+        "category": "migration",
+        "text": "AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('admin', 'editor')"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260402_erp_connections.sql",
+        "line": 51,
+        "category": "migration",
+        "text": "AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('admin', 'editor')"
+      },
+      {
+        "file": "supabase/migrations/20260403_payment_methods.sql",
+        "line": 78,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260403_payment_methods.sql",
+        "line": 143,
+        "category": "migration",
+        "text": "auth.uid(), v_actor_email, v_actor_role,"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "WHERE user_id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 89,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 172,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 335,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 382,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 422,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 462,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 504,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 537,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 591,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 650,
+        "category": "migration",
+        "text": "auth.uid(),"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 697,
+        "category": "migration",
+        "text": "v_actor_id := auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260331_profile_role_lockdown.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "USING (id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260331_profile_role_lockdown.sql",
+        "line": 13,
+        "category": "migration",
+        "text": "id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260409_onboarding_rls_admin_editor.sql",
+        "line": 20,
+        "category": "migration",
+        "text": "AND created_by = auth.uid()"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 218,
+        "category": "edge-function",
+        "text": "// RPC call, since check_and_log_ai_usage relies on auth.uid() inside"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 250,
+        "category": "edge-function",
+        "text": "// The RPC binds user_id and org_id from auth.uid() / profiles"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 14,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 8,
+        "category": "migration",
+        "text": "user_id      UUID,                             -- auth.uid() at time of action"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "FOR SELECT USING (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "WITH CHECK (org_id = (SELECT org_id FROM profiles WHERE id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260329_role_rls.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "SELECT role FROM profiles WHERE id = auth.uid();"
+      },
+      {
+        "file": "supabase/migrations/20260413_email_logs.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260413_email_logs.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "AND (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 38,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 79,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 88,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 91,
+        "category": "migration",
+        "text": "org_id = (SELECT org_id FROM profiles WHERE id = auth.uid())"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "WHERE user_id    = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 144,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 157,
+        "category": "migration",
+        "text": "WHERE id = auth.uid()"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 36,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true;"
+      },
+      {
+        "file": "supabase/migrations/20260329_entities.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "using (org_id = (select org_id from profiles where id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260329_entities.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "using (org_id = (select org_id from profiles where id = auth.uid()));"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "FOR SELECT USING (id = auth.uid());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 39,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 49,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true;"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 86,
+        "category": "migration",
+        "text": "WITH CHECK (actor_id = auth.uid() AND is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260605185322_ai_proxy_token_budgets.sql",
+        "line": 63,
+        "category": "migration",
+        "text": "v_user_id UUID := auth.uid();"
+      }
+    ],
+    "aal_or_mfa": [
+      {
+        "file": "tests/security/hedge-accounting-close-function-regression.test.mjs",
+        "line": 14,
+        "category": "test",
+        "text": "assert.match(ts, /authenticateUserAal2\\(req\\)/s)"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 173,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "--   IF (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN RAISE …"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 18,
+        "category": "migration",
+        "text": "-- 20260430_soc2_support_rpc_aal2.sql and is unchanged here."
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "IF (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 98,
+        "category": "migration",
+        "text": "IF (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 142,
+        "category": "migration",
+        "text": "IF (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 107,
+        "category": "edge-function",
+        "text": "export async function authenticateUserAal2(req: Request): Promise<UserAal2AuthResult> {"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 125,
+        "category": "edge-function",
+        "text": "if (!payload || payload.aal !== 'aal2') {"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The 20260506_aal2_team_management migration AAL2-hardened"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 16,
+        "category": "migration",
+        "text": "-- mfa.challengeAndVerify() immediately before invoking the RPC, so"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "v_last_mfa_ts   BIGINT;"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 63,
+        "category": "migration",
+        "text": "IF (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 72,
+        "category": "migration",
+        "text": "INTO v_last_mfa_ts"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 76,
+        "category": "migration",
+        "text": "IF v_last_mfa_ts IS NULL"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 77,
+        "category": "migration",
+        "text": "OR (EXTRACT(EPOCH FROM NOW())::BIGINT - v_last_mfa_ts) > v_max_age_sec"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_notification_preferences_org_binding.sql",
+        "line": 49,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 93,
+        "category": "test",
+        "text": "assert.match(content, /supabase\\.auth\\.mfa\\./s)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 103,
+        "category": "test",
+        "text": "assert.match(content, /CREATE POLICY \"notif_prefs_insert\" ON notification_preferences[\\s\\S]*WITH CHECK\\s*\\([\\s\\S]*user_id = auth\\.uid\\(\\)[\\s\\S]*org_id = current_user_org_id\\(\\)[\\s\\S]*\\(auth\\.jwt\\(\\)->>'aal'\\) = 'aal2'[\\s\\S]*\\)/s)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 104,
+        "category": "test",
+        "text": "assert.match(content, /CREATE POLICY \"notif_prefs_update\" ON notification_preferences[\\s\\S]*USING\\s*\\([\\s\\S]*user_id = auth\\.uid\\(\\)[\\s\\S]*org_id = current_user_org_id\\(\\)[\\s\\S]*\\(auth\\.jwt\\(\\)->>'aal'\\) = 'aal2'[\\s\\S]*\\)[\\s\\S]*WITH CHECK\\s*\\([\\s\\S]*user_id = auth\\.uid\\(\\)[\\s\\S]*org_id = current_user_org_id\\(\\)[\\s\\S]*\\(auth\\.jwt\\(\\)->>'aal'\\) = 'aal2'[\\s\\S]*\\)/s)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 161,
+        "category": "test",
+        "text": "assert.match(helper, /export async function authenticateUserAal2\\(req: Request\\)/s)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 173,
+        "category": "test",
+        "text": "assert.match(content, /authenticateUserAal2\\(req\\)/s, `${filePath} should require user AAL2 auth`)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 190,
+        "category": "test",
+        "text": "assert.match(mixed, /authenticateUserAal2\\(req\\)/s)"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 15,
+        "category": "migration",
+        "text": ") AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND is_active = true AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateServiceRole, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 30,
+        "category": "edge-function",
+        "text": "const userAuth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "src/pages/SignupPage.tsx",
+        "line": 64,
+        "category": "frontend",
+        "text": "// LoginPage mfaEnforcedSetupRequired path explicitly."
+      },
+      {
+        "file": "src/pages/SignupPage.tsx",
+        "line": 65,
+        "category": "frontend",
+        "text": "navigate(inviteId ? `/mfa-setup?invite=${encodeURIComponent(inviteId)}` : '/mfa-setup')"
+      },
+      {
+        "file": "supabase/functions/close-accounting-period/index.ts",
+        "line": 9,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/close-accounting-period/index.ts",
+        "line": 40,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'; -- ENFORCE MFA"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 117,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 199,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 285,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 368,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 433,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 494,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 5,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts';"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 21,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req);"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 2,
+        "category": "edge-function",
+        "text": "import { authenticateUserAal2, corsHeaders, createAdminClient, jsonResponse } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 212,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 52,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 68,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 106,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 114,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 122,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 130,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The 20260430_soc2_support_rpc_aal2 migration AAL2-hardened seven"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "WHERE id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin' AND (auth.jwt()->>'aal') = 'aal2')"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "CREATE POLICY \"profile_update_self\" ON profiles FOR UPDATE USING (id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_select\" ON notification_preferences FOR SELECT USING (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_insert\" ON notification_preferences FOR INSERT WITH CHECK (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "CREATE POLICY \"notif_prefs_update\" ON notification_preferences FOR UPDATE USING (user_id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_self_select\" ON support_users FOR SELECT USING (id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert\" ON support_audit_logs FOR INSERT WITH CHECK (actor_id = auth.uid() AND is_support_user() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 36,
+        "category": "frontend",
+        "text": "const [mfaPending, setMfaPending] = useState<MfaPending | null>(null)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 37,
+        "category": "frontend",
+        "text": "const [mfaCode, setMfaCode] = useState('')"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 38,
+        "category": "frontend",
+        "text": "const mfaInputRef = useRef<HTMLInputElement>(null)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 41,
+        "category": "frontend",
+        "text": "const [mfaFailures, setMfaFailures] = useState(0)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 42,
+        "category": "frontend",
+        "text": "const [mfaLockedUntil, setMfaLockedUntil] = useState<number | null>(null)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 43,
+        "category": "frontend",
+        "text": "const [mfaCountdown, setMfaCountdown] = useState(0)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 57,
+        "category": "frontend",
+        "text": "if (!mfaLockedUntil) return"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 59,
+        "category": "frontend",
+        "text": "const remaining = Math.ceil((mfaLockedUntil - Date.now()) / 1000)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 64,
+        "category": "frontend",
+        "text": "}, [mfaLockedUntil])"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 94,
+        "category": "frontend",
+        "text": "} else if (result.mfaEnforcedSetupRequired) {"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 96,
+        "category": "frontend",
+        "text": "navigate(inviteId ? `/mfa-setup?invite=${encodeURIComponent(inviteId)}` : '/mfa-setup')"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 97,
+        "category": "frontend",
+        "text": "} else if (result.mfaRequired) {"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 100,
+        "category": "frontend",
+        "text": "factorId: result.mfaFactorId!,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 105,
+        "category": "frontend",
+        "text": "setTimeout(() => mfaInputRef.current?.focus(), 100)"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 124,
+        "category": "frontend",
+        "text": "if (!mfaPending || mfaCode.length !== 6) return"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 125,
+        "category": "frontend",
+        "text": "if (mfaLockedUntil && Date.now() < mfaLockedUntil) return"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 130,
+        "category": "frontend",
+        "text": "mfaPending.factorId,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 131,
+        "category": "frontend",
+        "text": "mfaCode,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 132,
+        "category": "frontend",
+        "text": "mfaPending.pendingToken,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 133,
+        "category": "frontend",
+        "text": "mfaPending.pendingRefreshToken,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 136,
+        "category": "frontend",
+        "text": "const failures = mfaFailures + 1"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 148,
+        "category": "frontend",
+        "text": "email: mfaPending.pendingEmail,"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 183,
+        "category": "frontend",
+        "text": "{mfaPending ? 'Two-Factor Verification' : 'Sign in to Orbit'}"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 186,
+        "category": "frontend",
+        "text": "{mfaPending ? 'Enter the 6-digit code from your authenticator app' : inviteId ? 'Sign in to accept your invite' : 'The Financial Risk OS'}"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 190,
+        "category": "frontend",
+        "text": "{mfaPending ? ("
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 203,
+        "category": "frontend",
+        "text": "ref={mfaInputRef}"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 209,
+        "category": "frontend",
+        "text": "value={mfaCode}"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 221,
+        "category": "frontend",
+        "text": "{mfaLockedUntil && ("
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 223,
+        "category": "frontend",
+        "text": "Locked — try again in {mfaCountdown}s"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 227,
+        "category": "frontend",
+        "text": "disabled={loading || mfaCode.length !== 6 || !!(mfaLockedUntil && Date.now() < mfaLockedUntil)}"
+      },
+      {
+        "file": "src/pages/LoginPage.tsx",
+        "line": 272,
+        "category": "frontend",
+        "text": "{!mfaPending && ("
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 8,
+        "category": "migration",
+        "text": "-- Both helper functions were rewritten in 20260415_aal2_enforcement.sql"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 9,
+        "category": "migration",
+        "text": "-- to return NULL unless (auth.jwt()->>'aal') = 'aal2', which means"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "--   AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 39,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "AND (auth.jwt()->>'aal') = 'aal2'"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 320,
+        "category": "frontend",
+        "text": "const [mfaFactors, setMfaFactors] = useState<{ id: string; friendly_name: string; factor_type: string; status: string }[]>([])"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 321,
+        "category": "frontend",
+        "text": "const [mfaLoading, setMfaLoading] = useState(false)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 322,
+        "category": "frontend",
+        "text": "const [mfaEnrolling, setMfaEnrolling] = useState(false)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 323,
+        "category": "frontend",
+        "text": "const [mfaFactorId, setMfaFactorId] = useState('')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 324,
+        "category": "frontend",
+        "text": "const [mfaTotpUri, setMfaTotpUri] = useState('')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 325,
+        "category": "frontend",
+        "text": "const parsedTotp = useMemo(() => parseTotpUri(mfaTotpUri), [mfaTotpUri])"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 326,
+        "category": "frontend",
+        "text": "const [mfaChallengeId, setMfaChallengeId] = useState('')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 327,
+        "category": "frontend",
+        "text": "const [mfaCode, setMfaCode] = useState('')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 332,
+        "category": "frontend",
+        "text": "const [deleteStep, setDeleteStep] = useState<'confirm' | 'mfa'>('confirm')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 352,
+        "category": "frontend",
+        "text": "const verifiedFactor = mfaFactors.find(f => f.factor_type === 'totp' && f.status === 'verified')"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 384,
+        "category": "frontend",
+        "text": "const [mfaVerifying, setMfaVerifying] = useState(false)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 385,
+        "category": "frontend",
+        "text": "const [mfaSuccess, setMfaSuccess] = useState(false)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 386,
+        "category": "frontend",
+        "text": "const [mfaError, setMfaError] = useState<string | null>(null)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 387,
+        "category": "frontend",
+        "text": "const [mfaRemoving, setMfaRemoving] = useState(false)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 422,
+        "category": "frontend",
+        "text": "const { challengeId, error: cErr } = await challenge(mfaFactorId)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 424,
+        "category": "frontend",
+        "text": "const { error: vErr } = await verify(mfaFactorId, challengeId || mfaChallengeId, mfaCode)"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 434,
+        "category": "frontend",
+        "text": "resource: 'mfa_factor',"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 435,
+        "category": "frontend",
+        "text": "resource_id: mfaFactorId,"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 451,
+        "category": "frontend",
+        "text": "resource: 'mfa_factor',"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1442,
+        "category": "frontend",
+        "text": "onClick={() => { setDeleteStep('mfa'); loadMfaFactors() }}"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1527,
+        "category": "frontend",
+        "text": "{mfaLoading ? ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1529,
+        "category": "frontend",
+        "text": ") : mfaFactors.length > 0 ? ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1532,
+        "category": "frontend",
+        "text": "{mfaFactors.map(factor => ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1547,
+        "category": "frontend",
+        "text": "disabled={mfaRemoving}"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1551,
+        "category": "frontend",
+        "text": "{mfaRemoving"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1559,
+        "category": "frontend",
+        "text": ") : mfaFactorId ? ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1600,
+        "category": "frontend",
+        "text": "value={mfaCode}"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1609,
+        "category": "frontend",
+        "text": "disabled={mfaVerifying || mfaCode.length !== 6}"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1612,
+        "category": "frontend",
+        "text": "{mfaVerifying"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1629,
+        "category": "frontend",
+        "text": "disabled={mfaEnrolling}"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1633,
+        "category": "frontend",
+        "text": "{mfaEnrolling"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1640,
+        "category": "frontend",
+        "text": "{mfaSuccess && ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1646,
+        "category": "frontend",
+        "text": "{mfaError && ("
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1648,
+        "category": "frontend",
+        "text": "{mfaError}"
+      },
+      {
+        "file": "src/App.tsx",
+        "line": 138,
+        "category": "frontend",
+        "text": "<Route path=\"/mfa-setup\" element={<PublicRoute><RouteBoundary><ForceMfaSetupPage /></RouteBoundary></PublicRoute>} />"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 21,
+        "category": "frontend",
+        "text": "const [mfaFactorId, setMfaFactorId] = useState<string | null>(null)"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 22,
+        "category": "frontend",
+        "text": "const [mfaCode, setMfaCode] = useState('')"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 64,
+        "category": "frontend",
+        "text": "const { data: factors } = await supabase.auth.mfa.listFactors()"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 90,
+        "category": "frontend",
+        "text": "if (mfaFactorId && mfaCode.length !== 6) {"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 97,
+        "category": "frontend",
+        "text": "if (mfaFactorId) {"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 98,
+        "category": "frontend",
+        "text": "const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 99,
+        "category": "frontend",
+        "text": "factorId: mfaFactorId,"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 100,
+        "category": "frontend",
+        "text": "code: mfaCode,"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 102,
+        "category": "frontend",
+        "text": "if (mfaError) {"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 104,
+        "category": "frontend",
+        "text": "setError(mfaError.message.includes('Invalid')"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 106,
+        "category": "frontend",
+        "text": ": mfaError.message)"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 252,
+        "category": "frontend",
+        "text": "{mfaFactorId && ("
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 261,
+        "category": "frontend",
+        "text": "value={mfaCode}"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 288,
+        "category": "frontend",
+        "text": "|| (mfaFactorId !== null && mfaCode.length !== 6)"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 13,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.enroll({"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 30,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.challenge({ factorId })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 40,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.mfa.verify({ factorId, challengeId, code })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 49,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.mfa.unenroll({ factorId })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 58,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.listFactors()"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 15,
+        "category": "frontend",
+        "text": "mfaRequired?: boolean"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 16,
+        "category": "frontend",
+        "text": "mfaEnforcedSetupRequired?: boolean"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 17,
+        "category": "frontend",
+        "text": "mfaFactorId?: string"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 35,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 38,
+        "category": "frontend",
+        "text": "if (data.currentLevel !== 'aal2') return false"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 176,
+        "category": "frontend",
+        "text": "mfaRequired: true,"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 177,
+        "category": "frontend",
+        "text": "mfaFactorId: verifiedFactor.id,"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 185,
+        "category": "frontend",
+        "text": "return { error: null, mfaEnforcedSetupRequired: true }"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 278,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code })"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 24,
+        "category": "frontend",
+        "text": "const [mfaEnrolling, setMfaEnrolling] = useState(true)"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 25,
+        "category": "frontend",
+        "text": "const [mfaFactorId, setMfaFactorId] = useState('')"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 26,
+        "category": "frontend",
+        "text": "const [mfaTotpUri, setMfaTotpUri] = useState('')"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 27,
+        "category": "frontend",
+        "text": "const parsedTotp = useMemo(() => parseTotpUri(mfaTotpUri), [mfaTotpUri])"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 29,
+        "category": "frontend",
+        "text": "const [mfaCode, setMfaCode] = useState('')"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 30,
+        "category": "frontend",
+        "text": "const [mfaVerifying, setMfaVerifying] = useState(false)"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 31,
+        "category": "frontend",
+        "text": "const [mfaError, setMfaError] = useState<string | null>(null)"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 77,
+        "category": "frontend",
+        "text": "if (mfaCode.length !== 6 || mfaVerifying) return"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 82,
+        "category": "frontend",
+        "text": "const { challengeId, error: cErr } = await challenge(mfaFactorId)"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 89,
+        "category": "frontend",
+        "text": "const { error: vErr } = await verify(mfaFactorId, challengeId, mfaCode)"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 128,
+        "category": "frontend",
+        "text": "{mfaEnrolling && ("
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 134,
+        "category": "frontend",
+        "text": "{!mfaEnrolling && mfaTotpUri && ("
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 145,
+        "category": "frontend",
+        "text": "value={mfaTotpUri}"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 189,
+        "category": "frontend",
+        "text": "value={mfaCode}"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 192,
+        "category": "frontend",
+        "text": "disabled={mfaVerifying}"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 198,
+        "category": "frontend",
+        "text": "{mfaError && ("
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 200,
+        "category": "frontend",
+        "text": "{mfaError}"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 204,
+        "category": "frontend",
+        "text": "<button type=\"submit\" className=\"btn btn-primary\" disabled={mfaVerifying || mfaCode.length !== 6} style={{ justifyContent: 'center' }}>"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 205,
+        "category": "frontend",
+        "text": "{mfaVerifying ? <span className=\"spinner\" style={{ width: 16, height: 16 }} /> : <><ShieldCheck size={16} /> Complete Setup</>}"
+      }
+    ],
+    "supabase_auth": [
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 85,
+        "category": "edge-function",
+        "text": "const allAuthUsers: Map<string, { last_sign_in_at: string | null }> = new Map()"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 87,
+        "category": "edge-function",
+        "text": "const { data: authData } = await admin.auth.admin.listUsers()"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 89,
+        "category": "edge-function",
+        "text": "allAuthUsers.set(u.id, { last_sign_in_at: u.last_sign_in_at ?? null })"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 115,
+        "category": "edge-function",
+        "text": "const result = await computeOrgHealth(admin, org.id, now, allAuthUsers, counterpartiesTableExists)"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 152,
+        "category": "edge-function",
+        "text": "allAuthUsers: Map<string, { last_sign_in_at: string | null }>,"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 291,
+        "category": "edge-function",
+        "text": "const authUser = allAuthUsers.get(profile.id)"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 292,
+        "category": "edge-function",
+        "text": "if (authUser?.last_sign_in_at) {"
+      },
+      {
+        "file": "supabase/functions/compute-health-scores/index.ts",
+        "line": 293,
+        "category": "edge-function",
+        "text": "const loginDate = new Date(authUser.last_sign_in_at)"
+      },
+      {
+        "file": "tests/security/hedge-accounting-close-function-regression.test.mjs",
+        "line": 14,
+        "category": "test",
+        "text": "assert.match(ts, /authenticateUserAal2\\(req\\)/s)"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 173,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 201,
+        "category": "edge-function",
+        "text": "const { data: supportUser } = await admin"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 207,
+        "category": "edge-function",
+        "text": "if (!supportUser?.is_active) {"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 238,
+        "category": "edge-function",
+        "text": "// written to). Fall back to auth.users.email — the address the user"
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 240,
+        "category": "edge-function",
+        "text": "// (service_role) client bypasses RLS to read auth.users."
+      },
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 253,
+        "category": "edge-function",
+        "text": "const { data: { user } } = await admin.auth.admin.getUserById(p.id)"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 124,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User profile not found';"
+      },
+      {
+        "file": "supabase/migrations/20260404_onboarding_system.sql",
+        "line": 6,
+        "category": "migration",
+        "text": "-- ── Onboarding Sessions ────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260404_onboarding_system.sql",
+        "line": 19,
+        "category": "migration",
+        "text": "created_by              UUID NOT NULL REFERENCES auth.users(id),"
+      },
+      {
+        "file": "supabase/migrations/20260404_onboarding_system.sql",
+        "line": 252,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'Session not found or access denied';"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 3,
+        "category": "edge-function",
+        "text": "// User AAL2 and service-role authentication are intentionally split:"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { createClient, SupabaseClient, type User } from 'https://esm.sh/@supabase/supabase-js@2'"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 33,
+        "category": "edge-function",
+        "text": "export type UserAal2AuthResult ="
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 34,
+        "category": "edge-function",
+        "text": "| { authenticated: true; user: User }"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 107,
+        "category": "edge-function",
+        "text": "export async function authenticateUserAal2(req: Request): Promise<UserAal2AuthResult> {"
+      },
+      {
+        "file": "supabase/functions/_shared/auth.ts",
+        "line": 119,
+        "category": "edge-function",
+        "text": "const { data: { user }, error } = await supabase.auth.getUser(token)"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 62,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User not found in your organization';"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 116,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User not found in your organization';"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 161,
+        "category": "test",
+        "text": "assert.match(helper, /export async function authenticateUserAal2\\(req: Request\\)/s)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 173,
+        "category": "test",
+        "text": "assert.match(content, /authenticateUserAal2\\(req\\)/s, `${filePath} should require user AAL2 auth`)"
+      },
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 190,
+        "category": "test",
+        "text": "assert.match(mixed, /authenticateUserAal2\\(req\\)/s)"
+      },
+      {
+        "file": "supabase/migrations/20260506_delete_org_fresh_mfa.sql",
+        "line": 62,
+        "category": "migration",
+        "text": "-- 2. Session-level AAL2 (verified MFA at some point this session)"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateServiceRole, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 30,
+        "category": "edge-function",
+        "text": "const userAuth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 55,
+        "category": "edge-function",
+        "text": "return jsonResponse({ error: 'Unauthorized: User required' }, 401, req)"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 126,
+        "category": "edge-function",
+        "text": "const { data: users } = await admin.auth.admin.listUsers()"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 133,
+        "category": "edge-function",
+        "text": "const authUser = userMap.get(pref.user_id)"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 134,
+        "category": "edge-function",
+        "text": "if (!authUser?.email) continue"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 152,
+        "category": "edge-function",
+        "text": "to: authUser.email,"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 163,
+        "category": "edge-function",
+        "text": "recipient: authUser.email,"
+      },
+      {
+        "file": "supabase/functions/send-urgent-email/index.ts",
+        "line": 173,
+        "category": "edge-function",
+        "text": "errors.push(`${authUser.email}: ${result.error}`)"
+      },
+      {
+        "file": "supabase/migrations/20260415_ai_proxy_hardening.sql",
+        "line": 8,
+        "category": "migration",
+        "text": "user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/migrations/20260413_email_logs.sql",
+        "line": 9,
+        "category": "migration",
+        "text": "user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/functions/close-accounting-period/index.ts",
+        "line": 9,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/close-accounting-period/index.ts",
+        "line": 40,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 16,
+        "category": "migration",
+        "text": "id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/migrations/20260506_ai_quota_caller_binding.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User does not belong to an organization';"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 14,
+        "category": "migration",
+        "text": "user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "-- Users can read their own preferences"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "-- Users can insert their own row"
+      },
+      {
+        "file": "supabase/migrations/20260413_notification_preferences.sql",
+        "line": 37,
+        "category": "migration",
+        "text": "-- Users can update their own preferences"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 5,
+        "category": "edge-function",
+        "text": "import { createAdminClient, authenticateUserAal2, jsonResponse, corsHeaders } from '../_shared/auth.ts';"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 21,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req);"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 46,
+        "category": "migration",
+        "text": "-- Get the caller's verified email from auth.users"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 90,
+        "category": "migration",
+        "text": "(SELECT raw_user_meta_data ->> 'full_name' FROM auth.users WHERE id = v_user_id),"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 2,
+        "category": "edge-function",
+        "text": "import { authenticateUserAal2, corsHeaders, createAdminClient, jsonResponse } from '../_shared/auth.ts'"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 210,
+        "category": "edge-function",
+        "text": "// User-only auth: validates the JWT signature and enforces AAL2."
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 212,
+        "category": "edge-function",
+        "text": "const auth = await authenticateUserAal2(req)"
+      },
+      {
+        "file": "supabase/functions/anthropic-proxy/index.ts",
+        "line": 266,
+        "category": "edge-function",
+        "text": "return jsonResponse({ error: 'User does not belong to an organization' }, 403, req)"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User profile not found';"
+      },
+      {
+        "file": "supabase/migrations/20260403_add_plan_types.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "SELECT email INTO v_actor_email FROM auth.users WHERE id = v_actor_id;"
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "-- Extends Supabase auth.users with org membership and role."
+      },
+      {
+        "file": "supabase/migrations/001_initial_schema.sql",
+        "line": 26,
+        "category": "migration",
+        "text": "id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "-- 3. Resolve email from auth.users"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 55,
+        "category": "migration",
+        "text": "FROM auth.users"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 68,
+        "category": "edge-function",
+        "text": "const dailyUsers = prefs.filter(p => p.digest_frequency === 'daily')"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 69,
+        "category": "edge-function",
+        "text": "const weeklyUsers = prefs.filter(p => p.digest_frequency === 'weekly' && dayOfWeek === 1) // Monday"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 70,
+        "category": "edge-function",
+        "text": "const eligiblePrefs = [...dailyUsers, ...weeklyUsers]"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 89,
+        "category": "edge-function",
+        "text": "const { data: authUsers } = await admin.auth.admin.listUsers()"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 90,
+        "category": "edge-function",
+        "text": "const userMap = new Map(authUsers?.users?.map(u => [u.id, u]) ?? [])"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 95,
+        "category": "edge-function",
+        "text": "const authUser = userMap.get(pref.user_id)"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 96,
+        "category": "edge-function",
+        "text": "if (!authUser?.email) continue"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 106,
+        "category": "edge-function",
+        "text": "orgResult.errors.push(`${authUser.email}: Token generation failed`)"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 127,
+        "category": "edge-function",
+        "text": "to: authUser.email,"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 142,
+        "category": "edge-function",
+        "text": "recipient: authUser.email,"
+      },
+      {
+        "file": "supabase/functions/send-daily-digest/index.ts",
+        "line": 152,
+        "category": "edge-function",
+        "text": "orgResult.errors.push(`${authUser.email}: ${result.error}`)"
+      },
+      {
+        "file": "src/pages/CustomerContractsPage.tsx",
+        "line": 4,
+        "category": "frontend",
+        "text": "AlertCircle, CheckCircle, UserCheck,"
+      },
+      {
+        "file": "src/pages/CustomerContractsPage.tsx",
+        "line": 207,
+        "category": "frontend",
+        "text": "<UserCheck size={32} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />"
+      },
+      {
+        "file": "src/pages/CustomerContractsPage.tsx",
+        "line": 338,
+        "category": "frontend",
+        "text": "<UserCheck size={32} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />"
+      },
+      {
+        "file": "src/pages/CustomerContractsPage.tsx",
+        "line": 671,
+        "category": "frontend",
+        "text": "<UserCheck size={20} style={{ color: 'var(--teal)' }} />"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "CREATE POLICY \"Users can view their org's commodity exposures\""
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 81,
+        "category": "migration",
+        "text": "created_by      UUID REFERENCES auth.users(id) ON DELETE SET NULL,"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "CREATE POLICY \"Users can view their org's commodity hedges\""
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 12,
+        "category": "migration",
+        "text": "invited_by  UUID NOT NULL REFERENCES auth.users(id) ON DELETE SET NULL,"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 65,
+        "category": "migration",
+        "text": "SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 90,
+        "category": "migration",
+        "text": "-- User already onboarded — move them to the invited org"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 101,
+        "category": "migration",
+        "text": "(SELECT raw_user_meta_data ->> 'full_name' FROM auth.users WHERE id = v_user_id),"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 162,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User not found in your organisation';"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 221,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User not found in your organisation';"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 52,
+        "category": "migration",
+        "text": "-- 4. Support Users"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "-- 10. Onboarding Sessions"
+      },
+      {
+        "file": "supabase/migrations/007_bank_accounts.sql",
+        "line": 29,
+        "category": "migration",
+        "text": "-- Users can only see accounts belonging to their own org"
+      },
+      {
+        "file": "supabase/migrations/002_fix_signup_rls.sql",
+        "line": 12,
+        "category": "migration",
+        "text": "-- Users can only read/update/delete their own org"
+      },
+      {
+        "file": "supabase/migrations/002_fix_signup_rls.sql",
+        "line": 19,
+        "category": "migration",
+        "text": "-- Users can insert their own profile row"
+      },
+      {
+        "file": "supabase/migrations/002_fix_signup_rls.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "-- Users can only read/update/delete profiles in their org"
+      },
+      {
+        "file": "src/pages/SignupPage.tsx",
+        "line": 61,
+        "category": "frontend",
+        "text": "// enrol MFA before any AAL2-gated data is reachable. buildAuthUser"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 56,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User profile not found';"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "-- (e.g. support_users, auth.users, audit_logs) and intercept"
+      },
+      {
+        "file": "supabase/migrations/20260415_tag_auth_users_portal.sql",
+        "line": 1,
+        "category": "migration",
+        "text": "-- Tag auth.users with app_metadata.portal so support vs app users"
+      },
+      {
+        "file": "supabase/migrations/20260415_tag_auth_users_portal.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "UPDATE auth.users"
+      },
+      {
+        "file": "supabase/migrations/20260415_tag_auth_users_portal.sql",
+        "line": 10,
+        "category": "migration",
+        "text": "UPDATE auth.users"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 31,
+        "category": "migration",
+        "text": "-- Look up email from auth.users (not profiles) so it works"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 34,
+        "category": "migration",
+        "text": "FROM auth.users"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 122,
+        "category": "migration",
+        "text": "sent_by         UUID        NOT NULL REFERENCES auth.users(id),"
+      },
+      {
+        "file": "src/pages/AnalyticsPage.tsx",
+        "line": 566,
+        "category": "frontend",
+        "text": "'User':        r.user_email ?? '—',"
+      },
+      {
+        "file": "supabase/migrations/20260605185322_ai_proxy_token_budgets.sql",
+        "line": 103,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User does not belong to an organization';"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 353,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'User profile not found';"
+      },
+      {
+        "file": "supabase/migrations/20260414_organization_teardown.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "-- this completely purges all tenant data except auth.users which remain orphaned (but clean)."
+      },
+      {
+        "file": "src/pages/AuditLogPage.tsx",
+        "line": 202,
+        "category": "frontend",
+        "text": "{['Timestamp', 'User', 'Action', 'Resource', 'Summary'].map(col => ("
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 14,
+        "category": "frontend",
+        "text": "//   3. User NOT logged in                    → redirect to /signup?invite=<id>"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 17,
+        "category": "frontend",
+        "text": "//   4. User logged in, accept_invite RPC OK  → navigate to /dashboard"
+      },
+      {
+        "file": "src/pages/ForgotPasswordPage.tsx",
+        "line": 18,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.resetPasswordForEmail(email, {"
+      },
+      {
+        "file": "src/types/index.ts",
+        "line": 378,
+        "category": "frontend",
+        "text": "export interface AuthUser {"
+      },
+      {
+        "file": "src/types/index.ts",
+        "line": 389,
+        "category": "frontend",
+        "text": "export interface OnboardingSession {"
+      },
+      {
+        "file": "src/pages/ExposurePage.tsx",
+        "line": 8,
+        "category": "frontend",
+        "text": "Search, Trash2, X, Info, ShoppingCart, Users, Building2,"
+      },
+      {
+        "file": "src/pages/ExposurePage.tsx",
+        "line": 35,
+        "category": "frontend",
+        "text": "customer_contract: { label: 'Customer Contracts', color: '#6366f1', Icon: Users },"
+      },
+      {
+        "file": "src/pages/ExposurePage.tsx",
+        "line": 38,
+        "category": "frontend",
+        "text": "payroll:           { label: 'Payroll',            color: '#8b5cf6', Icon: Users },"
+      },
+      {
+        "file": "src/components/integrations/IntegrationSetupModal.tsx",
+        "line": 177,
+        "category": "frontend",
+        "text": "{ value: 'basic', label: 'Basic Authentication', description: 'Username + password (service user)' },"
+      },
+      {
+        "file": "src/components/integrations/IntegrationSetupModal.tsx",
+        "line": 183,
+        "category": "frontend",
+        "text": "label: 'Service User',"
+      },
+      {
+        "file": "src/components/integrations/IntegrationSetupModal.tsx",
+        "line": 250,
+        "category": "frontend",
+        "text": "label: 'Service User',"
+      },
+      {
+        "file": "src/components/integrations/IntegrationSetupModal.tsx",
+        "line": 373,
+        "category": "frontend",
+        "text": "hint: 'From Setup → Users/Roles → Access Tokens',"
+      },
+      {
+        "file": "src/features/upload/uploadCatalog.ts",
+        "line": 5,
+        "category": "frontend",
+        "text": "UserCheck,"
+      },
+      {
+        "file": "src/features/upload/uploadCatalog.ts",
+        "line": 12,
+        "category": "frontend",
+        "text": "Users,"
+      },
+      {
+        "file": "src/features/upload/uploadCatalog.ts",
+        "line": 76,
+        "category": "frontend",
+        "text": "icon: UserCheck,"
+      },
+      {
+        "file": "src/features/upload/uploadCatalog.ts",
+        "line": 135,
+        "category": "frontend",
+        "text": "icon: Users,"
+      },
+      {
+        "file": "src/components/layout/AppLayout.tsx",
+        "line": 15,
+        "category": "frontend",
+        "text": "Shield, ArrowLeftRight, Users, BarChart2, Landmark, Plug,"
+      },
+      {
+        "file": "src/components/layout/AppLayout.tsx",
+        "line": 34,
+        "category": "frontend",
+        "text": "{ label: 'Counterparties',       path: '/counterparties', icon: Users,           feature: 'hedge_tracking' },"
+      },
+      {
+        "file": "src/components/layout/AppLayout.tsx",
+        "line": 409,
+        "category": "frontend",
+        "text": "{/* Tier badge + Settings + User */}"
+      },
+      {
+        "file": "src/components/layout/AppLayout.tsx",
+        "line": 435,
+        "category": "frontend",
+        "text": "<div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.profile?.full_name ?? 'User'}</div>"
+      },
+      {
+        "file": "src/components/advisor/ScenarioPanel.tsx",
+        "line": 431,
+        "category": "frontend",
+        "text": "description: 'User-defined shock scenario.',"
+      },
+      {
+        "file": "src/components/ui/IdleTimeout.tsx",
+        "line": 121,
+        "category": "frontend",
+        "text": "Session Expiring Soon"
+      },
+      {
+        "file": "src/lib/anthropicProxy.ts",
+        "line": 12,
+        "category": "frontend",
+        "text": "const { data: { session } } = await supabase.auth.getSession()"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 7,
+        "category": "frontend",
+        "text": "import { Save, CheckCircle, User, Bell, Building2, Lock, Plus, Pencil, X, Globe, ShieldCheck, ShieldAlert, ArrowUpRight, Mail, Users, Trash2, Send, ChevronDown, Zap } from 'lucide-react'"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 17,
+        "category": "frontend",
+        "text": "{ key: 'profile',       label: 'Profile',          icon: User        },"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 517,
+        "category": "frontend",
+        "text": "<User size={16} color=\"var(--teal)\" />"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 762,
+        "category": "frontend",
+        "text": "<Users size={16} color=\"var(--teal)\" />"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 1201,
+        "category": "frontend",
+        "text": "<Users size={16} color=\"var(--teal)\" />"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 98,
+        "category": "frontend",
+        "text": "await supabase.auth.refreshSession()"
+      },
+      {
+        "file": "src/pages/ForceMfaSetupPage.tsx",
+        "line": 103,
+        "category": "frontend",
+        "text": "await supabase.auth.signOut({ scope: 'global' })"
+      },
+      {
+        "file": "src/pages/PayrollPage.tsx",
+        "line": 4,
+        "category": "frontend",
+        "text": "AlertCircle, Users,"
+      },
+      {
+        "file": "src/pages/PayrollPage.tsx",
+        "line": 221,
+        "category": "frontend",
+        "text": "<Users size={32} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />"
+      },
+      {
+        "file": "src/pages/PayrollPage.tsx",
+        "line": 371,
+        "category": "frontend",
+        "text": "<Users size={32} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />"
+      },
+      {
+        "file": "src/pages/PayrollPage.tsx",
+        "line": 499,
+        "category": "frontend",
+        "text": "icon={Users}"
+      },
+      {
+        "file": "src/pages/PayrollPage.tsx",
+        "line": 613,
+        "category": "frontend",
+        "text": "<Users size={20} style={{ color: 'var(--teal)' }} />"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 15,
+        "category": "frontend",
+        "text": "const [validSession, setValidSession] = useState(false)"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 18,
+        "category": "frontend",
+        "text": "// before updateUser({ password }) is allowed. Recovery links land at"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 27,
+        "category": "frontend",
+        "text": "async function initRecoverySession() {"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 43,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.setSession({"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 54,
+        "category": "frontend",
+        "text": "const { data: { session } } = await supabase.auth.getSession()"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 59,
+        "category": "frontend",
+        "text": "setValidSession(sessionEstablished)"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 63,
+        "category": "frontend",
+        "text": "// an MFA code on the form and elevate to AAL2 before updateUser."
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 64,
+        "category": "frontend",
+        "text": "const { data: factors } = await supabase.auth.mfa.listFactors()"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 74,
+        "category": "frontend",
+        "text": "initRecoverySession()"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 98,
+        "category": "frontend",
+        "text": "const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 111,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.updateUser({ password })"
+      },
+      {
+        "file": "src/pages/ResetPasswordPage.tsx",
+        "line": 130,
+        "category": "frontend",
+        "text": "if (!validSession) {"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 138,
+        "category": "frontend",
+        "text": "async function updateRole(targetUserId: string, newRole: 'admin' | 'editor' | 'viewer'): Promise<{ error?: string }> {"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 142,
+        "category": "frontend",
+        "text": "p_target_user_id: targetUserId,"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 152,
+        "category": "frontend",
+        "text": "async function removeMember(targetUserId: string): Promise<{ error?: string }> {"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 156,
+        "category": "frontend",
+        "text": "p_target_user_id: targetUserId,"
+      },
+      {
+        "file": "src/lib/supabase.ts",
+        "line": 14,
+        "category": "frontend",
+        "text": "// detectSessionInUrl is intentionally TRUE here (and FALSE in the"
+      },
+      {
+        "file": "src/lib/supabase.ts",
+        "line": 28,
+        "category": "frontend",
+        "text": "persistSession: true,"
+      },
+      {
+        "file": "src/lib/supabase.ts",
+        "line": 30,
+        "category": "frontend",
+        "text": "detectSessionInUrl: true,"
+      },
+      {
+        "file": "src/lib/supabase.ts",
+        "line": 35,
+        "category": "frontend",
+        "text": "export type { User, Session } from '@supabase/supabase-js'"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 13,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.enroll({"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 30,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.challenge({ factorId })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 40,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.mfa.verify({ factorId, challengeId, code })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 49,
+        "category": "frontend",
+        "text": "const { error } = await supabase.auth.mfa.unenroll({ factorId })"
+      },
+      {
+        "file": "src/hooks/useMfa.ts",
+        "line": 58,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.listFactors()"
+      },
+      {
+        "file": "src/lib/erpConnectorConfig.ts",
+        "line": 68,
+        "category": "frontend",
+        "text": "{ key: 'username',   label: 'Service Account Username',   type: 'text',     required: true  },"
+      },
+      {
+        "file": "src/lib/erpConnectorConfig.ts",
+        "line": 146,
+        "category": "frontend",
+        "text": "{ key: 'username',  label: 'API Username',       type: 'text',     required: true },"
+      },
+      {
+        "file": "src/lib/erpConnectorConfig.ts",
+        "line": 163,
+        "category": "frontend",
+        "text": "{ key: 'username',      label: 'Username',       type: 'text',     required: true },"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 11,
+        "category": "frontend",
+        "text": "OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 51,
+        "category": "frontend",
+        "text": "session: OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 74,
+        "category": "frontend",
+        "text": "session: OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 112,
+        "category": "frontend",
+        "text": "session: OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 224,
+        "category": "frontend",
+        "text": "session: OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useDiscoveryPipeline.ts",
+        "line": 393,
+        "category": "frontend",
+        "text": "_session: OnboardingSession,"
+      },
+      {
+        "file": "src/hooks/useOnboarding.ts",
+        "line": 4,
+        "category": "frontend",
+        "text": "import type { OnboardingSession, OnboardingStatus, OrganizationProfile } from '@/types'"
+      },
+      {
+        "file": "src/hooks/useOnboarding.ts",
+        "line": 7,
+        "category": "frontend",
+        "text": "session: OnboardingSession | null"
+      },
+      {
+        "file": "src/hooks/useOnboarding.ts",
+        "line": 19,
+        "category": "frontend",
+        "text": "const [session, setSession] = useState<OnboardingSession | null>(null)"
+      },
+      {
+        "file": "src/hooks/useOnboarding.ts",
+        "line": 48,
+        "category": "frontend",
+        "text": "setSession(sess as OnboardingSession)"
+      },
+      {
+        "file": "src/hooks/useOnboarding.ts",
+        "line": 81,
+        "category": "frontend",
+        "text": "setSession(prev => prev ? {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 2,
+        "category": "frontend",
+        "text": "import type { SupabaseClient, Session } from '@supabase/supabase-js'"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 5,
+        "category": "frontend",
+        "text": "import type { AuthUser, Organisation, Profile } from '@/types'"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 10,
+        "category": "frontend",
+        "text": "user: AuthUser | null"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 34,
+        "category": "frontend",
+        "text": "async function sessionSatisfiesRequiredAal(_session: Session): Promise<boolean> {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 35,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 51,
+        "category": "frontend",
+        "text": "async function buildAuthUser(session: Session): Promise<AuthUser | null> {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 112,
+        "category": "frontend",
+        "text": "const [user, setUser] = useState<AuthUser | null>(null)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 116,
+        "category": "frontend",
+        "text": "async function syncFromSession(session: Session | null) {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 120,
+        "category": "frontend",
+        "text": "setUser(null)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 125,
+        "category": "frontend",
+        "text": "const authUser = await buildAuthUser(session)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 127,
+        "category": "frontend",
+        "text": "setUser(authUser)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 134,
+        "category": "frontend",
+        "text": "supabase.auth.getSession()"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 137,
+        "category": "frontend",
+        "text": "return syncFromSession(session)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 146,
+        "category": "frontend",
+        "text": "setUser(null)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 150,
+        "category": "frontend",
+        "text": "const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 153,
+        "category": "frontend",
+        "text": "void syncFromSession(session)"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 165,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.signInWithPassword({ email, password })"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 201,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.signUp({"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 215,
+        "category": "frontend",
+        "text": "// (buildAuthUser detects the missing profile and uses metadata to finish setup)."
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 233,
+        "category": "frontend",
+        "text": "await supabase.auth.signOut({ scope: 'global' })"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 245,
+        "category": "frontend",
+        "text": "await supabase.auth.signOut({ scope: 'global' })"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 249,
+        "category": "frontend",
+        "text": "// Let onAuthStateChange handle setUser to avoid race condition"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 257,
+        "category": "frontend",
+        "text": "await supabase.auth.signOut({ scope: 'global' }).then(() => {}, () => {})"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 272,
+        "category": "frontend",
+        "text": "await supabase.auth.setSession({"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 278,
+        "category": "frontend",
+        "text": "const { data, error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code })"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 282,
+        "category": "frontend",
+        "text": "const { data: { session } } = await supabase.auth.getSession()"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 285,
+        "category": "frontend",
+        "text": "// Let onAuthStateChange handle setUser to avoid race condition"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 290,
+        "category": "frontend",
+        "text": "fireAuditLog(profileResult.data.org_id, userId, userEmail, 'login', 'User signed in with MFA')"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 306,
+        "category": "frontend",
+        "text": "fireAuditLog(user.profile.org_id, user.id, user.email ?? '', 'logout', 'User signed out')"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 309,
+        "category": "frontend",
+        "text": "await supabase.auth.signOut({ scope: 'global' })"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 310,
+        "category": "frontend",
+        "text": "setUser(null)"
+      },
+      {
+        "file": "src/hooks/useMappings.ts",
+        "line": 61,
+        "category": "frontend",
+        "text": "function loadFromSessionStorage(): FieldMapping[] {"
+      },
+      {
+        "file": "src/hooks/useMappings.ts",
+        "line": 83,
+        "category": "frontend",
+        "text": "const local = loadFromSessionStorage()"
+      }
+    ],
+    "invite_flow": [
+      {
+        "file": "tests/security/authorization-regression.test.mjs",
+        "line": 169,
+        "category": "test",
+        "text": "'supabase/functions/send-team-invite/index.ts',"
+      },
+      {
+        "file": "supabase/functions/_shared/emailTemplates.ts",
+        "line": 202,
+        "category": "edge-function",
+        "text": "// Required by the send-team-invite Edge Function. Dropped from this file at"
+      },
+      {
+        "file": "supabase/functions/_shared/emailTemplates.ts",
+        "line": 203,
+        "category": "edge-function",
+        "text": "// some point, which broke send-team-invite on deploy (BOOT_ERROR — missing"
+      },
+      {
+        "file": "supabase/functions/_shared/emailTemplates.ts",
+        "line": 213,
+        "category": "edge-function",
+        "text": "export function teamInviteEmail(data: TeamInviteEmailData): { subject: string; html: string } {"
+      },
+      {
+        "file": "supabase/migrations/20260506_aal2_team_management.sql",
+        "line": 13,
+        "category": "migration",
+        "text": "-- accept_invite() and onboard_new_user() are intentionally NOT"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 2,
+        "category": "edge-function",
+        "text": "// Orbit Edge Function: send-team-invite"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 3,
+        "category": "edge-function",
+        "text": "// Sends an organization invite email for pending team invites"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 7,
+        "category": "edge-function",
+        "text": "import { teamInviteEmail } from '../_shared/emailTemplates.ts';"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 41,
+        "category": "edge-function",
+        "text": "const { data: invite, error: inviteErr } = await admin.from('invites').select('id, org_id, email, role, invited_by, accepted_at, expires_at').eq('id', body.invite_id).single();"
+      },
+      {
+        "file": "supabase/functions/send-team-invite/index.ts",
+        "line": 75,
+        "category": "edge-function",
+        "text": "const emailContent = teamInviteEmail({"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 2,
+        "category": "migration",
+        "text": "-- ORBIT: Block silent cross-tenant moves via accept_invite()"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The original accept_invite() (defined in 20260413_team_invites.sql)"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 12,
+        "category": "migration",
+        "text": "-- This migration re-creates accept_invite() with one extra guard:"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION accept_invite(p_invite_id UUID)"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "SELECT * INTO v_invite FROM invites WHERE id = p_invite_id;"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 98,
+        "category": "migration",
+        "text": "UPDATE invites SET accepted_at = NOW() WHERE id = p_invite_id;"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 115,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION accept_invite(UUID) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260506_accept_invite_no_cross_tenant.sql",
+        "line": 116,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION accept_invite(UUID) TO authenticated;"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 7,
+        "category": "frontend",
+        "text": "// Public landing page for /accept-invite?invite=<uuid>. The send-team-invite"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 9,
+        "category": "frontend",
+        "text": "// the invite email and the existing signup + accept_invite() RPC plumbing."
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 15,
+        "category": "frontend",
+        "text": "//      (SignupPage already reads ?invite and chains accept_invite after"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 17,
+        "category": "frontend",
+        "text": "//   4. User logged in, accept_invite RPC OK  → navigate to /dashboard"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 31,
+        "category": "frontend",
+        "text": "export function AcceptInvitePage() {"
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 51,
+        "category": "frontend",
+        "text": "// chains accept_invite() server-side after email confirmation."
+      },
+      {
+        "file": "src/pages/AcceptInvitePage.tsx",
+        "line": 62,
+        "category": "frontend",
+        "text": "const { error } = await db.rpc('accept_invite', { p_invite_id: inviteId })"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 2,
+        "category": "migration",
+        "text": "-- ORBIT: Pin AAL2 directly into the `invites` RLS policies."
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The three existing policies on `invites` (select, insert, delete)"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "-- were defined in 20260413_team_invites.sql with predicates:"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "-- revoking invites. That's correct behavior, but it depends on the"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 22,
+        "category": "migration",
+        "text": "-- accept_invite()'s UPDATE on invites is unaffected — that function"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "-- ── invites_select ─────────────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"invites_select\" ON invites;"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_select\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 42,
+        "category": "migration",
+        "text": "-- ── invites_insert ─────────────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 43,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"invites_insert\" ON invites;"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 45,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_insert\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "-- ── invites_delete ─────────────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"invites_delete\" ON invites;"
+      },
+      {
+        "file": "supabase/migrations/20260506_invites_rls_explicit_aal2.sql",
+        "line": 56,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_delete\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 100,
+        "category": "migration",
+        "text": "DROP TRIGGER IF EXISTS trg_audit_invites ON invites;"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 101,
+        "category": "migration",
+        "text": "CREATE TRIGGER trg_audit_invites"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "AFTER INSERT OR UPDATE OR DELETE ON invites"
+      },
+      {
+        "file": "src/pages/SettingsPage.tsx",
+        "line": 142,
+        "category": "frontend",
+        "text": "members: teamMembers, invites: teamInvites, loading: teamLoading,"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "CREATE TABLE invites ("
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 19,
+        "category": "migration",
+        "text": "ALTER TABLE invites ENABLE ROW LEVEL SECURITY;"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 21,
+        "category": "migration",
+        "text": "-- Admins can see invites for their org"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 22,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_select\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "-- Admins can create invites"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 29,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_insert\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 36,
+        "category": "migration",
+        "text": "-- Admins can delete (revoke) invites"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 37,
+        "category": "migration",
+        "text": "CREATE POLICY \"invites_delete\" ON invites"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 43,
+        "category": "migration",
+        "text": "CREATE INDEX idx_invites_org ON invites(org_id);"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 44,
+        "category": "migration",
+        "text": "CREATE INDEX idx_invites_email ON invites(email);"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 48,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION accept_invite(p_invite_id UUID)"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 68,
+        "category": "migration",
+        "text": "SELECT * INTO v_invite FROM invites WHERE id = p_invite_id;"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 109,
+        "category": "migration",
+        "text": "UPDATE invites SET accepted_at = NOW() WHERE id = p_invite_id;"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 125,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION accept_invite(UUID) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260413_team_invites.sql",
+        "line": 126,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION accept_invite(UUID) TO authenticated;"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 28,
+        "category": "frontend",
+        "text": "const [invites, setInvites] = useState<Invite[]>([])"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 62,
+        "category": "frontend",
+        "text": "// Fetch pending invites"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 64,
+        "category": "frontend",
+        "text": ".from('invites')"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 90,
+        "category": "frontend",
+        "text": "const existingInvite = invites.find(i => i.email.toLowerCase() === trimmed)"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 94,
+        "category": "frontend",
+        "text": ".from('invites')"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 111,
+        "category": "frontend",
+        "text": "const { data: emailResult, error: emailErr } = await db.functions.invoke('send-team-invite', {"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 116,
+        "category": "frontend",
+        "text": "await db.from('invites').delete().eq('id', newInvite.id)"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 128,
+        "category": "frontend",
+        "text": ".from('invites')"
+      },
+      {
+        "file": "src/hooks/useTeamMembers.ts",
+        "line": 167,
+        "category": "frontend",
+        "text": "invites,"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 71,
+        "category": "frontend",
+        "text": "const { error: inviteError } = await supabase.rpc('accept_invite', {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 220,
+        "category": "frontend",
+        "text": "? await supabase.rpc('accept_invite', { p_invite_id: inviteId })"
+      },
+      {
+        "file": "src/App.tsx",
+        "line": 27,
+        "category": "frontend",
+        "text": "const AcceptInvitePage = lazy(() => import('@/pages/AcceptInvitePage').then(m => ({ default: m.AcceptInvitePage })))"
+      },
+      {
+        "file": "src/App.tsx",
+        "line": 142,
+        "category": "frontend",
+        "text": "<Route path=\"/accept-invite\"   element={<RouteBoundary><AcceptInvitePage /></RouteBoundary>} />"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 2441,
+        "category": "frontend",
+        "text": "invites: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 2474,
+        "category": "frontend",
+        "text": "foreignKeyName: \"invites_org_id_fkey\""
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3798,
+        "category": "frontend",
+        "text": "accept_invite: { Args: { p_invite_id: string }; Returns: string }"
+      }
+    ],
+    "support_identity": [
+      {
+        "file": "supabase/functions/send-nudge/index.ts",
+        "line": 202,
+        "category": "edge-function",
+        "text": ".from('support_users')"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 105,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 190,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 281,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260429_support_modules_rpc.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION is_support_user()"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 13,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 23,
+        "category": "migration",
+        "text": "SELECT role FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 49,
+        "category": "migration",
+        "text": "USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 52,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_users_select_health_scores\" ON customer_health_scores;"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_select_health_scores\""
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_users_select_nudges\" ON nudges;"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 61,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_select_nudges\""
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 65,
+        "category": "migration",
+        "text": "USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 67,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_users_insert_nudges\" ON nudges;"
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 68,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_insert_nudges\""
+      },
+      {
+        "file": "supabase/migrations/20260417_health_scores_rls_hardening.sql",
+        "line": 72,
+        "category": "migration",
+        "text": "WITH CHECK (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260404_tier_system.sql",
+        "line": 101,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "--   - support_users      : Orbit internal staff identity table"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "--   - is_support_user()  : RLS helper"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "-- ── support_users ─────────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 15,
+        "category": "migration",
+        "text": "CREATE TABLE support_users ("
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "ALTER TABLE support_users ENABLE ROW LEVEL SECURITY;"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 27,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_self_select\" ON support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION is_support_user()"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 38,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 48,
+        "category": "migration",
+        "text": "SELECT role FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 58,
+        "category": "migration",
+        "text": "actor_id         UUID NOT NULL,              -- support_users.id"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 86,
+        "category": "migration",
+        "text": "WITH CHECK (actor_id = auth.uid() AND is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 90,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 115,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 145,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 149,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 153,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 157,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 161,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 165,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 169,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 173,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 177,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 181,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 185,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 189,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 192,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 195,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 198,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 201,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 204,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 207,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 210,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 213,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 216,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 16,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION support_write_audit_log("
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 42,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 79,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 80,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) TO authenticated;"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 27,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 50,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(v_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 114,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 136,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 196,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 214,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 282,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 294,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 366,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 431,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 491,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_add_plan_types.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "SELECT role  INTO v_actor_role  FROM support_users WHERE id = v_actor_id AND is_active = true;"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 121,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 74,
+        "category": "migration",
+        "text": "USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260429_commodity_risk_module.sql",
+        "line": 136,
+        "category": "migration",
+        "text": "USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "-- support mutation RPCs. Six of them also call has_support_access_to(...)"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 20,
+        "category": "migration",
+        "text": "--   IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 85,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_users_self_select\" ON support_users;"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 54,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_self_select\" ON support_users FOR SELECT USING (id = auth.uid() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert\" ON support_audit_logs FOR INSERT WITH CHECK (actor_id = auth.uid() AND is_support_user() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_security_definer_hardening.sql",
+        "line": 19,
+        "category": "migration",
+        "text": "ALTER FUNCTION public.is_support_user() SET search_path = public, auth;"
+      },
+      {
+        "file": "supabase/migrations/20260415_security_definer_hardening.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "ALTER FUNCTION public.support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) SET search_path = public, auth;"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 115,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260403_payment_methods.sql",
+        "line": 77,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_tag_auth_users_portal.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "WHERE id IN (SELECT id FROM public.support_users);"
+      },
+      {
+        "file": "supabase/migrations/20260415_tag_auth_users_portal.sql",
+        "line": 12,
+        "category": "migration",
+        "text": "WHERE id NOT IN (SELECT id FROM public.support_users);"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 10,
+        "category": "migration",
+        "text": "-- remains accessible via is_support_user() for the tenant list."
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 30,
+        "category": "migration",
+        "text": "FOR SELECT USING (is_support_user());"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 51,
+        "category": "migration",
+        "text": "-- ── 2. has_support_access_to() helper ───────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION has_support_access_to(p_org_id UUID)"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 65,
+        "category": "migration",
+        "text": "AND is_support_user();"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 91,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 174,
+        "category": "migration",
+        "text": "FROM support_users WHERE id = v_actor_id AND is_active = true;"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 214,
+        "category": "migration",
+        "text": "-- ── 5. Update RLS policies: sensitive tables → has_support_access_to() ──"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 219,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 224,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 229,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 234,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 239,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 244,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 249,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 254,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 259,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 264,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 269,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 274,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 279,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 284,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 289,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 294,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 299,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 304,
+        "category": "migration",
+        "text": "FOR SELECT USING (has_support_access_to(org_id));"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 306,
+        "category": "migration",
+        "text": "-- NOTE: These 3 policies STAY as is_support_user() for tenant list metadata:"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 334,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 357,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(v_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 421,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 430,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 503,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 512,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 590,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 599,
+        "category": "migration",
+        "text": "IF NOT has_support_access_to(p_org_id) THEN"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 671,
+        "category": "migration",
+        "text": "-- ── 7. Update support_write_audit_log allowed actions ───────"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 673,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION support_write_audit_log("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 699,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 730,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 731,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) TO authenticated;"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 31,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_select_health_scores\""
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 37,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 137,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_select_nudges\""
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 143,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 150,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_users_insert_nudges\""
+      },
+      {
+        "file": "supabase/migrations/20260416_health_scores_tables.sql",
+        "line": 156,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "-- (e.g. support_users, auth.users, audit_logs) and intercept"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "--   is_support_user()                  — 20260403_support_portal.sql:33"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "-- ── is_support_user() ────────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 18,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION is_support_user()"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 24,
+        "category": "migration",
+        "text": "SELECT 1 FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "SELECT role FROM support_users"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 49,
+        "category": "migration",
+        "text": "FROM support_users"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3574,
+        "category": "frontend",
+        "text": "support_users: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3604,
+        "category": "frontend",
+        "text": "foreignKeyName: \"support_users_bank_id_fkey\""
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3931,
+        "category": "frontend",
+        "text": "has_support_access_to: { Args: { p_org_id: string }; Returns: boolean }"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3932,
+        "category": "frontend",
+        "text": "has_support_access_to_bank: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3941,
+        "category": "frontend",
+        "text": "is_support_user: { Args: never; Returns: boolean }"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 4077,
+        "category": "frontend",
+        "text": "support_write_audit_log: {"
+      }
+    ],
+    "audit_identity": [
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 59,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 143,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 221,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260404_optional_reason.sql",
+        "line": 334,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "tests/security/window-forward-regression.test.mjs",
+        "line": 55,
+        "category": "test",
+        "text": "assert.match(sql, /trg_audit_hedge_position_draws[\\s\\S]*audit_trigger_func\\(\\)/s)"
+      },
+      {
+        "file": "tests/security/window-forward-regression.test.mjs",
+        "line": 79,
+        "category": "test",
+        "text": "assert.match(sql, /trg_audit_draw_exposure_allocations[\\s\\S]*audit_trigger_func\\(\\)/s)"
+      },
+      {
+        "file": "tests/security/window-forward-regression.test.mjs",
+        "line": 102,
+        "category": "test",
+        "text": "assert.match(sql, /trg_audit_hedge_policies[\\s\\S]*audit_trigger_func\\(\\)/s)"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_commodity_audits.sql",
+        "line": 9,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_commodity_audits.sql",
+        "line": 14,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "--   - support_audit_logs : immutable cross-org audit trail"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 52,
+        "category": "migration",
+        "text": "-- ── support_audit_logs ────────────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 56,
+        "category": "migration",
+        "text": "CREATE TABLE support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 81,
+        "category": "migration",
+        "text": "ALTER TABLE support_audit_logs ENABLE ROW LEVEL SECURITY;"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 84,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert\" ON support_audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 89,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_select\" ON support_audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 97,
+        "category": "migration",
+        "text": "'support_audit_logs are immutable — rows may not be updated or deleted (SOC2 CC7.2)';"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 101,
+        "category": "migration",
+        "text": "CREATE TRIGGER trg_support_audit_logs_immutable"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 102,
+        "category": "migration",
+        "text": "BEFORE DELETE OR UPDATE ON support_audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 130,
+        "category": "migration",
+        "text": "CREATE TRIGGER trg_support_audit_logs_enforce_fields"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 131,
+        "category": "migration",
+        "text": "BEFORE INSERT ON support_audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 134,
+        "category": "migration",
+        "text": "CREATE INDEX idx_support_audit_logs_actor      ON support_audit_logs(actor_id, created_at DESC);"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 135,
+        "category": "migration",
+        "text": "CREATE INDEX idx_support_audit_logs_target_org ON support_audit_logs(target_org_id, created_at DESC);"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 136,
+        "category": "migration",
+        "text": "CREATE INDEX idx_support_audit_logs_action     ON support_audit_logs(action, created_at DESC);"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 179,
+        "category": "migration",
+        "text": "-- audit_logs (customer-facing; support can read across all orgs)"
+      },
+      {
+        "file": "supabase/migrations/20260403_support_portal.sql",
+        "line": 180,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_support_select\" ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 69,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 149,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 224,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 327,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 398,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 459,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260430_soc2_support_rpc_aal2.sql",
+        "line": 518,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "src/pages/AuditLogPage.tsx",
+        "line": 72,
+        "category": "frontend",
+        "text": ".from('audit_logs')"
+      },
+      {
+        "file": "supabase/migrations/20260403_add_plan_types.sql",
+        "line": 63,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260331_security_definer_search_path.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "'audit_logs are immutable — rows may not be updated or deleted (SOC2 CC7.2). '"
+      },
+      {
+        "file": "tests/security/hedge-accounting-foundation-regression.test.mjs",
+        "line": 78,
+        "category": "test",
+        "text": "assert.match(sql, new RegExp(`${trigger}[\\\\s\\\\S]*audit_trigger_func\\\\(\\\\)`, 's'), `missing audit trigger ${trigger}`)"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 5,
+        "category": "migration",
+        "text": "CREATE TABLE audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 19,
+        "category": "migration",
+        "text": "ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 22,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_select\" ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 26,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_insert\" ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 32,
+        "category": "migration",
+        "text": "CREATE INDEX idx_audit_logs_org        ON audit_logs(org_id, created_at DESC);"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 33,
+        "category": "migration",
+        "text": "CREATE INDEX idx_audit_logs_user       ON audit_logs(user_id);"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 34,
+        "category": "migration",
+        "text": "CREATE INDEX idx_audit_logs_resource   ON audit_logs(org_id, resource, resource_id);"
+      },
+      {
+        "file": "supabase/migrations/20260329_audit_logs.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "CREATE INDEX idx_audit_logs_action     ON audit_logs(org_id, action);"
+      },
+      {
+        "file": "supabase/migrations/20260506_support_change_org_modules_jit.sql",
+        "line": 96,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260604000003_draw_exposure_allocations.sql",
+        "line": 38,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The support_audit_logs INSERT policy lets any support user"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 16,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION support_write_audit_log("
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 64,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 79,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 80,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) TO authenticated;"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 82,
+        "category": "migration",
+        "text": "-- Revoke direct INSERT on support_audit_logs from authenticated users."
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 85,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_audit_logs_insert\" ON support_audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260409_support_audit_log_rpc.sql",
+        "line": 86,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert_blocked\" ON support_audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION write_audit_log("
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 40,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'audit_logs: authenticated user required';"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 65,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'audit_logs: resource is required';"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 77,
+        "category": "migration",
+        "text": "INSERT INTO audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 89,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION write_audit_log(TEXT, TEXT, TEXT, TEXT, JSONB) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 90,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION write_audit_log(TEXT, TEXT, TEXT, TEXT, JSONB) TO authenticated;"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 98,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"audit_logs_insert\" ON audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260415_audit_log_content_validation.sql",
+        "line": 99,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_insert_blocked\" ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260604000004_window_forward_policy.sql",
+        "line": 35,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 6,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION audit_trigger_func()"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 56,
+        "category": "migration",
+        "text": "-- The BEFORE INSERT trigger on audit_logs already intercepts this and populates"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 58,
+        "category": "migration",
+        "text": "INSERT INTO audit_logs (org_id, action, resource, resource_id, summary, metadata)"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 73,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 78,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 83,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 88,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 93,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 98,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260414_mandatory_audit_triggers.sql",
+        "line": 103,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 4,
+        "category": "migration",
+        "text": "-- The audit_logs INSERT policy only checks org_id matches the"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 11,
+        "category": "migration",
+        "text": "-- Same pattern as support_audit_logs enforcement trigger."
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 17,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION enforce_audit_log_fields()"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 28,
+        "category": "migration",
+        "text": "RAISE EXCEPTION 'audit_logs: authenticated user required';"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 46,
+        "category": "migration",
+        "text": "CREATE TRIGGER trg_audit_logs_enforce_fields"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 47,
+        "category": "migration",
+        "text": "BEFORE INSERT ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260409_audit_log_enforce_identity.sql",
+        "line": 48,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION enforce_audit_log_fields();"
+      },
+      {
+        "file": "src/pages/AnalyticsPage.tsx",
+        "line": 558,
+        "category": "frontend",
+        "text": ".from('audit_logs')"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 128,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 192,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 246,
+        "category": "migration",
+        "text": "-- audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 247,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"audit_logs_support_select\" ON audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 248,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_support_select\" ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 376,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 456,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 531,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 644,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 671,
+        "category": "migration",
+        "text": "-- ── 7. Update support_write_audit_log allowed actions ───────"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 673,
+        "category": "migration",
+        "text": "CREATE OR REPLACE FUNCTION support_write_audit_log("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 716,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 730,
+        "category": "migration",
+        "text": "REVOKE ALL ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) FROM PUBLIC;"
+      },
+      {
+        "file": "supabase/migrations/20260415_support_jit_access.sql",
+        "line": 731,
+        "category": "migration",
+        "text": "GRANT EXECUTE ON FUNCTION support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) TO authenticated;"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 6,
+        "category": "migration",
+        "text": "-- 2. Add hard immutability trigger to audit_logs so rows cannot"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 41,
+        "category": "migration",
+        "text": "-- ── 2. audit_logs — hard immutability trigger ─────────────────────────────"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 43,
+        "category": "migration",
+        "text": "-- audit_logs physically immutable even for Supabase dashboard superusers"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 53,
+        "category": "migration",
+        "text": "'audit_logs are immutable — rows may not be updated or deleted (SOC2 CC7.2). '"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 59,
+        "category": "migration",
+        "text": "CREATE TRIGGER trg_audit_logs_immutable"
+      },
+      {
+        "file": "supabase/migrations/20260331_security_hardening.sql",
+        "line": 60,
+        "category": "migration",
+        "text": "BEFORE DELETE OR UPDATE ON audit_logs"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 56,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"support_audit_logs_insert\" ON support_audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 57,
+        "category": "migration",
+        "text": "CREATE POLICY \"support_audit_logs_insert\" ON support_audit_logs FOR INSERT WITH CHECK (actor_id = auth.uid() AND is_support_user() AND (auth.jwt()->>'aal') = 'aal2');"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 75,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"audit_logs_select\" ON audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 76,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_select\" ON audit_logs FOR SELECT USING (org_id = current_user_org_id());"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 78,
+        "category": "migration",
+        "text": "DROP POLICY IF EXISTS \"audit_logs_insert\" ON audit_logs;"
+      },
+      {
+        "file": "supabase/migrations/20260415_aal2_enforcement.sql",
+        "line": 79,
+        "category": "migration",
+        "text": "CREATE POLICY \"audit_logs_insert\" ON audit_logs FOR INSERT WITH CHECK (org_id = current_user_org_id());"
+      },
+      {
+        "file": "supabase/migrations/20260415_security_definer_hardening.sql",
+        "line": 25,
+        "category": "migration",
+        "text": "ALTER FUNCTION public.support_write_audit_log(TEXT, TEXT, TEXT, UUID, TEXT, JSONB) SET search_path = public, auth;"
+      },
+      {
+        "file": "supabase/migrations/20260403_payment_methods.sql",
+        "line": 137,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 74,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260403_pricing_and_plan_types.sql",
+        "line": 161,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 6,
+        "category": "migration",
+        "text": "-- an immutable support_audit_logs entry."
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 70,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260403_support_data_ops.sql",
+        "line": 154,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260429_support_modules_rpc.sql",
+        "line": 6,
+        "category": "migration",
+        "text": "-- an immutable support_audit_logs entry."
+      },
+      {
+        "file": "supabase/migrations/20260429_support_modules_rpc.sql",
+        "line": 58,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "supabase/migrations/20260604000002_window_forward_draws.sql",
+        "line": 80,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 7,
+        "category": "migration",
+        "text": "-- (e.g. support_users, auth.users, audit_logs) and intercept"
+      },
+      {
+        "file": "supabase/migrations/20260409_search_path_hardening.sql",
+        "line": 71,
+        "category": "migration",
+        "text": "'audit_logs are immutable — rows may not be updated or deleted (SOC2 CC7.2). '"
+      },
+      {
+        "file": "supabase/migrations/20260404_tier_system.sql",
+        "line": 145,
+        "category": "migration",
+        "text": "INSERT INTO support_audit_logs ("
+      },
+      {
+        "file": "src/lib/uploadDedup.ts",
+        "line": 60,
+        "category": "frontend",
+        "text": ";db.from('audit_logs').insert({"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 476,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 481,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 486,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "supabase/migrations/20260605000002_hedge_accounting_foundation.sql",
+        "line": 491,
+        "category": "migration",
+        "text": "FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();"
+      },
+      {
+        "file": "src/hooks/useAuditLog.ts",
+        "line": 24,
+        "category": "frontend",
+        "text": "const { error } = await db.rpc('write_audit_log', {"
+      },
+      {
+        "file": "src/hooks/useAuth.tsx",
+        "line": 43,
+        "category": "frontend",
+        "text": "void supabase.rpc('write_audit_log', {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 289,
+        "category": "frontend",
+        "text": "audit_logs: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 331,
+        "category": "frontend",
+        "text": "foreignKeyName: \"audit_logs_bank_id_fkey\""
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 338,
+        "category": "frontend",
+        "text": "foreignKeyName: \"audit_logs_org_id_fkey\""
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3521,
+        "category": "frontend",
+        "text": "support_audit_logs: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 3566,
+        "category": "frontend",
+        "text": "foreignKeyName: \"support_audit_logs_target_org_id_fkey\""
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 4077,
+        "category": "frontend",
+        "text": "support_write_audit_log: {"
+      },
+      {
+        "file": "src/types/database.types.ts",
+        "line": 4104,
+        "category": "frontend",
+        "text": "write_audit_log: {"
+      }
+    ]
+  },
+  "summary": {
+    "auth_uid": {
+      "matches": 161,
+      "files": 52,
+      "by_category": {
+        "migration": 159,
+        "edge-function": 2
+      }
+    },
+    "aal_or_mfa": {
+      "matches": 185,
+      "files": 25,
+      "by_category": {
+        "test": 7,
+        "edge-function": 12,
+        "migration": 51,
+        "frontend": 115
+      }
+    },
+    "supabase_auth": {
+      "matches": 218,
+      "files": 63,
+      "by_category": {
+        "edge-function": 49,
+        "test": 4,
+        "migration": 51,
+        "frontend": 114
+      }
+    },
+    "invite_flow": {
+      "matches": 74,
+      "files": 14,
+      "by_category": {
+        "test": 1,
+        "edge-function": 8,
+        "migration": 41,
+        "frontend": 24
+      }
+    },
+    "support_identity": {
+      "matches": 147,
+      "files": 21,
+      "by_category": {
+        "edge-function": 1,
+        "migration": 140,
+        "frontend": 6
+      }
+    },
+    "audit_identity": {
+      "matches": 134,
+      "files": 34,
+      "by_category": {
+        "migration": 118,
+        "test": 4,
+        "frontend": 12
+      }
+    }
+  }
+}
