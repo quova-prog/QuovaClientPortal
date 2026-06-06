@@ -728,8 +728,22 @@ Expected: commit succeeds.
 ## Task 7: Record Phase 0 Validation Result
 
 **Files:**
+- Optional helper: `scripts/workos/phase0-capture-workos-token.mjs`
 - Create: `scripts/workos/phase0-write-result.mjs`
 - Create: `docs/workos/phase0-validation-result.md`
+
+- [ ] **Step 0: Capture a WorkOS access token if needed**
+
+If `WORKOS_PHASE0_ACCESS_TOKEN` is not already present in `.env.phase0.local`,
+save `WORKOS_API_KEY` in that gitignored file and run:
+
+```bash
+node scripts/workos/phase0-capture-workos-token.mjs
+```
+
+Expected: the helper prints a WorkOS AuthKit URL. Complete the browser login
+for the expected organization, then the helper saves
+`WORKOS_PHASE0_ACCESS_TOKEN` to `.env.phase0.local` without printing the token.
 
 - [ ] **Step 1: Create the result writer script**
 
