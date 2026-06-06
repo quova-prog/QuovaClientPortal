@@ -90,7 +90,35 @@ function WorkosCallbackRoute() {
   if (loading) return <RouteSpinner />
   if (workosProvisionRequired) return <Navigate to="/provision-org" replace />
   if (user) return <Navigate to="/" replace />
-  return <Navigate to="/login" replace />
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg-app)',
+      padding: '1rem',
+    }}>
+      <div className="card" style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
+        <h1 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+          Sign-in could not be completed
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+          Your WorkOS session did not finish connecting to Quova.
+        </p>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={() => {
+            window.sessionStorage.removeItem('workos:code-verifier')
+            window.location.assign('/login?retry=1')
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function SmartRedirect() {

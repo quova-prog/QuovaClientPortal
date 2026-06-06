@@ -63,11 +63,15 @@ test('Protected routes send signed-in WorkOS users without org_id to provisionin
 
 test('WorkOS callback path completes AuthKit redirects without falling through to the app 404', () => {
   const app = readRepoFile('src/App.tsx')
+  const callbackRoute = app.match(/function WorkosCallbackRoute\(\) \{[\s\S]*?\n\}\n\nfunction SmartRedirect/)?.[0] ?? ''
 
   assert.match(app, /function WorkosCallbackRoute/s)
   assert.match(app, /path="\/callback"/s)
-  assert.match(app, /if \(loading\) return <RouteSpinner \/>/s)
-  assert.match(app, /if \(workosProvisionRequired\) return <Navigate to="\/provision-org" replace \/>/s)
-  assert.match(app, /if \(user\) return <Navigate to="\/" replace \/>/s)
-  assert.match(app, /return <Navigate to="\/login" replace \/>/s)
+  assert.match(callbackRoute, /if \(loading\) return <RouteSpinner \/>/s)
+  assert.match(callbackRoute, /if \(workosProvisionRequired\) return <Navigate to="\/provision-org" replace \/>/s)
+  assert.match(callbackRoute, /if \(user\) return <Navigate to="\/" replace \/>/s)
+  assert.match(callbackRoute, /Sign-in could not be completed/s)
+  assert.match(callbackRoute, /window\.sessionStorage\.removeItem\('workos:code-verifier'\)/s)
+  assert.match(callbackRoute, /window\.location\.assign\('\/login\?retry=1'\)/s)
+  assert.doesNotMatch(callbackRoute, /return <Navigate to="\/login" replace \/>/s)
 })
