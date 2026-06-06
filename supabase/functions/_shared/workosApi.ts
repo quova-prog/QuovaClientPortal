@@ -19,6 +19,17 @@ export type WorkosInvitation = {
   createdAt?: string
 }
 
+export type WorkosOrganizationMembership = {
+  id: string
+  user_id?: string
+  userId?: string
+  organization_id?: string
+  organizationId?: string
+  status?: 'active' | 'inactive' | 'pending'
+  role?: { slug?: string }
+  roles?: Array<{ slug?: string }>
+}
+
 function apiKey(): string {
   const value = Deno.env.get('WORKOS_API_KEY')
   if (!value) throw new Error('Missing WORKOS_API_KEY')
@@ -89,6 +100,37 @@ export async function createWorkosOrganizationMembership(input: {
       role_slug: input.roleSlug,
     }),
   })
+}
+
+export async function listWorkosOrganizationMemberships(input: {
+  organization_id: string
+  user_id: string
+}): Promise<WorkosOrganizationMembership[]> {
+  const params = new URLSearchParams({
+    organization_id: input.organization_id,
+    user_id: input.user_id,
+    limit: '100',
+  })
+  const body = await workosFetch<{ data?: WorkosOrganizationMembership[] }>(`/user_management/organization_memberships?${params.toString()}`)
+  return body.data ?? []
+}
+
+export async function updateWorkosOrganizationMembershipRole(
+  membershipId: string,
+  roleSlug: 'admin' | 'editor' | 'viewer',
+): Promise<WorkosOrganizationMembership> {
+  const body = await workosFetch<Record<string, unknown>>(`/user_management/organization_memberships/${encodeURIComponent(membershipId)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ role_slug: roleSlug }),
+  })
+  return unwrap<WorkosOrganizationMembership>(body, 'organization_membership')
+}
+
+export async function deactivateWorkosOrganizationMembership(membershipId: string): Promise<WorkosOrganizationMembership> {
+  const body = await workosFetch<Record<string, unknown>>(`/user_management/organization_memberships/${encodeURIComponent(membershipId)}/deactivate`, {
+    method: 'PUT',
+  })
+  return unwrap<WorkosOrganizationMembership>(body, 'organization_membership')
 }
 
 export async function listWorkosInvitations(input: {

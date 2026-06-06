@@ -38,9 +38,51 @@ test('team member hook switches invite transport only in WorkOS mode', () => {
   assert.match(hook, /loadRuntimeWorkosAuthConfig/s)
   assert.match(hook, /const isWorkos = config\.provider === 'workos'/s)
   assert.match(hook, /workos-team-invites/s)
+  assert.match(hook, /\.eq\('membership_status', 'active'\)/s)
+  assert.match(hook, /\.is\('deactivated_at', null\)/s)
   assert.match(hook, /action:\s*'send'/s)
   assert.match(hook, /action:\s*'list'/s)
   assert.match(hook, /action:\s*'revoke'/s)
   assert.match(hook, /send-team-invite/s)
   assert.match(hook, /\.from\('invites'\)/s)
+})
+
+test('WorkOS team lifecycle updates active memberships through WorkOS before local cache changes', () => {
+  const fn = readRepoFile('supabase/functions/workos-team-invites/index.ts')
+  const api = readRepoFile('supabase/functions/_shared/workosApi.ts')
+
+  assert.match(fn, /action:\s*'list' \| 'send' \| 'revoke' \| 'update_role' \| 'remove_member'/s)
+  assert.match(fn, /listWorkosOrganizationMemberships/s)
+  assert.match(fn, /updateWorkosOrganizationMembershipRole/s)
+  assert.match(fn, /deactivateWorkosOrganizationMembership/s)
+  assert.match(fn, /workos_user_id/s)
+  assert.match(fn, /Cannot remove yourself from the organization/s)
+  assert.match(fn, /Cannot remove the last admin/s)
+  assert.match(fn, /Cannot demote the last admin/s)
+  assert.match(fn, /\.not\('workos_user_id', 'is', null\)/s)
+  assert.match(fn, /membership_status:\s*'deactivated'/s)
+  assert.match(fn, /deactivated_at:\s*new Date\(\)\.toISOString\(\)/s)
+  assert.match(api, /\/user_management\/organization_memberships\?\$\{params\.toString\(\)\}/s)
+  assert.match(api, /\/user_management\/organization_memberships\/\$\{encodeURIComponent\(membershipId\)\}/s)
+  assert.match(api, /\/user_management\/organization_memberships\/\$\{encodeURIComponent\(membershipId\)\}\/deactivate/s)
+})
+
+test('team member hook routes role changes and removals through WorkOS in WorkOS mode', () => {
+  const hook = readRepoFile('src/hooks/useTeamMembers.ts')
+
+  assert.match(hook, /body:\s*\{\s*action:\s*'update_role',\s*profile_id:\s*targetUserId,\s*role:\s*newRole\s*\}/s)
+  assert.match(hook, /body:\s*\{\s*action:\s*'remove_member',\s*profile_id:\s*targetUserId\s*\}/s)
+  assert.match(hook, /db\.rpc\('update_member_role'/s)
+  assert.match(hook, /db\.rpc\('remove_member'/s)
+})
+
+test('WorkOS settings mode does not expose Supabase MFA or org deletion controls', () => {
+  const settings = readRepoFile('src/pages/SettingsPage.tsx')
+
+  assert.match(settings, /loadRuntimeWorkosAuthConfig/s)
+  assert.match(settings, /const isWorkos = config\.provider === 'workos'/s)
+  assert.match(settings, /if \(tab === 'security' && !isWorkos\)/s)
+  assert.match(settings, /Authentication is managed by WorkOS/s)
+  assert.match(settings, /WorkOS manages MFA, password reset, and active sessions/s)
+  assert.match(settings, /isAdmin && !isWorkos/s)
 })
