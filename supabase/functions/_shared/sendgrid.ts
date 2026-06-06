@@ -41,6 +41,12 @@ export async function sendEmail(email: SendGridEmail): Promise<SendGridResult> {
     from: { email: fromEmail, name: fromName },
     subject: email.subject,
     content: [{ type: 'text/html', value: email.html }],
+    tracking_settings: {
+      click_tracking: {
+        enable: false,
+        enable_text: false,
+      },
+    },
   }
 
   if (email.attachment) {

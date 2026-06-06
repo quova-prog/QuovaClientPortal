@@ -147,6 +147,15 @@ test('email templates validate app CTA paths and escape URL attributes', () => {
   assert.doesNotMatch(nudge, /href="\$\{opts\.unsubscribeUrl\}"/s)
 })
 
+test('SendGrid emails disable click tracking for transactional links', () => {
+  const sendgrid = readRepoFile('supabase/functions/_shared/sendgrid.ts')
+
+  assert.match(sendgrid, /tracking_settings:\s*\{/s)
+  assert.match(sendgrid, /click_tracking:\s*\{/s)
+  assert.match(sendgrid, /enable:\s*false/s)
+  assert.match(sendgrid, /enable_text:\s*false/s)
+})
+
 test('Edge auth helpers keep user AAL2 and service-role auth explicitly split', () => {
   const helper = readRepoFile('supabase/functions/_shared/auth.ts')
   assert.match(helper, /export async function authenticateUserAal2\(req: Request\)/s)
