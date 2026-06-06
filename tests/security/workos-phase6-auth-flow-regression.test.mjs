@@ -51,15 +51,28 @@ test('WorkOS login and signup pages redirect through AuthKit instead of renderin
 test('WorkOS invite tokens are detected separately from legacy Supabase UUID invites', () => {
   const helper = readRepoFile('src/lib/workosInvite.ts')
   const acceptInvite = readRepoFile('src/pages/AcceptInvitePage.tsx')
+  const signup = readRepoFile('src/pages/SignupPage.tsx')
+  const login = readRepoFile('src/pages/LoginPage.tsx')
+  const auth = readRepoFile('src/hooks/useAuth.tsx')
 
   assert.match(helper, /export function readInviteParams/s)
+  assert.match(helper, /WORKOS_INVITE_TOKEN_SESSION_KEY/s)
+  assert.match(helper, /rememberWorkosInviteToken/s)
+  assert.match(helper, /readRememberedWorkosInviteToken/s)
+  assert.match(helper, /clearRememberedWorkosInviteToken/s)
   assert.match(helper, /legacyInviteId/s)
   assert.match(helper, /workosInviteToken/s)
   assert.match(helper, /UUID_RE/s)
   assert.match(acceptInvite, /config\.provider === 'workos'/s)
   assert.match(acceptInvite, /const invitationToken = inviteParams\.workosInviteToken/s)
+  assert.match(acceptInvite, /rememberWorkosInviteToken\(invitationToken\)/s)
   assert.match(acceptInvite, /acceptInvite\(invitationToken\)/s)
   assert.match(acceptInvite, /legacyInviteId/s)
+  assert.match(signup, /readRememberedWorkosInviteToken/s)
+  assert.match(signup, /const inviteToken = inviteParams\.workosInviteToken \?\? rememberedInviteToken/s)
+  assert.match(login, /readRememberedWorkosInviteToken/s)
+  assert.match(login, /const inviteToken = inviteParams\.workosInviteToken \?\? rememberedInviteToken/s)
+  assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
 })
 
 test('Protected routes send signed-in WorkOS users without org_id to provisioning', () => {

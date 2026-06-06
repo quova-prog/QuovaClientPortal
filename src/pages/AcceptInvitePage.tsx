@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
-import { readInviteParams } from '@/lib/workosInvite'
+import { readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
 import { QuovaMark } from '@/components/ui/QuovaMark'
 
 // Public landing page for /accept-invite?invite=<uuid>. The send-team-invite
@@ -51,6 +51,7 @@ export function AcceptInvitePage() {
       }
 
       const invitationToken = inviteParams.workosInviteToken
+      rememberWorkosInviteToken(invitationToken)
       let cancelled = false
       setState({ kind: 'accepting' })
       ;(async () => {

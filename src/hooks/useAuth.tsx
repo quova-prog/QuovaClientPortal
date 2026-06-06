@@ -4,6 +4,7 @@ import type { User as WorkosUser } from '@workos-inc/authkit-react'
 import type { SupabaseClient, Session } from '@supabase/supabase-js'
 import { setSupabaseAccessTokenProvider, supabase } from '@/lib/supabase'
 import { loadRuntimeWorkosAuthConfig, type AuthProvider as AuthProviderKind, type WorkosAuthConfig } from '@/lib/workosConfig'
+import { clearRememberedWorkosInviteToken } from '@/lib/workosInvite'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import type { AuthUser, Organisation, Profile } from '@/types'
 
@@ -579,6 +580,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
 
       const authUser = await buildWorkosAuthUser(authKitUser, syncResult)
       if (syncVersionRef.current !== syncId) return
+      clearRememberedWorkosInviteToken()
       setUser(authUser)
       setLoading(false)
     } catch (error) {
@@ -699,6 +701,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
 
     const returnTo = typeof window === 'undefined' ? undefined : window.location.origin
     await authKitSignOut({ returnTo, navigate: false })
+    clearRememberedWorkosInviteToken()
     setUser(null)
   }, [authKitSignOut, user])
 
