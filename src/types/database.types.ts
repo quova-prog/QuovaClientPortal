@@ -289,8 +289,10 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string
+          actor_type: string
           bank_id: string
           created_at: string
+          external_actor_id: string | null
           id: string
           metadata: Json | null
           org_id: string | null
@@ -302,8 +304,10 @@ export type Database = {
         }
         Insert: {
           action: string
+          actor_type?: string
           bank_id: string
           created_at?: string
+          external_actor_id?: string | null
           id?: string
           metadata?: Json | null
           org_id?: string | null
@@ -315,8 +319,10 @@ export type Database = {
         }
         Update: {
           action?: string
+          actor_type?: string
           bank_id?: string
           created_at?: string
+          external_actor_id?: string | null
           id?: string
           metadata?: Json | null
           org_id?: string | null
@@ -2857,6 +2863,7 @@ export type Database = {
           plan: string
           setup_fee: number | null
           updated_at: string
+          workos_org_id: string | null
         }
         Insert: {
           bank_id: string
@@ -2869,6 +2876,7 @@ export type Database = {
           plan?: string
           setup_fee?: number | null
           updated_at?: string
+          workos_org_id?: string | null
         }
         Update: {
           bank_id?: string
@@ -2881,6 +2889,7 @@ export type Database = {
           plan?: string
           setup_fee?: number | null
           updated_at?: string
+          workos_org_id?: string | null
         }
         Relationships: [
           {
@@ -3143,33 +3152,42 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deactivated_at: string | null
           email: string | null
           full_name: string | null
           id: string
+          membership_status: string
           org_id: string
           phone: string | null
           role: string
           updated_at: string
+          workos_user_id: string | null
         }
         Insert: {
           created_at?: string
+          deactivated_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          membership_status?: string
           org_id: string
           phone?: string | null
           role?: string
           updated_at?: string
+          workos_user_id?: string | null
         }
         Update: {
           created_at?: string
+          deactivated_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          membership_status?: string
           org_id?: string
           phone?: string | null
           role?: string
           updated_at?: string
+          workos_user_id?: string | null
         }
         Relationships: [
           {
@@ -3580,6 +3598,7 @@ export type Database = {
           is_active: boolean
           role: string
           updated_at: string
+          workos_user_id: string | null
         }
         Insert: {
           bank_id?: string | null
@@ -3589,6 +3608,7 @@ export type Database = {
           is_active?: boolean
           role: string
           updated_at?: string
+          workos_user_id?: string | null
         }
         Update: {
           bank_id?: string | null
@@ -3598,6 +3618,7 @@ export type Database = {
           is_active?: boolean
           role?: string
           updated_at?: string
+          workos_user_id?: string | null
         }
         Relationships: [
           {
@@ -3921,6 +3942,10 @@ export type Database = {
       current_user_bank_id: { Args: never; Returns: string }
       current_user_org_id: { Args: never; Returns: string }
       current_user_role: { Args: never; Returns: string }
+      current_workos_org_id: { Args: never; Returns: string }
+      current_workos_profile_id: { Args: never; Returns: string }
+      current_workos_support_user_id: { Args: never; Returns: string }
+      current_workos_user_role: { Args: never; Returns: string }
       delete_organisation: { Args: never; Returns: undefined }
       dump_schema_introspection: { Args: never; Returns: Json }
       fx_quote_to_usd: {
@@ -4110,6 +4135,18 @@ export type Database = {
           p_summary?: string
         }
         Returns: undefined
+      }
+      write_audit_log_as_actor: {
+        Args: {
+          p_action: string
+          p_actor_profile_id: string
+          p_metadata?: Json
+          p_org_id: string
+          p_resource: string
+          p_resource_id?: string
+          p_summary?: string
+        }
+        Returns: string
       }
     }
     Enums: {
