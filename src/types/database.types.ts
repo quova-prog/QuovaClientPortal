@@ -3769,6 +3769,51 @@ export type Database = {
           },
         ]
       }
+      workos_provisioning_locks: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          email: string | null
+          error: string | null
+          first_attempt_at: string
+          last_attempt_at: string
+          local_org_id: string | null
+          local_profile_id: string | null
+          org_name: string
+          status: string
+          workos_org_id: string | null
+          workos_user_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          email?: string | null
+          error?: string | null
+          first_attempt_at?: string
+          last_attempt_at?: string
+          local_org_id?: string | null
+          local_profile_id?: string | null
+          org_name: string
+          status?: string
+          workos_org_id?: string | null
+          workos_user_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          email?: string | null
+          error?: string | null
+          first_attempt_at?: string
+          last_attempt_at?: string
+          local_org_id?: string | null
+          local_profile_id?: string | null
+          org_name?: string
+          status?: string
+          workos_org_id?: string | null
+          workos_user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_exposure_summary: {
