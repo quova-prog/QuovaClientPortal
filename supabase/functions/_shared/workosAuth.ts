@@ -23,10 +23,13 @@ export type WorkosAuthOptions = {
   allowMissingOrgId?: boolean
 }
 
-export type WorkosAuthResult =
-  | { authenticated: true; context: WorkosUserAuthContext }
+export type WorkosIdentityAuthResult =
   | { authenticated: true; identity: WorkosVerifiedIdentity }
   | { authenticated: false; error: string }
+
+export type WorkosAuthResult =
+  | { authenticated: true; context: WorkosUserAuthContext }
+  | WorkosIdentityAuthResult
 
 type WorkosJwtClaims = JWTPayload & {
   role?: unknown
@@ -61,7 +64,7 @@ async function verifyWorkosJwt(token: string): Promise<WorkosJwtClaims> {
   return payload as WorkosJwtClaims
 }
 
-function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): WorkosAuthResult {
+function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): WorkosIdentityAuthResult {
   if (typeof claims.sub !== 'string' || claims.sub.length === 0) {
     return { authenticated: false, error: 'Missing WorkOS sub' }
   }
@@ -117,7 +120,7 @@ function createUserTokenSupabaseClient(token: string): SupabaseClient {
 export async function authenticateWorkosIdentity(
   req: Request,
   options: WorkosAuthOptions = {},
-): Promise<WorkosAuthResult> {
+): Promise<WorkosIdentityAuthResult> {
   const token = bearerToken(req)
   if (!token) {
     return { authenticated: false, error: 'Missing Authorization header' }
