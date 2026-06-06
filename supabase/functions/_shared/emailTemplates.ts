@@ -198,6 +198,37 @@ export function unsubscribeConfirmationHtml(preferenceLabel: string): string {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
+// ── Team Invite Email ────────────────────────────────────────────────
+// Required by the send-team-invite Edge Function. Dropped from this file at
+// some point, which broke send-team-invite on deploy (BOOT_ERROR — missing
+// export). A `deno check` CI step now guards against this regressing again.
+
+export interface TeamInviteEmailData {
+  orgName: string
+  inviterEmail: string
+  role: string
+  inviteUrl: string
+}
+
+export function teamInviteEmail(data: TeamInviteEmailData): { subject: string; html: string } {
+  const safeInviteUrl = escapeHtmlAttr(safeHttpUrl(data.inviteUrl, 'https://app.quovaos.com'))
+  const roleLabel = data.role.charAt(0).toUpperCase() + data.role.slice(1)
+  const content = `
+    <h2 style="margin:0 0 12px;font-size:20px;color:${TEXT_PRIMARY};font-weight:600;">You're invited to join ${escapeHtml(data.orgName)} on Quova</h2>
+    <p style="margin:0 0 24px;font-size:14px;color:${TEXT_MUTED};line-height:1.6;">
+      ${escapeHtml(data.inviterEmail)} has invited you to join <strong>${escapeHtml(data.orgName)}</strong> on Quova as a ${escapeHtml(roleLabel)}. Click below to accept and set up your account.
+    </p>
+    <a href="${safeInviteUrl}" style="display:inline-block;padding:10px 24px;background:${TEAL};color:${WHITE};border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+      Accept invitation
+    </a>
+    <p style="margin:24px 0 0;font-size:12px;color:${TEXT_MUTED};">If you weren't expecting this invitation, you can safely ignore this email.</p>
+  `
+  return {
+    subject: `You've been invited to join ${data.orgName} on Quova`,
+    html: baseTemplate(content, 'https://app.quovaos.com/settings'),
+  }
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')

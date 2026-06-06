@@ -45,7 +45,7 @@ Deno.serve(async (req)=>{
     }, 404);
   }
   const { data: callerProfile } = await admin.from('profiles').select('org_id, role').eq('id', auth.user.id).single();
-  if (callerProfile?.org_id !== invite.org_id || callerProfile.role !== 'admin') {
+  if (callerProfile?.org_id !== invite.org_id || callerProfile?.role !== 'admin') {
     return jsonResponse({
       error: 'Forbidden: Admin access required for this organization'
     }, 403);

@@ -64,3 +64,23 @@ jobs:
 
       - name: Build application
         run: npm run build
+
+  edge-functions:
+    # Type-checks every Supabase Edge Function with Deno. Catches missing
+    # exports and type errors in supabase/functions/** BEFORE they can be
+    # deployed — a dropped `teamInviteEmail` export here previously boot-
+    # errored the live send-team-invite function (BOOT_ERROR), which the
+    # SPA build/lint/tests could not catch because Edge Functions are a
+    # separate Deno runtime.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check Supabase Edge Functions
+        run: deno check supabase/functions/*/index.ts
