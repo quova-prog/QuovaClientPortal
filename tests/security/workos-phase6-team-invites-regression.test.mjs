@@ -98,3 +98,12 @@ test('WorkOS settings mode does not expose Supabase MFA or org deletion controls
   assert.match(settings, /handleRevokeInvite/s)
   assert.match(settings, /revokingInviteId === inv\.id/s)
 })
+
+test('Edge Function CORS trusts Quova Vercel preview deployment origins', () => {
+  const auth = readRepoFile('supabase/functions/_shared/auth.ts')
+
+  assert.match(auth, /TRUSTED_VERCEL_PREVIEW_SUFFIX/s)
+  assert.match(auth, /isTrustedVercelPreviewOrigin/s)
+  assert.match(auth, /originHostname\.endsWith\(TRUSTED_VERCEL_PREVIEW_SUFFIX\)/s)
+  assert.match(auth, /ALLOWED_ORIGINS\.includes\(origin\) \|\| isTrustedVercelPreviewOrigin\(origin\)/s)
+})

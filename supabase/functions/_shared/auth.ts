@@ -29,6 +29,7 @@ const ENV_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .filter(Boolean)
 
 const ALLOWED_ORIGINS: string[] = ENV_ORIGINS.length > 0 ? ENV_ORIGINS : FALLBACK_ORIGINS
+const TRUSTED_VERCEL_PREVIEW_SUFFIX = '-quova-progs-projects.vercel.app'
 
 export type UserAal2AuthResult =
   | { authenticated: true; user: User }
@@ -37,6 +38,18 @@ export type UserAal2AuthResult =
 export type ServiceRoleAuthResult =
   | { authenticated: true }
   | { authenticated: false; error: string }
+
+function isTrustedVercelPreviewOrigin(origin: string): boolean {
+  if (!origin) return false
+
+  try {
+    const { protocol, hostname } = new URL(origin)
+    const originHostname = hostname.toLowerCase()
+    return protocol === 'https:' && originHostname.endsWith(TRUSTED_VERCEL_PREVIEW_SUFFIX)
+  } catch {
+    return false
+  }
+}
 
 /**
  * Build CORS headers for a specific request.
@@ -51,7 +64,9 @@ export type ServiceRoleAuthResult =
  */
 export function corsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get('Origin') ?? ''
-  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) || isTrustedVercelPreviewOrigin(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0]
   return {
     'Access-Control-Allow-Origin':  allowOrigin,
     'Vary':                         'Origin',
