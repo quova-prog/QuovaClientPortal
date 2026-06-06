@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
-import { clearRememberedWorkosInviteToken, readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
+import { readInviteParams, readRememberedWorkosInviteToken, rememberWorkosInviteToken } from '@/lib/workosInvite'
 import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
@@ -13,6 +13,7 @@ export function SignupPage() {
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
+  const workosInviteToken = inviteToken ?? readRememberedWorkosInviteToken()
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
   const [workosRedirectPaused, setWorkosRedirectPaused] = useState(false)
@@ -23,23 +24,22 @@ export function SignupPage() {
   const [cooldownLeft, setCooldownLeft] = useState(0)
 
   function startWorkosAuthRedirect() {
-    void signIn('', '', inviteToken ?? null)
+    void signIn('', '', workosInviteToken ?? null)
   }
 
   useEffect(() => {
     if (config.provider !== 'workos') return
-    if (inviteParams.workosInviteToken) rememberWorkosInviteToken(inviteParams.workosInviteToken)
-    else clearRememberedWorkosInviteToken()
-    const key = `signup:${inviteToken ?? 'default'}`
+    if (inviteToken) rememberWorkosInviteToken(inviteToken)
+    const key = `signup:${workosInviteToken ?? 'default'}`
     if (!beginWorkosAuthRedirect(key)) {
       setWorkosRedirectPaused(true)
       return
     }
     startWorkosAuthRedirect()
-  }, [config.provider, inviteToken, signIn, signUp])
+  }, [config.provider, inviteToken, signIn, signUp, workosInviteToken])
 
   function handleContinueWorkosRedirect() {
-    const key = `signup:${inviteToken ?? 'default'}`
+    const key = `signup:${workosInviteToken ?? 'default'}`
     continueWorkosRedirect(key)
     setWorkosRedirectPaused(false)
     startWorkosAuthRedirect()
