@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
+import { readInviteParams } from '@/lib/workosInvite'
 import { QuovaMark } from '@/components/ui/QuovaMark'
 
 // Public landing page for /accept-invite?invite=<uuid>. The send-team-invite
@@ -29,13 +31,39 @@ type ViewState =
   | { kind: 'error'; message: string }
 
 export function AcceptInvitePage() {
-  const { user, loading, db } = useAuth()
+  const { acceptInvite, user, loading, db } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const inviteId = searchParams.get('invite')?.trim() ?? ''
+  const config = loadRuntimeWorkosAuthConfig()
+  const inviteParams = readInviteParams(searchParams)
+  const inviteId = inviteParams.legacyInviteId ?? ''
   const [state, setState] = useState<ViewState>({ kind: 'loading' })
 
   useEffect(() => {
+    if (config.provider === 'workos') {
+      if (!inviteParams.workosInviteToken) {
+        if (inviteParams.legacyInviteId) {
+          setState({ kind: 'error', message: 'This invitation link is no longer valid for WorkOS sign-in.' })
+        } else {
+          setState({ kind: 'invalid_link' })
+        }
+        return
+      }
+
+      const invitationToken = inviteParams.workosInviteToken
+      let cancelled = false
+      setState({ kind: 'accepting' })
+      ;(async () => {
+        const { error } = await acceptInvite(invitationToken)
+        if (cancelled) return
+        if (error) {
+          setState({ kind: 'error', message: error })
+        }
+      })()
+
+      return () => { cancelled = true }
+    }
+
     if (loading) {
       setState({ kind: 'loading' })
       return
@@ -71,7 +99,7 @@ export function AcceptInvitePage() {
     })()
 
     return () => { cancelled = true }
-  }, [loading, user, inviteId, navigate, db])
+  }, [acceptInvite, config.provider, inviteParams.legacyInviteId, inviteParams.workosInviteToken, loading, user, inviteId, navigate, db])
 
   return (
     <div style={{

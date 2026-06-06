@@ -3,7 +3,7 @@ import { useAuth as useAuthKit } from '@workos-inc/authkit-react'
 import type { User as WorkosUser } from '@workos-inc/authkit-react'
 import type { SupabaseClient, Session } from '@supabase/supabase-js'
 import { setSupabaseAccessTokenProvider, supabase } from '@/lib/supabase'
-import { loadRuntimeWorkosAuthConfig, type WorkosAuthConfig } from '@/lib/workosConfig'
+import { loadRuntimeWorkosAuthConfig, type AuthProvider as AuthProviderKind, type WorkosAuthConfig } from '@/lib/workosConfig'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import type { AuthUser, Organisation, Profile } from '@/types'
 
@@ -13,10 +13,12 @@ import type { AuthUser, Organisation, Profile } from '@/types'
 type DbClient = SupabaseClient<any, any, any>
 
 interface AuthContextType {
+  provider: AuthProviderKind
   user: AuthUser | null
   loading: boolean
+  workosProvisionRequired: boolean
   db: DbClient
-  signIn: (email: string, password: string) => Promise<{
+  signIn: (email: string, password: string, inviteToken?: string | null) => Promise<{
     error: string | null
     mfaRequired?: boolean
     mfaEnforcedSetupRequired?: boolean
@@ -32,6 +34,8 @@ interface AuthContextType {
     pendingRefreshToken?: string,
   ) => Promise<{ error: string | null }>
   signUp: (email: string, password: string, orgName: string, fullName: string, inviteId?: string | null) => Promise<{ error: string | null; confirmationRequired?: boolean }>
+  acceptInvite: (inviteToken: string) => Promise<{ error: string | null }>
+  provisionOrg: (orgName: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -305,6 +309,15 @@ function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const acceptInvite = useCallback(async (inviteToken: string): Promise<{ error: string | null }> => {
+    const { error } = await supabase.rpc('accept_invite', { p_invite_id: inviteToken })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const provisionOrg = useCallback(async (): Promise<{ error: string | null }> => {
+    return { error: 'Organization provisioning requires WorkOS sign-in' }
+  }, [])
+
   const completeMfaSignIn = useCallback(async (
     factorId: string,
     code: string,
@@ -354,14 +367,18 @@ function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
   }, [user])
 
   const contextValue = useMemo(() => ({
+    provider: 'supabase' as AuthProviderKind,
     user,
     loading,
+    workosProvisionRequired: false,
     db: supabase as DbClient,
     signIn,
     completeMfaSignIn,
     signUp,
+    acceptInvite,
+    provisionOrg,
     signOut,
-  }), [user, loading, signIn, completeMfaSignIn, signUp, signOut])
+  }), [user, loading, signIn, completeMfaSignIn, signUp, acceptInvite, provisionOrg, signOut])
 
   return (
     <AuthContext.Provider value={contextValue}>
@@ -374,13 +391,16 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
   const {
     getAccessToken,
     isLoading: authKitLoading,
+    organizationId: authKitOrganizationId,
     signIn: authKitSignIn,
     signOut: authKitSignOut,
     signUp: authKitSignUp,
+    switchToOrganization: authKitSwitchToOrganization,
     user: authKitUser,
   } = useAuthKit()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [workosProvisionRequired, setWorkosProvisionRequired] = useState(false)
   const [dbClient, setDbClient] = useState<DbClient>(supabase as DbClient)
   const syncVersionRef = useRef(0)
 
@@ -408,11 +428,20 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!authKitUser) {
+      setWorkosProvisionRequired(false)
       setUser(null)
       setLoading(false)
       return
     }
 
+    if (!authKitOrganizationId) {
+      setWorkosProvisionRequired(true)
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    setWorkosProvisionRequired(false)
     setLoading(true)
 
     try {
@@ -440,16 +469,17 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setLoading(false)
     }
-  }, [authKitLoading, authKitUser, getAccessToken])
+  }, [authKitLoading, authKitOrganizationId, authKitUser, getAccessToken])
 
   useEffect(() => {
     void syncWorkosUser()
   }, [syncWorkosUser])
 
-  const signIn = useCallback(async (email: string) => {
+  const signIn = useCallback(async (email: string, _password: string, inviteToken?: string | null) => {
     try {
       await authKitSignIn({
         ...(email.trim() ? { loginHint: email.trim() } : {}),
+        ...(inviteToken ? { invitationToken: inviteToken } : {}),
       })
       return { error: null }
     } catch (error) {
@@ -479,6 +509,53 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authKitSignUp])
 
+  const acceptInvite = useCallback(async (inviteToken: string): Promise<{ error: string | null }> => {
+    try {
+      if (!inviteToken.trim()) return { error: 'Invalid invitation' }
+      const options = { invitationToken: inviteToken.trim() }
+      if (authKitUser) await authKitSignIn(options)
+      else await authKitSignUp(options)
+      return { error: null }
+    } catch (error) {
+      void reportException(error, {
+        category: 'auth',
+        severity: 'error',
+        message: 'WorkOS invite acceptance redirect failed unexpectedly',
+      })
+      return { error: 'Invitation could not be opened' }
+    }
+  }, [authKitSignIn, authKitSignUp, authKitUser])
+
+  const provisionOrg = useCallback(async (orgName: string): Promise<{ error: string | null }> => {
+    const trimmed = orgName.trim()
+    if (trimmed.length < 2) return { error: 'Organization name is required' }
+
+    try {
+      const accessToken = await getAccessToken()
+      const { data, error } = await supabase.functions.invoke('provision-org', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: { org_name: trimmed },
+      })
+
+      if (error) return { error: error.message }
+      const result = data as { ok?: boolean; error?: string; workos_org_id?: string } | null
+      if (!result?.ok || !result.workos_org_id) {
+        return { error: result?.error ?? 'Organization could not be provisioned' }
+      }
+
+      await authKitSwitchToOrganization({ organizationId: result.workos_org_id })
+      return { error: null }
+    } catch (error) {
+      void reportException(error, {
+        category: 'auth',
+        severity: 'error',
+        message: 'WorkOS organization provisioning failed unexpectedly',
+      })
+      return { error: 'Organization could not be provisioned' }
+    }
+  }, [authKitSwitchToOrganization, getAccessToken])
+
   const completeMfaSignIn = useCallback(async (): Promise<{ error: string | null }> => {
     return { error: null }
   }, [])
@@ -494,14 +571,18 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
   }, [authKitSignOut, user])
 
   const contextValue = useMemo(() => ({
+    provider: 'workos' as AuthProviderKind,
     user,
     loading: loading || authKitLoading,
+    workosProvisionRequired,
     db: dbClient,
     signIn,
     completeMfaSignIn,
     signUp,
+    acceptInvite,
+    provisionOrg,
     signOut,
-  }), [user, loading, authKitLoading, dbClient, signIn, completeMfaSignIn, signUp, signOut])
+  }), [user, loading, authKitLoading, workosProvisionRequired, dbClient, signIn, completeMfaSignIn, signUp, acceptInvite, provisionOrg, signOut])
 
   return (
     <AuthContext.Provider value={contextValue}>

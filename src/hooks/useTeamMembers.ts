@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
+import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
 
 export interface TeamMember {
   id: string
@@ -21,6 +22,8 @@ export interface Invite {
 
 export function useTeamMembers() {
   const { user, db } = useAuth()
+  const config = loadRuntimeWorkosAuthConfig()
+  const isWorkos = config.provider === 'workos'
   const orgId = user?.profile?.org_id
   const isAdmin = user?.profile?.role === 'admin'
 
@@ -59,20 +62,29 @@ export function useTeamMembers() {
 
     setMembers(memberList)
 
-    // Fetch pending invites
-    const { data: inviteData, error: inviteErr } = await db
-      .from('invites')
-      .select('*')
-      .eq('org_id', orgId)
-      .is('accepted_at', null)
-      .order('created_at', { ascending: false })
+    if (isWorkos) {
+      const { data: inviteResult, error: inviteErr } = await db.functions.invoke('workos-team-invites', {
+        body: { action: 'list' },
+      })
+      if (!inviteErr && Array.isArray(inviteResult?.invites)) {
+        setInvites(inviteResult.invites as Invite[])
+      }
+    } else {
+      // Fetch pending invites
+      const { data: inviteData, error: inviteErr } = await db
+        .from('invites')
+        .select('*')
+        .eq('org_id', orgId)
+        .is('accepted_at', null)
+        .order('created_at', { ascending: false })
 
-    if (!inviteErr) {
-      setInvites((inviteData ?? []) as Invite[])
+      if (!inviteErr) {
+        setInvites((inviteData ?? []) as Invite[])
+      }
     }
 
     setLoading(false)
-  }, [orgId, isAdmin, db, user?.id, user?.email])
+  }, [orgId, isAdmin, isWorkos, db, user?.id, user?.email])
 
   useEffect(() => { load() }, [load])
 
@@ -89,6 +101,17 @@ export function useTeamMembers() {
     // Check for existing pending invite
     const existingInvite = invites.find(i => i.email.toLowerCase() === trimmed)
     if (existingInvite) return { error: 'An invite has already been sent to this email' }
+
+    if (isWorkos) {
+      const { data: inviteResult, error: inviteErr } = await db.functions.invoke('workos-team-invites', {
+        body: { action: 'send', email: trimmed, role },
+      })
+      if (inviteErr || inviteResult?.error) {
+        return { error: inviteErr?.message ?? inviteResult?.error ?? 'Invite email could not be sent' }
+      }
+      await load()
+      return {}
+    }
 
     const { data: newInvite, error: insertErr } = await db
       .from('invites')
@@ -123,6 +146,17 @@ export function useTeamMembers() {
 
   async function revokeInvite(inviteId: string): Promise<{ error?: string }> {
     if (!isAdmin) return { error: 'Admin access required' }
+
+    if (isWorkos) {
+      const { data: inviteResult, error: revokeErr } = await db.functions.invoke('workos-team-invites', {
+        body: { action: 'revoke', invitation_id: inviteId },
+      })
+      if (revokeErr || inviteResult?.error) {
+        return { error: revokeErr?.message ?? inviteResult?.error ?? 'Invite could not be revoked' }
+      }
+      await load()
+      return {}
+    }
 
     const { error: deleteErr } = await db
       .from('invites')

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
+import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
+import { readInviteParams } from '@/lib/workosInvite'
 import { ShieldCheck } from 'lucide-react'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
@@ -21,7 +23,10 @@ interface MfaPending {
 export function LoginPage() {
   const navigate = useNavigate()
   const { signIn, completeMfaSignIn } = useAuth()
-  const inviteId = new URLSearchParams(window.location.search).get('invite')?.trim() || null
+  const config = loadRuntimeWorkosAuthConfig()
+  const inviteParams = readInviteParams(window.location.search)
+  const inviteId = inviteParams.legacyInviteId
+  const inviteToken = inviteParams.workosInviteToken
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -41,6 +46,11 @@ export function LoginPage() {
   const [mfaFailures, setMfaFailures] = useState(0)
   const [mfaLockedUntil, setMfaLockedUntil] = useState<number | null>(null)
   const [mfaCountdown, setMfaCountdown] = useState(0)
+
+  useEffect(() => {
+    if (config.provider !== 'workos') return
+    void signIn('', '', inviteToken)
+  }, [config.provider, inviteToken, signIn])
 
   // Countdown tickers
   useEffect(() => {
@@ -69,7 +79,7 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const result = await signIn(email, password)
+      const result = await signIn(email, password, inviteToken)
       if (result.error) {
         const failures = loginFailures + 1
         setLoginFailures(failures)
@@ -168,6 +178,22 @@ export function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (config.provider === 'workos') {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: 'var(--bg-app)', padding: '1rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
+          <OrbitMark />
+          <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Redirecting to sign in</h1>
+          {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
+        </div>
+      </div>
+    )
   }
 
   return (
