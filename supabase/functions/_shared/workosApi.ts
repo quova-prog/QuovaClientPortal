@@ -50,9 +50,21 @@ async function workosFetch<T>(path: string, init: RequestInit = {}): Promise<T> 
   })
 
   const text = await response.text()
-  const body = text ? JSON.parse(text) as Record<string, unknown> : {}
+  let body: Record<string, unknown> = {}
+  try {
+    body = text ? JSON.parse(text) as Record<string, unknown> : {}
+  } catch {
+    body = text ? { message: text } : {}
+  }
+
   if (!response.ok) {
-    const message = typeof body.message === 'string' ? body.message : `WorkOS request failed with ${response.status}`
+    const message = typeof body.message === 'string'
+      ? body.message
+      : typeof body.error === 'string'
+        ? body.error
+        : typeof body.error_description === 'string'
+          ? body.error_description
+          : `WorkOS request failed with ${response.status}`
     throw new Error(message)
   }
 

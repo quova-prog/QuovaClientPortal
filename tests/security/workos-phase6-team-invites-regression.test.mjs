@@ -21,6 +21,7 @@ test('WorkOS team invites are admin-only and use organization-scoped WorkOS iden
 
 test('WorkOS team invites list, send, and revoke through the WorkOS Invitation API', () => {
   const fn = readRepoFile('supabase/functions/workos-team-invites/index.ts')
+  const api = readRepoFile('supabase/functions/_shared/workosApi.ts')
 
   assert.match(fn, /action:\s*'list' \| 'send' \| 'revoke'/s)
   assert.match(fn, /listWorkosInvitations/s)
@@ -30,6 +31,10 @@ test('WorkOS team invites list, send, and revoke through the WorkOS Invitation A
   assert.match(fn, /role_slug:\s*role/s)
   assert.match(fn, /expires_in_days:\s*7/s)
   assert.match(fn, /inviter_user_id:\s*auth\.context\.workosUserId/s)
+  assert.match(fn, /catch \(error\)[\s\S]*workos-team-invites action failed/s)
+  assert.match(fn, /jsonResponse\(\{ error: actionErrorMessage\(error\) \}, 502, req\)/s)
+  assert.match(api, /typeof body\.error === 'string'/s)
+  assert.match(api, /typeof body\.error_description === 'string'/s)
 })
 
 test('team member hook switches invite transport only in WorkOS mode', () => {
@@ -43,6 +48,8 @@ test('team member hook switches invite transport only in WorkOS mode', () => {
   assert.match(hook, /action:\s*'send'/s)
   assert.match(hook, /action:\s*'list'/s)
   assert.match(hook, /action:\s*'revoke'/s)
+  assert.match(hook, /describeFunctionError/s)
+  assert.match(hook, /context instanceof Response/s)
   assert.match(hook, /send-team-invite/s)
   assert.match(hook, /\.from\('invites'\)/s)
 })

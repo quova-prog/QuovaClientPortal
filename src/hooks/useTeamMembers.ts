@@ -20,6 +20,36 @@ export interface Invite {
   created_at: string
 }
 
+async function describeFunctionError(error: unknown): Promise<string | undefined> {
+  const context = error && typeof error === 'object' && 'context' in error
+    ? (error as { context?: unknown }).context
+    : null
+
+  if (context instanceof Response) {
+    const status = `${context.status}${context.statusText ? ` ${context.statusText}` : ''}`
+    const contentType = context.headers.get('content-type') ?? ''
+
+    try {
+      if (contentType.includes('application/json')) {
+        const body = await context.clone().json() as Record<string, unknown>
+        const message = typeof body.error === 'string'
+          ? body.error
+          : JSON.stringify(body)
+        return `${status}: ${message.slice(0, 1000)}`
+      }
+
+      const text = await context.clone().text()
+      return text ? `${status}: ${text.slice(0, 1000)}` : status
+    } catch {
+      return status
+    }
+  }
+
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return undefined
+}
+
 export function useTeamMembers() {
   const { user, db } = useAuth()
   const config = loadRuntimeWorkosAuthConfig()
@@ -109,7 +139,7 @@ export function useTeamMembers() {
         body: { action: 'send', email: trimmed, role },
       })
       if (inviteErr || inviteResult?.error) {
-        return { error: inviteErr?.message ?? inviteResult?.error ?? 'Invite email could not be sent' }
+        return { error: await describeFunctionError(inviteErr) ?? inviteResult?.error ?? 'Invite email could not be sent' }
       }
       await load()
       return {}
@@ -154,7 +184,7 @@ export function useTeamMembers() {
         body: { action: 'revoke', invitation_id: inviteId },
       })
       if (revokeErr || inviteResult?.error) {
-        return { error: revokeErr?.message ?? inviteResult?.error ?? 'Invite could not be revoked' }
+        return { error: await describeFunctionError(revokeErr) ?? inviteResult?.error ?? 'Invite could not be revoked' }
       }
       await load()
       return {}
@@ -179,7 +209,7 @@ export function useTeamMembers() {
         body: { action: 'update_role', profile_id: targetUserId, role: newRole },
       })
       if (memberErr || memberResult?.error) {
-        return { error: memberErr?.message ?? memberResult?.error ?? 'Member role could not be updated' }
+        return { error: await describeFunctionError(memberErr) ?? memberResult?.error ?? 'Member role could not be updated' }
       }
       await load()
       return {}
@@ -204,7 +234,7 @@ export function useTeamMembers() {
         body: { action: 'remove_member', profile_id: targetUserId },
       })
       if (memberErr || memberResult?.error) {
-        return { error: memberErr?.message ?? memberResult?.error ?? 'Member could not be removed' }
+        return { error: await describeFunctionError(memberErr) ?? memberResult?.error ?? 'Member could not be removed' }
       }
       await load()
       return {}

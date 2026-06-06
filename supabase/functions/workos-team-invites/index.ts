@@ -101,6 +101,12 @@ function activeMembership(memberships: WorkosOrganizationMembership[]): WorkosOr
   return memberships.find(membership => (membership.status ?? 'active') === 'active') ?? null
 }
 
+function actionErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return 'Team invite request failed'
+}
+
 async function resolveActiveWorkosMembership(workosOrgId: string, workosUserId: string): Promise<WorkosOrganizationMembership> {
   const memberships = await listWorkosOrganizationMemberships({
     organization_id: workosOrgId,
@@ -139,142 +145,150 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400, req)
   }
 
-  if (body.action === 'list') {
-    const invitations = await listWorkosInvitations({
-      organization_id: auth.context.workosOrgId,
-    })
-    return jsonResponse({
-      invites: invitations
-        .filter(invite => (invite.state ?? invite.status ?? 'pending') !== 'revoked')
-        .map(invite => mapInvitation(invite, auth.context.profileId)),
-    }, 200, req)
-  }
-
-  if (body.action === 'send') {
-    const email = cleanEmail(body.email)
-    const role = cleanRole(body.role)
-    if (!email || !role) {
-      return jsonResponse({ error: 'Valid email and role are required' }, 400, req)
-    }
-
-    const invitation = await sendWorkosInvitation({
-      email,
-      organization_id: auth.context.workosOrgId,
-      role_slug: role,
-      expires_in_days: 7,
-      inviter_user_id: auth.context.workosUserId,
-    })
-
-    const admin = createAdminClient()
-    await admin.from('email_logs').insert({
-      org_id: auth.context.orgId,
-      user_id: auth.context.profileId,
-      email_type: 'team_invite',
-      recipient: email,
-      subject: 'You have been invited to Quova',
-      status: 'sent',
-      error: null,
-    })
-
-    return jsonResponse({
-      message: 'Invite email sent',
-      invite: mapInvitation(invitation, auth.context.profileId),
-    }, 200, req)
-  }
-
-  if (body.action === 'revoke') {
-    if (!body.invitation_id) {
-      return jsonResponse({ error: 'Missing invitation_id' }, 400, req)
-    }
-
-    const invitation = await revokeWorkosInvitation(body.invitation_id)
-    return jsonResponse({
-      message: 'Invite revoked',
-      invite: mapInvitation(invitation, auth.context.profileId),
-    }, 200, req)
-  }
-
-  if (body.action === 'update_role') {
-    const profileId = cleanProfileId(body.profile_id)
-    const role = cleanRole(body.role)
-    if (!profileId || !role) {
-      return jsonResponse({ error: 'Valid profile_id and role are required' }, 400, req)
-    }
-
-    const admin = createAdminClient()
-    const target = await loadTargetProfile(admin, profileId, auth.context.orgId)
-    if (!target || target.membership_status !== 'active' || target.deactivated_at) {
-      return jsonResponse({ error: 'User not found in your organization' }, 404, req)
-    }
-    if (!target.workos_user_id) {
-      return jsonResponse({ error: 'Member is not linked to WorkOS' }, 409, req)
-    }
-    if (role !== 'admin' && target.role === 'admin') {
-      const remainingAdmins = await countOtherActiveAdmins(admin, auth.context.orgId, target.id)
-      if (remainingAdmins === 0) {
-        return jsonResponse({ error: 'Cannot demote the last admin' }, 409, req)
-      }
-    }
-
-    const membership = await resolveActiveWorkosMembership(auth.context.workosOrgId, target.workos_user_id)
-    await updateWorkosOrganizationMembershipRole(membership.id, role)
-
-    const { error: updateError } = await admin
-      .from('profiles')
-      .update({ role, updated_at: new Date().toISOString() })
-      .eq('id', target.id)
-      .eq('org_id', auth.context.orgId)
-
-    if (updateError) {
-      return jsonResponse({ error: 'WorkOS role changed, but local profile cache could not be updated' }, 500, req)
-    }
-
-    return jsonResponse({ message: 'Member role updated', member: { id: target.id, role } }, 200, req)
-  }
-
-  if (body.action === 'remove_member') {
-    const profileId = cleanProfileId(body.profile_id)
-    if (!profileId) {
-      return jsonResponse({ error: 'Valid profile_id is required' }, 400, req)
-    }
-    if (profileId === auth.context.profileId) {
-      return jsonResponse({ error: 'Cannot remove yourself from the organization' }, 409, req)
-    }
-
-    const admin = createAdminClient()
-    const target = await loadTargetProfile(admin, profileId, auth.context.orgId)
-    if (!target || target.membership_status !== 'active' || target.deactivated_at) {
-      return jsonResponse({ error: 'User not found in your organization' }, 404, req)
-    }
-    if (!target.workos_user_id) {
-      return jsonResponse({ error: 'Member is not linked to WorkOS' }, 409, req)
-    }
-    if (target.role === 'admin') {
-      const remainingAdmins = await countOtherActiveAdmins(admin, auth.context.orgId, target.id)
-      if (remainingAdmins === 0) {
-        return jsonResponse({ error: 'Cannot remove the last admin' }, 409, req)
-      }
-    }
-
-    const membership = await resolveActiveWorkosMembership(auth.context.workosOrgId, target.workos_user_id)
-    await deactivateWorkosOrganizationMembership(membership.id)
-
-    const { error: updateError } = await admin
-      .from('profiles')
-      .update({
-        membership_status: 'deactivated',
-        deactivated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+  try {
+    if (body.action === 'list') {
+      const invitations = await listWorkosInvitations({
+        organization_id: auth.context.workosOrgId,
       })
-      .eq('id', target.id)
-      .eq('org_id', auth.context.orgId)
-
-    if (updateError) {
-      return jsonResponse({ error: 'WorkOS membership deactivated, but local profile cache could not be updated' }, 500, req)
+      return jsonResponse({
+        invites: invitations
+          .filter(invite => (invite.state ?? invite.status ?? 'pending') !== 'revoked')
+          .map(invite => mapInvitation(invite, auth.context.profileId)),
+      }, 200, req)
     }
 
-    return jsonResponse({ message: 'Member removed' }, 200, req)
-  }
+    if (body.action === 'send') {
+      const email = cleanEmail(body.email)
+      const role = cleanRole(body.role)
+      if (!email || !role) {
+        return jsonResponse({ error: 'Valid email and role are required' }, 400, req)
+      }
 
-  return jsonResponse({ error: 'Unsupported invite action' }, 400, req)
+      const invitation = await sendWorkosInvitation({
+        email,
+        organization_id: auth.context.workosOrgId,
+        role_slug: role,
+        expires_in_days: 7,
+        inviter_user_id: auth.context.workosUserId,
+      })
+
+      const admin = createAdminClient()
+      await admin.from('email_logs').insert({
+        org_id: auth.context.orgId,
+        user_id: auth.context.profileId,
+        email_type: 'team_invite',
+        recipient: email,
+        subject: 'You have been invited to Quova',
+        status: 'sent',
+        error: null,
+      })
+
+      return jsonResponse({
+        message: 'Invite email sent',
+        invite: mapInvitation(invitation, auth.context.profileId),
+      }, 200, req)
+    }
+
+    if (body.action === 'revoke') {
+      if (!body.invitation_id) {
+        return jsonResponse({ error: 'Missing invitation_id' }, 400, req)
+      }
+
+      const invitation = await revokeWorkosInvitation(body.invitation_id)
+      return jsonResponse({
+        message: 'Invite revoked',
+        invite: mapInvitation(invitation, auth.context.profileId),
+      }, 200, req)
+    }
+
+    if (body.action === 'update_role') {
+      const profileId = cleanProfileId(body.profile_id)
+      const role = cleanRole(body.role)
+      if (!profileId || !role) {
+        return jsonResponse({ error: 'Valid profile_id and role are required' }, 400, req)
+      }
+
+      const admin = createAdminClient()
+      const target = await loadTargetProfile(admin, profileId, auth.context.orgId)
+      if (!target || target.membership_status !== 'active' || target.deactivated_at) {
+        return jsonResponse({ error: 'User not found in your organization' }, 404, req)
+      }
+      if (!target.workos_user_id) {
+        return jsonResponse({ error: 'Member is not linked to WorkOS' }, 409, req)
+      }
+      if (role !== 'admin' && target.role === 'admin') {
+        const remainingAdmins = await countOtherActiveAdmins(admin, auth.context.orgId, target.id)
+        if (remainingAdmins === 0) {
+          return jsonResponse({ error: 'Cannot demote the last admin' }, 409, req)
+        }
+      }
+
+      const membership = await resolveActiveWorkosMembership(auth.context.workosOrgId, target.workos_user_id)
+      await updateWorkosOrganizationMembershipRole(membership.id, role)
+
+      const { error: updateError } = await admin
+        .from('profiles')
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq('id', target.id)
+        .eq('org_id', auth.context.orgId)
+
+      if (updateError) {
+        return jsonResponse({ error: 'WorkOS role changed, but local profile cache could not be updated' }, 500, req)
+      }
+
+      return jsonResponse({ message: 'Member role updated', member: { id: target.id, role } }, 200, req)
+    }
+
+    if (body.action === 'remove_member') {
+      const profileId = cleanProfileId(body.profile_id)
+      if (!profileId) {
+        return jsonResponse({ error: 'Valid profile_id is required' }, 400, req)
+      }
+      if (profileId === auth.context.profileId) {
+        return jsonResponse({ error: 'Cannot remove yourself from the organization' }, 409, req)
+      }
+
+      const admin = createAdminClient()
+      const target = await loadTargetProfile(admin, profileId, auth.context.orgId)
+      if (!target || target.membership_status !== 'active' || target.deactivated_at) {
+        return jsonResponse({ error: 'User not found in your organization' }, 404, req)
+      }
+      if (!target.workos_user_id) {
+        return jsonResponse({ error: 'Member is not linked to WorkOS' }, 409, req)
+      }
+      if (target.role === 'admin') {
+        const remainingAdmins = await countOtherActiveAdmins(admin, auth.context.orgId, target.id)
+        if (remainingAdmins === 0) {
+          return jsonResponse({ error: 'Cannot remove the last admin' }, 409, req)
+        }
+      }
+
+      const membership = await resolveActiveWorkosMembership(auth.context.workosOrgId, target.workos_user_id)
+      await deactivateWorkosOrganizationMembership(membership.id)
+
+      const { error: updateError } = await admin
+        .from('profiles')
+        .update({
+          membership_status: 'deactivated',
+          deactivated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', target.id)
+        .eq('org_id', auth.context.orgId)
+
+      if (updateError) {
+        return jsonResponse({ error: 'WorkOS membership deactivated, but local profile cache could not be updated' }, 500, req)
+      }
+
+      return jsonResponse({ message: 'Member removed' }, 200, req)
+    }
+
+    return jsonResponse({ error: 'Unsupported invite action' }, 400, req)
+  } catch (error) {
+    console.error('workos-team-invites action failed', {
+      action: body.action,
+      error: actionErrorMessage(error),
+    })
+    return jsonResponse({ error: actionErrorMessage(error) }, 502, req)
+  }
 })
