@@ -12,9 +12,9 @@ export type WorkosUserAuthContext = {
   email: string | null
 }
 
-export type WorkosPreOrgIdentity = {
+export type WorkosVerifiedIdentity = {
   workosUserId: string
-  workosOrgId: null
+  workosOrgId: string | null
   role: WorkosAppRole
   email: string | null
 }
@@ -25,7 +25,7 @@ export type WorkosAuthOptions = {
 
 export type WorkosAuthResult =
   | { authenticated: true; context: WorkosUserAuthContext }
-  | { authenticated: true; identity: WorkosPreOrgIdentity }
+  | { authenticated: true; identity: WorkosVerifiedIdentity }
   | { authenticated: false; error: string }
 
 type WorkosJwtClaims = JWTPayload & {
@@ -61,7 +61,7 @@ async function verifyWorkosJwt(token: string): Promise<WorkosJwtClaims> {
   return payload as WorkosJwtClaims
 }
 
-function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): WorkosAuthResult | null {
+function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): WorkosAuthResult {
   if (typeof claims.sub !== 'string' || claims.sub.length === 0) {
     return { authenticated: false, error: 'Missing WorkOS sub' }
   }
@@ -95,7 +95,15 @@ function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): Wo
     return { authenticated: false, error: 'Invalid WorkOS org_id' }
   }
 
-  return null
+  return {
+    authenticated: true,
+    identity: {
+      workosUserId: claims.sub,
+      workosOrgId: claims.org_id,
+      role,
+      email: typeof claims.email === 'string' ? claims.email : null,
+    },
+  }
 }
 
 function createUserTokenSupabaseClient(token: string): SupabaseClient {
@@ -106,7 +114,7 @@ function createUserTokenSupabaseClient(token: string): SupabaseClient {
   )
 }
 
-export async function authenticateWorkosUser(
+export async function authenticateWorkosIdentity(
   req: Request,
   options: WorkosAuthOptions = {},
 ): Promise<WorkosAuthResult> {
@@ -122,15 +130,33 @@ export async function authenticateWorkosUser(
     return { authenticated: false, error: 'Invalid WorkOS token' }
   }
 
-  const validationResult = validateClaims(claims, options)
-  if (validationResult) return validationResult
+  return validateClaims(claims, options)
+}
+
+export async function authenticateWorkosUser(
+  req: Request,
+  options: WorkosAuthOptions = {},
+): Promise<WorkosAuthResult> {
+  const identityAuth = await authenticateWorkosIdentity(req, options)
+  if (!identityAuth.authenticated) return identityAuth
+  if (!('identity' in identityAuth)) return identityAuth
+
+  const { identity } = identityAuth
+  if (!identity.workosOrgId) {
+    return { authenticated: false, error: 'Missing WorkOS org_id' }
+  }
+
+  const token = bearerToken(req)
+  if (!token) {
+    return { authenticated: false, error: 'Missing Authorization header' }
+  }
 
   const supabase = createUserTokenSupabaseClient(token)
   const { data, error } = await supabase
     .from('profiles')
     .select('id, org_id, role, email, organisations!inner(workos_org_id)')
-    .eq('workos_user_id', claims.sub)
-    .eq('organisations.workos_org_id', claims.org_id)
+    .eq('workos_user_id', identity.workosUserId)
+    .eq('organisations.workos_org_id', identity.workosOrgId)
     .eq('membership_status', 'active')
     .is('deactivated_at', null)
     .maybeSingle()
@@ -147,8 +173,8 @@ export async function authenticateWorkosUser(
   return {
     authenticated: true,
     context: {
-      workosUserId: claims.sub,
-      workosOrgId: claims.org_id as string,
+      workosUserId: identity.workosUserId,
+      workosOrgId: identity.workosOrgId,
       profileId: data.id,
       orgId: data.org_id,
       role,

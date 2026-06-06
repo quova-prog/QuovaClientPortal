@@ -35,8 +35,8 @@ test('WorkOS Edge helper resolves active local profile by WorkOS sub and org_id'
 
   assert.match(helper, /from\('profiles'\)/s)
   assert.match(helper, /organisations!inner/s)
-  assert.match(helper, /eq\('workos_user_id',\s*claims\.sub\)/s)
-  assert.match(helper, /eq\('organisations\.workos_org_id',\s*claims\.org_id\)/s)
+  assert.match(helper, /eq\('workos_user_id',\s*identity\.workosUserId\)/s)
+  assert.match(helper, /eq\('organisations\.workos_org_id',\s*identity\.workosOrgId\)/s)
   assert.match(helper, /eq\('membership_status',\s*'active'\)/s)
   assert.match(helper, /is\('deactivated_at',\s*null\)/s)
 })
@@ -44,6 +44,9 @@ test('WorkOS Edge helper resolves active local profile by WorkOS sub and org_id'
 test('WorkOS Edge helper returns app auth context without mixing service-role auth', () => {
   const helper = readRepoFile('supabase/functions/_shared/workosAuth.ts')
 
+  assert.match(helper, /export type WorkosVerifiedIdentity/s)
+  assert.match(helper, /export async function authenticateWorkosIdentity\(/s)
+  assert.match(helper, /const identityAuth = await authenticateWorkosIdentity\(req, options\)/s)
   assert.match(helper, /export type WorkosUserAuthContext/s)
   assert.match(helper, /profileId:\s*string/s)
   assert.match(helper, /orgId:\s*string/s)
