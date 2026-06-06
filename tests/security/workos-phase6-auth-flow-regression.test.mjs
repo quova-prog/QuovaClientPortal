@@ -28,15 +28,24 @@ test('WorkOS mode exposes provisioning state and keeps Supabase mode as the defa
 test('WorkOS login and signup pages redirect through AuthKit instead of rendering password forms', () => {
   const login = readRepoFile('src/pages/LoginPage.tsx')
   const signup = readRepoFile('src/pages/SignupPage.tsx')
+  const guard = readRepoFile('src/lib/workosRedirectGuard.ts')
 
   assert.match(login, /loadRuntimeWorkosAuthConfig/s)
   assert.match(login, /config\.provider === 'workos'/s)
+  assert.match(login, /beginWorkosAuthRedirect/s)
+  assert.match(login, /continueWorkosRedirect/s)
   assert.match(login, /void signIn\([^)]*inviteToken/s)
   assert.match(login, /Redirecting to sign in/s)
   assert.match(signup, /loadRuntimeWorkosAuthConfig/s)
   assert.match(signup, /config\.provider === 'workos'/s)
+  assert.match(signup, /beginWorkosAuthRedirect/s)
+  assert.match(signup, /continueWorkosRedirect/s)
   assert.match(signup, /void signUp\([^)]*inviteToken/s)
   assert.match(signup, /Redirecting to sign up/s)
+  assert.match(guard, /WORKOS_REDIRECT_GUARD_PREFIX/s)
+  assert.match(guard, /WORKOS_REDIRECT_GUARD_TTL_MS/s)
+  assert.match(guard, /sessionStorage\.setItem/s)
+  assert.match(guard, /sessionStorage\.removeItem/s)
 })
 
 test('WorkOS invite tokens are detected separately from legacy Supabase UUID invites', () => {

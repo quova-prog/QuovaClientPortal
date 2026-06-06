@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
 import { readInviteParams } from '@/lib/workosInvite'
+import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
@@ -14,6 +15,7 @@ export function SignupPage() {
   const inviteToken = inviteParams.workosInviteToken
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
+  const [workosRedirectPaused, setWorkosRedirectPaused] = useState(false)
   const [loading, setLoading] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [attempts, setAttempts] = useState<number[]>([])
@@ -22,8 +24,20 @@ export function SignupPage() {
 
   useEffect(() => {
     if (config.provider !== 'workos') return
+    const key = `signup:${inviteToken ?? 'default'}`
+    if (!beginWorkosAuthRedirect(key)) {
+      setWorkosRedirectPaused(true)
+      return
+    }
     void signUp('', '', '', '', inviteToken)
   }, [config.provider, inviteToken, signUp])
+
+  function handleContinueWorkosRedirect() {
+    const key = `signup:${inviteToken ?? 'default'}`
+    continueWorkosRedirect(key)
+    setWorkosRedirectPaused(false)
+    void signUp('', '', '', '', inviteToken)
+  }
 
   useEffect(() => {
     if (cooldownEnd <= 0) return
@@ -122,7 +136,19 @@ export function SignupPage() {
         <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
           <OrbitMark />
           <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Redirecting to sign up</h1>
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            {workosRedirectPaused ? 'Continue sign up' : 'Redirecting to sign up'}
+          </h1>
+          {workosRedirectPaused && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleContinueWorkosRedirect}
+              style={{ marginTop: '1rem' }}
+            >
+              Continue
+            </button>
+          )}
           {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       </div>

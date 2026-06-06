@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
 import { readInviteParams } from '@/lib/workosInvite'
+import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { ShieldCheck } from 'lucide-react'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
@@ -30,6 +31,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [workosRedirectPaused, setWorkosRedirectPaused] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Login rate limiting
@@ -49,8 +51,20 @@ export function LoginPage() {
 
   useEffect(() => {
     if (config.provider !== 'workos') return
+    const key = `login:${inviteToken ?? 'default'}`
+    if (!beginWorkosAuthRedirect(key)) {
+      setWorkosRedirectPaused(true)
+      return
+    }
     void signIn('', '', inviteToken)
   }, [config.provider, inviteToken, signIn])
+
+  function handleContinueWorkosRedirect() {
+    const key = `login:${inviteToken ?? 'default'}`
+    continueWorkosRedirect(key)
+    setWorkosRedirectPaused(false)
+    void signIn('', '', inviteToken)
+  }
 
   // Countdown tickers
   useEffect(() => {
@@ -189,7 +203,19 @@ export function LoginPage() {
         <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
           <OrbitMark />
           <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Redirecting to sign in</h1>
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            {workosRedirectPaused ? 'Continue sign in' : 'Redirecting to sign in'}
+          </h1>
+          {workosRedirectPaused && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleContinueWorkosRedirect}
+              style={{ marginTop: '1rem' }}
+            >
+              Continue
+            </button>
+          )}
           {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       </div>
