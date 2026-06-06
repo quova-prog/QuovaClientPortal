@@ -13,6 +13,7 @@ export type WorkosInvitation = {
   role_slug?: string
   roleSlug?: string
   organization_id?: string
+  organizationId?: string
   expires_at?: string
   expiresAt?: string
   created_at?: string
@@ -148,6 +149,16 @@ export async function listWorkosUsers(input: {
   return body.data ?? []
 }
 
+export async function getWorkosUser(userId: string): Promise<WorkosUser> {
+  const body = await workosFetch<Record<string, unknown>>(`/user_management/users/${encodeURIComponent(userId)}`)
+  return unwrap<WorkosUser>(body, 'user')
+}
+
+export async function findWorkosInvitationByToken(token: string): Promise<WorkosInvitation> {
+  const body = await workosFetch<Record<string, unknown>>(`/user_management/invitations/by_token/${encodeURIComponent(token)}`)
+  return unwrap<WorkosInvitation>(body, 'invitation')
+}
+
 export async function updateWorkosOrganizationMembershipRole(
   membershipId: string,
   roleSlug: 'admin' | 'editor' | 'viewer',
@@ -194,6 +205,13 @@ export async function sendWorkosInvitation(input: {
 
 export async function revokeWorkosInvitation(invitationId: string): Promise<WorkosInvitation> {
   const body = await workosFetch<Record<string, unknown>>(`/user_management/invitations/${encodeURIComponent(invitationId)}/revoke`, {
+    method: 'POST',
+  })
+  return unwrap<WorkosInvitation>(body, 'invitation')
+}
+
+export async function acceptWorkosInvitation(invitationId: string): Promise<WorkosInvitation> {
+  const body = await workosFetch<Record<string, unknown>>(`/user_management/invitations/${encodeURIComponent(invitationId)}/accept`, {
     method: 'POST',
   })
   return unwrap<WorkosInvitation>(body, 'invitation')

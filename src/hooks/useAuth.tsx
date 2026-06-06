@@ -4,7 +4,7 @@ import type { User as WorkosUser } from '@workos-inc/authkit-react'
 import type { SupabaseClient, Session } from '@supabase/supabase-js'
 import { setSupabaseAccessTokenProvider, supabase } from '@/lib/supabase'
 import { loadRuntimeWorkosAuthConfig, type AuthProvider as AuthProviderKind, type WorkosAuthConfig } from '@/lib/workosConfig'
-import { clearRememberedWorkosInviteToken } from '@/lib/workosInvite'
+import { clearRememberedWorkosInviteToken, readRememberedWorkosInviteToken } from '@/lib/workosInvite'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import type { AuthUser, Organisation, Profile } from '@/types'
 
@@ -46,6 +46,14 @@ type SyncCurrentUserResult = {
   action: 'created' | 'updated'
   profile_id: string
   org_id: string
+}
+
+type AcceptWorkosInviteResult = {
+  ok: true
+  action: 'created' | 'updated'
+  profile_id: string
+  org_id: string
+  workos_org_id: string
 }
 
 type AuthDiagnostic = {
@@ -537,6 +545,71 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!authKitOrganizationId) {
+      const rememberedInviteToken = readRememberedWorkosInviteToken()
+      if (rememberedInviteToken) {
+        setWorkosProvisionRequired(false)
+        setAuthError(null)
+        setUser(null)
+        setLoading(true)
+
+        try {
+          const accessToken = await getAccessToken()
+          if (!accessToken) {
+            throw new AuthBootstrapError(
+              'workos_access_token_missing',
+              'WorkOS did not return an access token for the signed-in session.',
+            )
+          }
+
+          const { data, error } = await supabase.functions.invoke('accept-workos-invite', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: { invitation_token: rememberedInviteToken },
+          })
+
+          if (error) {
+            throw new AuthBootstrapError(
+              'workos_invite_accept_invoke_failed',
+              'Quova could not accept the WorkOS invitation.',
+              await describeFunctionError(error),
+            )
+          }
+
+          const inviteResult = data as (AcceptWorkosInviteResult & { error?: string }) | null
+          if (!inviteResult?.ok || !inviteResult.workos_org_id) {
+            throw new AuthBootstrapError(
+              'workos_invite_accept_rejected',
+              inviteResult?.error ?? 'The WorkOS invitation could not be accepted.',
+            )
+          }
+
+          if (syncVersionRef.current !== syncId) return
+          clearRememberedWorkosInviteToken()
+          await authKitSwitchToOrganization({ organizationId: inviteResult.workos_org_id })
+          return
+        } catch (error) {
+          const diagnostic = toAuthDiagnostic(
+            error,
+            'workos_invite_accept_failed',
+            'The WorkOS invitation could not be connected to Quova.',
+          )
+          void reportException(error, {
+            category: 'auth',
+            severity: 'error',
+            message: 'WorkOS invitation bootstrap failed',
+            metadata: {
+              code: diagnostic.code,
+              detail: diagnostic.detail,
+            },
+          })
+          if (syncVersionRef.current !== syncId) return
+          setAuthError(diagnostic)
+          setUser(null)
+          setLoading(false)
+          return
+        }
+      }
+
       setWorkosProvisionRequired(true)
       setAuthError(null)
       setUser(null)
@@ -603,7 +676,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setLoading(false)
     }
-  }, [authKitLoading, authKitOrganizationId, authKitUser, getAccessToken])
+  }, [authKitLoading, authKitOrganizationId, authKitSwitchToOrganization, authKitUser, getAccessToken])
 
   useEffect(() => {
     void syncWorkosUser()
@@ -647,7 +720,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!inviteToken.trim()) return { error: 'Invalid invitation' }
       const options = { invitationToken: inviteToken.trim() }
-      await authKitSignIn(options)
+      await authKitSignUp(options)
       return { error: null }
     } catch (error) {
       void reportException(error, {
@@ -657,7 +730,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       })
       return { error: 'Invitation could not be opened' }
     }
-  }, [authKitSignIn])
+  }, [authKitSignUp])
 
   const provisionOrg = useCallback(async (orgName: string): Promise<{ error: string | null }> => {
     const trimmed = orgName.trim()

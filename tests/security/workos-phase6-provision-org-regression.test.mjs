@@ -9,13 +9,16 @@ function readRepoFile(relativePath) {
   return readFileSync(path.join(repoRoot, relativePath), 'utf8')
 }
 
-test('provision-org is the only WorkOS user endpoint allowed to accept missing org_id', () => {
+test('only provision-org and accept-workos-invite can accept missing org_id', () => {
   const fn = readRepoFile('supabase/functions/provision-org/index.ts')
+  const acceptInvite = readRepoFile('supabase/functions/accept-workos-invite/index.ts')
   const sync = readRepoFile('supabase/functions/sync-current-user/index.ts')
 
   assert.match(fn, /authenticateWorkosIdentity\(req,\s*\{\s*allowMissingOrgId:\s*true\s*\}\)/s)
   assert.match(fn, /if \(identity\.workosOrgId\)/s)
   assert.match(fn, /Use sync-current-user for organization-scoped sessions/s)
+  assert.match(acceptInvite, /authenticateWorkosIdentity\(req,\s*\{\s*allowMissingOrgId:\s*true\s*\}\)/s)
+  assert.match(acceptInvite, /Invitation email does not match signed-in user/s)
   assert.doesNotMatch(sync, /allowMissingOrgId:\s*true/s)
 })
 

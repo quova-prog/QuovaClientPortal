@@ -41,7 +41,7 @@ test('WorkOS login and signup pages redirect through AuthKit instead of renderin
   assert.match(signup, /beginWorkosAuthRedirect/s)
   assert.match(signup, /continueWorkosRedirect/s)
   assert.match(signup, /startWorkosAuthRedirect/s)
-  assert.match(signup, /signIn\('', '', inviteToken \?\? null\)/s)
+  assert.match(signup, /signUp\('', '', '', '', inviteToken \?\? null\)/s)
   assert.match(signup, /Redirecting to sign up/s)
   assert.match(guard, /WORKOS_REDIRECT_GUARD_PREFIX/s)
   assert.match(guard, /WORKOS_REDIRECT_GUARD_TTL_MS/s)
@@ -72,12 +72,26 @@ test('WorkOS invite tokens are detected separately from legacy Supabase UUID inv
   assert.doesNotMatch(signup, /readRememberedWorkosInviteToken/s)
   assert.match(signup, /const inviteToken = inviteParams\.workosInviteToken/s)
   assert.match(signup, /clearRememberedWorkosInviteToken\(\)/s)
-  assert.match(signup, /signIn\('', '', inviteToken \?\? null\)/s)
+  assert.match(signup, /signUp\('', '', '', '', inviteToken \?\? null\)/s)
   assert.doesNotMatch(login, /readRememberedWorkosInviteToken/s)
   assert.match(login, /const inviteToken = inviteParams\.workosInviteToken/s)
   assert.match(login, /clearRememberedWorkosInviteToken\(\)/s)
   assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
-  assert.match(auth, /await authKitSignIn\(options\)/s)
+  assert.match(auth, /await authKitSignUp\(options\)/s)
+  assert.doesNotMatch(auth, /const acceptInvite = useCallback\(async \(inviteToken: string\)[\s\S]*await authKitSignIn\(options\)/s)
+})
+
+test('WorkOS no-org sessions redeem a remembered invitation before provisioning', () => {
+  const auth = readRepoFile('src/hooks/useAuth.tsx')
+
+  assert.match(auth, /readRememberedWorkosInviteToken/s)
+  assert.match(auth, /const rememberedInviteToken = readRememberedWorkosInviteToken\(\)/s)
+  assert.match(auth, /functions\.invoke\('accept-workos-invite'/s)
+  assert.match(auth, /body:\s*\{\s*invitation_token:\s*rememberedInviteToken\s*\}/s)
+  assert.match(auth, /const inviteResult = data as \(AcceptWorkosInviteResult & \{ error\?: string \}\) \| null/s)
+  assert.match(auth, /await authKitSwitchToOrganization\(\{\s*organizationId:\s*inviteResult\.workos_org_id\s*\}\)/s)
+  assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
+  assert.match(auth, /setWorkosProvisionRequired\(true\)/s)
 })
 
 test('Protected routes send signed-in WorkOS users without org_id to provisioning', () => {
