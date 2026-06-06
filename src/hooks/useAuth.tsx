@@ -647,8 +647,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!inviteToken.trim()) return { error: 'Invalid invitation' }
       const options = { invitationToken: inviteToken.trim() }
-      if (authKitUser) await authKitSignIn(options)
-      else await authKitSignUp(options)
+      await authKitSignIn(options)
       return { error: null }
     } catch (error) {
       void reportException(error, {
@@ -658,7 +657,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       })
       return { error: 'Invitation could not be opened' }
     }
-  }, [authKitSignIn, authKitSignUp, authKitUser])
+  }, [authKitSignIn])
 
   const provisionOrg = useCallback(async (orgName: string): Promise<{ error: string | null }> => {
     const trimmed = orgName.trim()

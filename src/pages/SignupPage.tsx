@@ -7,7 +7,7 @@ import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRed
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
-  const { signUp } = useAuth()
+  const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
   const config = loadRuntimeWorkosAuthConfig()
   const inviteParams = readInviteParams(window.location.search)
@@ -23,6 +23,10 @@ export function SignupPage() {
   const [cooldownEnd, setCooldownEnd] = useState(0)
   const [cooldownLeft, setCooldownLeft] = useState(0)
 
+  function startWorkosAuthRedirect() {
+    void (inviteToken ? signIn('', '', inviteToken) : signUp('', '', '', '', null))
+  }
+
   useEffect(() => {
     if (config.provider !== 'workos') return
     if (inviteParams.workosInviteToken) rememberWorkosInviteToken(inviteParams.workosInviteToken)
@@ -31,14 +35,14 @@ export function SignupPage() {
       setWorkosRedirectPaused(true)
       return
     }
-    void signUp('', '', '', '', inviteToken)
-  }, [config.provider, inviteToken, signUp])
+    startWorkosAuthRedirect()
+  }, [config.provider, inviteToken, signIn, signUp])
 
   function handleContinueWorkosRedirect() {
     const key = `signup:${inviteToken ?? 'default'}`
     continueWorkosRedirect(key)
     setWorkosRedirectPaused(false)
-    void signUp('', '', '', '', inviteToken)
+    startWorkosAuthRedirect()
   }
 
   useEffect(() => {
