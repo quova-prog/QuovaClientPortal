@@ -72,6 +72,15 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Membership is deactivated' }, 403, req)
     }
 
+    if (existingProfile.role === identity.role && existingProfile.email === identity.email) {
+      return jsonResponse({
+        ok: true,
+        action: 'updated',
+        profile_id: existingProfile.id,
+        org_id: existingProfile.org_id,
+      }, 200, req)
+    }
+
     const { data: updatedProfile, error: updateError } = await admin
       .from('profiles')
       .update({
