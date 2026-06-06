@@ -81,8 +81,27 @@ function normalizeInvitationToken(value) {
   }
 }
 
-function jsonResponse(res, status, body) {
-  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' })
+function parseCookies(header) {
+  const cookies = new Map()
+  if (!header) return cookies
+
+  for (const pair of header.split(';')) {
+    const separator = pair.indexOf('=')
+    if (separator === -1) continue
+
+    const key = pair.slice(0, separator).trim()
+    const value = pair.slice(separator + 1).trim()
+    if (key) cookies.set(key, value)
+  }
+
+  return cookies
+}
+
+function jsonResponse(res, status, body, headers = {}) {
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    ...headers,
+  })
   res.end(JSON.stringify(body, null, 2))
 }
 
@@ -114,15 +133,41 @@ async function exchangeCode({ apiKey, clientId, code, request }) {
   return data.access_token
 }
 
+async function usableInvitationToken({ apiKey, token }) {
+  if (!token) return null
+
+  const response = await fetch(
+    `https://api.workos.com/user_management/invitations/by_token/${encodeURIComponent(token)}`,
+    {
+      headers: { authorization: `Bearer ${apiKey}` },
+    }
+  )
+  const invitation = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    console.warn(`Configured invitation token could not be verified (${response.status}); continuing without it.`)
+    return null
+  }
+
+  if (invitation.state !== 'pending') {
+    console.warn(`Configured invitation is ${invitation.state}; continuing without the invitation token.`)
+    return null
+  }
+
+  return token
+}
+
 const env = parseEnvFile(ENV_FILE)
 const clientId = envValue(env, 'WORKOS_CLIENT_ID')
 const apiKey = envValue(env, 'WORKOS_API_KEY')
 const expectedOrgId = envValue(env, 'WORKOS_PHASE0_EXPECTED_ORG_ID')
-const invitationToken = normalizeInvitationToken(
+const configuredInvitationToken = normalizeInvitationToken(
   process.env.WORKOS_PHASE0_INVITATION_TOKEN ?? env.WORKOS_PHASE0_INVITATION_TOKEN
 )
 const redirectUri = process.env.WORKOS_PHASE0_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI
 const state = randomBytes(24).toString('base64url')
+const stateCookie = 'workos_phase0_state'
+const invitationToken = await usableInvitationToken({ apiKey, token: configuredInvitationToken })
 
 const authorizationUrl = new URL('https://api.workos.com/user_management/authorize')
 authorizationUrl.searchParams.set('provider', 'authkit')
@@ -136,16 +181,35 @@ if (invitationToken) {
 }
 
 const redirectUrl = new URL(redirectUri)
+const startUrl = new URL('/start', redirectUrl.origin)
 const server = createServer(async (request, response) => {
+  let shouldClose = false
+
   try {
     const requestUrl = new URL(request.url ?? '/', redirectUri)
+    if (requestUrl.pathname === startUrl.pathname) {
+      response.writeHead(302, {
+        location: authorizationUrl.toString(),
+        'set-cookie': `${stateCookie}=${state}; HttpOnly; SameSite=Lax; Path=${redirectUrl.pathname}; Max-Age=600`,
+      })
+      response.end()
+      return
+    }
+
     if (requestUrl.pathname !== redirectUrl.pathname) {
       jsonResponse(response, 404, { error: 'not_found' })
       return
     }
 
+    shouldClose = true
     const returnedState = requestUrl.searchParams.get('state')
-    assert.equal(returnedState, state, 'callback state did not match')
+    const cookieState = parseCookies(request.headers.cookie).get(stateCookie) ?? null
+    if (returnedState !== null) {
+      assert.equal(returnedState, state, 'callback state did not match')
+    } else {
+      assert.equal(cookieState, state, 'callback omitted state and local start cookie did not match')
+      console.warn('Callback omitted state; validated local start cookie instead.')
+    }
 
     const code = requestUrl.searchParams.get('code')
     assert.equal(typeof code, 'string', 'callback must include code')
@@ -173,19 +237,25 @@ const server = createServer(async (request, response) => {
       ok: true,
       message: `Saved WORKOS_PHASE0_ACCESS_TOKEN to ${ENV_FILE}`,
       summary,
+    }, {
+      'set-cookie': `${stateCookie}=; HttpOnly; SameSite=Lax; Path=${redirectUrl.pathname}; Max-Age=0`,
     })
     console.log(JSON.stringify(summary, null, 2))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    jsonResponse(response, 500, { ok: false, error: message })
+    jsonResponse(response, 500, { ok: false, error: message }, {
+      'set-cookie': `${stateCookie}=; HttpOnly; SameSite=Lax; Path=${redirectUrl.pathname}; Max-Age=0`,
+    })
     console.error(message)
   } finally {
-    server.close()
+    if (shouldClose) {
+      server.close()
+    }
   }
 })
 
 server.listen(Number(redirectUrl.port), redirectUrl.hostname, () => {
   console.log(`Listening on ${redirectUri}`)
-  console.log('Open this URL and complete the AuthKit login:')
-  console.log(authorizationUrl.toString())
+  console.log('Open this local URL and complete the AuthKit login:')
+  console.log(startUrl.toString())
 })

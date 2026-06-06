@@ -4,6 +4,12 @@ import { createClient } from '@supabase/supabase-js'
 
 const ORBIT_MVP_SUPABASE_PROJECT_REF = 'vmtwojalyzvmdpldgabi'
 
+class Phase0UnusedRealtimeTransport {
+  constructor() {
+    throw new Error('Phase 0 probe scripts do not use Supabase Realtime')
+  }
+}
+
 function requiredEnv(name) {
   const value = process.env[name]
   if (!value || value.trim() === '') {
@@ -50,6 +56,9 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false,
+  },
+  realtime: {
+    transport: Phase0UnusedRealtimeTransport,
   },
 })
 
