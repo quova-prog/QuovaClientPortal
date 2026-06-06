@@ -15,6 +15,8 @@ test('WorkOS mode exposes provisioning state and keeps Supabase mode as the defa
   assert.match(auth, /provider:\s*AuthProviderKind/s)
   assert.match(auth, /workosProvisionRequired:\s*boolean/s)
   assert.match(auth, /authError:\s*AuthDiagnostic \| null/s)
+  assert.match(auth, /async function describeFunctionError/s)
+  assert.match(auth, /context instanceof Response/s)
   assert.match(auth, /provisionOrg:\s*\(orgName: string\)/s)
   assert.match(auth, /acceptInvite:\s*\(inviteToken: string\)/s)
   assert.match(auth, /provider:\s*'supabase'/s)

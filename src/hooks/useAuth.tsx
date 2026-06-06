@@ -93,6 +93,34 @@ function toAuthDiagnostic(error: unknown, fallbackCode: string, fallbackMessage:
   }
 }
 
+async function describeFunctionError(error: unknown): Promise<string | undefined> {
+  const context = error && typeof error === 'object' && 'context' in error
+    ? (error as { context?: unknown }).context
+    : null
+
+  if (context instanceof Response) {
+    const status = `${context.status}${context.statusText ? ` ${context.statusText}` : ''}`
+    const contentType = context.headers.get('content-type') ?? ''
+
+    try {
+      if (contentType.includes('application/json')) {
+        const body = await context.clone().json() as Record<string, unknown>
+        const message = typeof body.error === 'string'
+          ? body.error
+          : JSON.stringify(body)
+        return `${status}: ${message.slice(0, 1000)}`
+      }
+
+      const text = await context.clone().text()
+      return text ? `${status}: ${text.slice(0, 1000)}` : status
+    } catch {
+      return status
+    }
+  }
+
+  return errorDetail(error)
+}
+
 async function sessionSatisfiesRequiredAal(_session: Session): Promise<boolean> {
   const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (error || !data) return false
@@ -537,7 +565,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
         throw new AuthBootstrapError(
           'workos_sync_invoke_failed',
           'Quova could not call the WorkOS user sync function.',
-          error.message,
+          await describeFunctionError(error),
         )
       }
 
