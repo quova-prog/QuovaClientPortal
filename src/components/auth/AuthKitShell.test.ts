@@ -20,13 +20,13 @@ describe('AuthKit shell', () => {
       workos: {
         clientId: 'client_123',
         redirectUri: 'https://app.quovaos.com/callback',
-        apiHostname: 'auth.quovaos.com',
+        apiHostname: 'api.workos.com',
         devMode: false,
       },
     })).toEqual({
       clientId: 'client_123',
       redirectUri: 'https://app.quovaos.com/callback',
-      apiHostname: 'auth.quovaos.com',
+      apiHostname: 'api.workos.com',
       devMode: false,
     })
   })

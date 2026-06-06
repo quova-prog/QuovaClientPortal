@@ -84,6 +84,15 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function WorkosCallbackRoute() {
+  const { user, loading, workosProvisionRequired } = useAuth()
+
+  if (loading) return <RouteSpinner />
+  if (workosProvisionRequired) return <Navigate to="/provision-org" replace />
+  if (user) return <Navigate to="/" replace />
+  return <Navigate to="/login" replace />
+}
+
 function SmartRedirect() {
   const { user, loading } = useAuth()
   const [target, setTarget] = useState<string | null>(null)
@@ -139,6 +148,7 @@ export default function App() {
               {/* Public */}
               <Route path="/login"           element={<PublicRoute><RouteBoundary><LoginPage /></RouteBoundary></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><RouteBoundary><SignupPage /></RouteBoundary></PublicRoute>} />
+              <Route path="/callback" element={<WorkosCallbackRoute />} />
               <Route path="/provision-org" element={<RouteBoundary><WorkosProvisionPage /></RouteBoundary>} />
               <Route path="/mfa-setup" element={<PublicRoute><RouteBoundary><ForceMfaSetupPage /></RouteBoundary></PublicRoute>} />
               <Route path="/forgot-password" element={<PublicRoute><RouteBoundary><ForgotPasswordPage /></RouteBoundary></PublicRoute>} />

@@ -20,7 +20,7 @@ describe('WorkOS auth config', () => {
         {
           VITE_AUTH_PROVIDER: 'workos',
           VITE_WORKOS_CLIENT_ID: 'client_123',
-          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
+          VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
           VITE_WORKOS_DEV_MODE: 'true',
         },
         { mode: 'production' },
@@ -59,11 +59,11 @@ describe('WorkOS auth config', () => {
         {
           VITE_AUTH_PROVIDER: 'workos',
           VITE_WORKOS_CLIENT_ID: 'client_123',
-          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
+          VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
         },
         { mode: 'production' },
       ).workos.apiHostname,
-    ).toBe('auth.quovaos.com')
+    ).toBe('api.workos.com')
   })
 
   it('requires HTTPS redirects outside localhost', () => {
@@ -72,7 +72,7 @@ describe('WorkOS auth config', () => {
         {
           VITE_AUTH_PROVIDER: 'workos',
           VITE_WORKOS_CLIENT_ID: 'client_123',
-          VITE_WORKOS_API_HOSTNAME: 'auth.quovaos.com',
+          VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
           VITE_WORKOS_REDIRECT_URI: 'http://app.quovaos.com/callback',
         },
         { mode: 'production' },

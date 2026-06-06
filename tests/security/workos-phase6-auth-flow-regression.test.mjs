@@ -60,3 +60,14 @@ test('Protected routes send signed-in WorkOS users without org_id to provisionin
   assert.match(provisionPage, /provisionOrg\(orgName\)/s)
   assert.match(provisionPage, /workosProvisionRequired/s)
 })
+
+test('WorkOS callback path completes AuthKit redirects without falling through to the app 404', () => {
+  const app = readRepoFile('src/App.tsx')
+
+  assert.match(app, /function WorkosCallbackRoute/s)
+  assert.match(app, /path="\/callback"/s)
+  assert.match(app, /if \(loading\) return <RouteSpinner \/>/s)
+  assert.match(app, /if \(workosProvisionRequired\) return <Navigate to="\/provision-org" replace \/>/s)
+  assert.match(app, /if \(user\) return <Navigate to="\/" replace \/>/s)
+  assert.match(app, /return <Navigate to="\/login" replace \/>/s)
+})
