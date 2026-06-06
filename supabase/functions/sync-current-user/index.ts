@@ -72,7 +72,8 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Membership is deactivated' }, 403, req)
     }
 
-    if (existingProfile.role === identity.role && existingProfile.email === identity.email) {
+    const nextEmail = identity.email ?? existingProfile.email
+    if (existingProfile.role === identity.role && existingProfile.email === nextEmail) {
       return jsonResponse({
         ok: true,
         action: 'updated',
@@ -85,7 +86,7 @@ Deno.serve(async (req: Request) => {
       .from('profiles')
       .update({
         role: identity.role,
-        email: identity.email,
+        email: nextEmail,
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingProfile.id)

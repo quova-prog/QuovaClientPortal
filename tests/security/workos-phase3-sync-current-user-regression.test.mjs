@@ -52,8 +52,10 @@ test('sync-current-user inserts or refreshes the local profile from WorkOS claim
 test('sync-current-user does not update an unchanged existing profile during login bootstrap', () => {
   const fn = readRepoFile('supabase/functions/sync-current-user/index.ts')
 
-  assert.match(fn, /existingProfile\.role === identity\.role && existingProfile\.email === identity\.email/s)
+  assert.match(fn, /const nextEmail = identity\.email \?\? existingProfile\.email/s)
+  assert.match(fn, /existingProfile\.role === identity\.role && existingProfile\.email === nextEmail/s)
   assert.match(fn, /profile_id:\s*existingProfile\.id/s)
   assert.match(fn, /org_id:\s*existingProfile\.org_id/s)
+  assert.match(fn, /email:\s*nextEmail/s)
   assert.match(fn, /const \{ data: updatedProfile, error: updateError \} = await admin/s)
 })
