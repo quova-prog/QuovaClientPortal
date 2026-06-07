@@ -8,6 +8,7 @@ export type WorkosAuthConfig = {
     clientId: string | null
     redirectUri: string | null
     apiHostname: string | null
+    passwordResetUrl: string | null
     devMode: boolean
   }
 }
@@ -31,19 +32,23 @@ function isLocalhostUrl(url: URL): boolean {
   return url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]'
 }
 
-function validateRedirectUri(value: string): string {
+function validateAppUrl(value: string, envName: string): string {
   let parsed: URL
   try {
     parsed = new URL(value)
   } catch {
-    throw new Error('VITE_WORKOS_REDIRECT_URI must be a valid URL')
+    throw new Error(`${envName} must be a valid URL`)
   }
 
   if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && isLocalhostUrl(parsed))) {
-    throw new Error('VITE_WORKOS_REDIRECT_URI must use HTTPS outside localhost development')
+    throw new Error(`${envName} must use HTTPS outside localhost development`)
   }
 
   return parsed.toString()
+}
+
+function validateRedirectUri(value: string): string {
+  return validateAppUrl(value, 'VITE_WORKOS_REDIRECT_URI')
 }
 
 function validateApiHostname(value: string): string {
@@ -78,6 +83,8 @@ export function loadWorkosAuthConfig(env: EnvLike, options: WorkosAuthConfigOpti
   const redirectUri = rawRedirectUri ? validateRedirectUri(rawRedirectUri) : null
   const rawApiHostname = envString(env, 'VITE_WORKOS_API_HOSTNAME')
   const apiHostname = rawApiHostname ? validateApiHostname(rawApiHostname) : null
+  const rawPasswordResetUrl = envString(env, 'VITE_WORKOS_PASSWORD_RESET_URL')
+  const passwordResetUrl = rawPasswordResetUrl ? validateAppUrl(rawPasswordResetUrl, 'VITE_WORKOS_PASSWORD_RESET_URL') : null
   const clientId = envString(env, 'VITE_WORKOS_CLIENT_ID') ?? null
 
   if (provider === 'workos' && !clientId) {
@@ -94,6 +101,7 @@ export function loadWorkosAuthConfig(env: EnvLike, options: WorkosAuthConfigOpti
       clientId,
       redirectUri,
       apiHostname,
+      passwordResetUrl,
       devMode,
     },
   }

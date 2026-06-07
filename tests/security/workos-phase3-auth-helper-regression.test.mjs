@@ -55,3 +55,18 @@ test('WorkOS Edge helper returns app auth context without mixing service-role au
   assert.doesNotMatch(helper, /SUPABASE_SERVICE_ROLE_KEY/s)
   assert.doesNotMatch(helper, /authenticateServiceRole/s)
 })
+
+test('WorkOS Edge helper preserves user name claims for local profile bootstrap', () => {
+  const helper = readRepoFile('supabase/functions/_shared/workosAuth.ts')
+
+  assert.match(helper, /firstName:\s*string \| null/s)
+  assert.match(helper, /lastName:\s*string \| null/s)
+  assert.match(helper, /fullName:\s*string \| null/s)
+  assert.match(helper, /first_name\?:\s*unknown/s)
+  assert.match(helper, /firstName\?:\s*unknown/s)
+  assert.match(helper, /last_name\?:\s*unknown/s)
+  assert.match(helper, /lastName\?:\s*unknown/s)
+  assert.match(helper, /name\?:\s*unknown/s)
+  assert.match(helper, /workosClaimsName\(claims\)/s)
+  assert.match(helper, /fullName:\s*claimName\.fullName/s)
+})

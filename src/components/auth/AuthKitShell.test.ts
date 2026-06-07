@@ -9,6 +9,7 @@ describe('AuthKit shell', () => {
         clientId: null,
         redirectUri: null,
         apiHostname: null,
+        passwordResetUrl: null,
         devMode: false,
       },
     })).toBeNull()
@@ -21,6 +22,7 @@ describe('AuthKit shell', () => {
         clientId: 'client_123',
         redirectUri: 'https://app.quovaos.com/callback',
         apiHostname: 'api.workos.com',
+        passwordResetUrl: null,
         devMode: false,
       },
     })).toEqual({
@@ -38,6 +40,7 @@ describe('AuthKit shell', () => {
         clientId: 'client_123',
         redirectUri: null,
         apiHostname: null,
+        passwordResetUrl: null,
         devMode: true,
       },
     })).toEqual({

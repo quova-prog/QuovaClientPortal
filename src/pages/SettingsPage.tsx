@@ -79,6 +79,22 @@ export function SettingsPage() {
     setTimeout(() => setSavedProfile(false), 3000)
   }
 
+  function handleChangePassword() {
+    setDbError(null)
+    if (isWorkos) {
+      const resetUrl = config.workos.passwordResetUrl
+      if (!resetUrl) {
+        setDbError('WorkOS password reset URL is not configured.')
+        return
+      }
+
+      window.location.assign(resetUrl)
+      return
+    }
+
+    window.location.assign('/forgot-password')
+  }
+
   // ── Notification prefs (DB-backed) ───────────────────────────────────────
   const { prefs: notifPrefs, loading: notifLoading, error: notifError, isGated: notifGated, update: updateNotifPrefs } = useNotificationPreferences()
 
@@ -569,7 +585,9 @@ export function SettingsPage() {
               <Lock size={16} color="var(--text-muted)" />
               <h3 style={{ fontWeight: 600 }}>Security</h3>
             </div>
-            <button className="btn btn-ghost btn-sm">Change Password →</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleChangePassword}>
+              Change Password <ArrowUpRight size={13} />
+            </button>
           </div>
         </div>
       )}

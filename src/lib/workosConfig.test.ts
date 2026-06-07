@@ -66,6 +66,20 @@ describe('WorkOS auth config', () => {
     ).toBe('api.workos.com')
   })
 
+  it('loads the WorkOS hosted password reset URL when provided', () => {
+    expect(
+      loadWorkosAuthConfig(
+        {
+          VITE_AUTH_PROVIDER: 'workos',
+          VITE_WORKOS_CLIENT_ID: 'client_123',
+          VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
+          VITE_WORKOS_PASSWORD_RESET_URL: 'https://fiery-root-58.authkit.app/reset-password',
+        },
+        { mode: 'production' },
+      ).workos.passwordResetUrl,
+    ).toBe('https://fiery-root-58.authkit.app/reset-password')
+  })
+
   it('requires HTTPS redirects outside localhost', () => {
     expect(() =>
       loadWorkosAuthConfig(
@@ -74,6 +88,20 @@ describe('WorkOS auth config', () => {
           VITE_WORKOS_CLIENT_ID: 'client_123',
           VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
           VITE_WORKOS_REDIRECT_URI: 'http://app.quovaos.com/callback',
+        },
+        { mode: 'production' },
+      ),
+    ).toThrow(/HTTPS/)
+  })
+
+  it('requires HTTPS password reset URLs outside localhost', () => {
+    expect(() =>
+      loadWorkosAuthConfig(
+        {
+          VITE_AUTH_PROVIDER: 'workos',
+          VITE_WORKOS_CLIENT_ID: 'client_123',
+          VITE_WORKOS_API_HOSTNAME: 'api.workos.com',
+          VITE_WORKOS_PASSWORD_RESET_URL: 'http://fiery-root-58.authkit.app/reset-password',
         },
         { mode: 'production' },
       ),

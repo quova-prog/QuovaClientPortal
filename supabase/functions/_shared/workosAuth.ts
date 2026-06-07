@@ -17,6 +17,9 @@ export type WorkosVerifiedIdentity = {
   workosOrgId: string | null
   role: WorkosAppRole
   email: string | null
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
 }
 
 export type WorkosAuthOptions = {
@@ -36,6 +39,11 @@ type WorkosJwtClaims = JWTPayload & {
   user_role?: unknown
   org_id?: unknown
   email?: unknown
+  first_name?: unknown
+  firstName?: unknown
+  last_name?: unknown
+  lastName?: unknown
+  name?: unknown
 }
 
 function bearerToken(req: Request): string | null {
@@ -47,6 +55,27 @@ function bearerToken(req: Request): string | null {
 function appRole(value: unknown): WorkosAppRole | null {
   if (value === 'admin' || value === 'editor' || value === 'viewer') return value
   return null
+}
+
+function claimString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed || null
+}
+
+function joinNameParts(firstName: string | null, lastName: string | null): string | null {
+  return [firstName, lastName].filter(Boolean).join(' ') || null
+}
+
+function workosClaimsName(claims: WorkosJwtClaims): {
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
+} {
+  const firstName = claimString(claims.first_name) ?? claimString(claims.firstName)
+  const lastName = claimString(claims.last_name) ?? claimString(claims.lastName)
+  const fullName = claimString(claims.name) ?? joinNameParts(firstName, lastName)
+  return { firstName, lastName, fullName }
 }
 
 async function verifyWorkosJwt(token: string): Promise<WorkosJwtClaims> {
@@ -78,6 +107,8 @@ function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): Wo
     return { authenticated: false, error: 'Invalid WorkOS user_role' }
   }
 
+  const claimName = workosClaimsName(claims)
+
   if (!claims.org_id && !options.allowMissingOrgId) {
     return { authenticated: false, error: 'Missing WorkOS org_id' }
   }
@@ -90,6 +121,9 @@ function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): Wo
         workosOrgId: null,
         role,
         email: typeof claims.email === 'string' ? claims.email : null,
+        firstName: claimName.firstName,
+        lastName: claimName.lastName,
+        fullName: claimName.fullName,
       },
     }
   }
@@ -105,6 +139,9 @@ function validateClaims(claims: WorkosJwtClaims, options: WorkosAuthOptions): Wo
       workosOrgId: claims.org_id,
       role,
       email: typeof claims.email === 'string' ? claims.email : null,
+      firstName: claimName.firstName,
+      lastName: claimName.lastName,
+      fullName: claimName.fullName,
     },
   }
 }
