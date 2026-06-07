@@ -1,9 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-const sqlPath = path.join(process.cwd(), 'docs/workos/phase1-additive-schema.sql')
+const migrationsDir = path.join(process.cwd(), 'supabase/migrations')
+const migrationFileName = readdirSync(migrationsDir).find((entry) =>
+  entry.endsWith('_workos_phase1_additive_schema.sql'),
+)
+assert.ok(migrationFileName, 'expected a tracked WorkOS Phase 1 additive migration')
+const sqlPath = path.join(migrationsDir, migrationFileName)
 
 function sql() {
   return readFileSync(sqlPath, 'utf8')

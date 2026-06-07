@@ -1,8 +1,10 @@
 -- WorkOS Phase 3 provisioning support.
 --
--- Historical reference only. Do not apply this doc directly.
--- Source of truth: supabase/migrations/20260606175000_workos_phase3_provisioning_schema.sql
--- It is intentionally separate from the Phase 4 RLS re-key cutover SQL.
+-- Dashboard-applied WorkOS SQL reconciled into migration history.
+-- This migration is the source of truth for rebuilding the Phase 3
+-- provisioning state; docs/workos/phase3-provisioning-schema.sql is only a
+-- historical copy. It is intentionally separate from the Phase 4 RLS re-key
+-- cutover SQL.
 
 CREATE TABLE IF NOT EXISTS public.workos_provisioning_locks (
   workos_user_id TEXT PRIMARY KEY,

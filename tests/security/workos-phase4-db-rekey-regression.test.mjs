@@ -1,10 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 const repoRoot = process.cwd()
-const sqlPath = path.join(repoRoot, 'docs/workos/phase4-db-rekey-cutover.sql')
+const migrationsDir = path.join(repoRoot, 'supabase/migrations')
+const migrationFileName = readdirSync(migrationsDir).find((entry) =>
+  entry.endsWith('_workos_phase4_db_rekey_cutover.sql'),
+)
+assert.ok(migrationFileName, 'expected a tracked WorkOS Phase 4 DB re-key migration')
+const sqlPath = path.join(migrationsDir, migrationFileName)
 const safeSupportMigrationPath = path.join(
   repoRoot,
   'supabase/migrations/20260606180329_workos_safe_support_admin_helpers.sql',

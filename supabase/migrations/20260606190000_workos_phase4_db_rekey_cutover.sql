@@ -1,6 +1,7 @@
 -- WorkOS Phase 4 database re-key cutover.
--- Historical reference only. Do not apply this doc directly.
--- Source of truth: supabase/migrations/20260606190000_workos_phase4_db_rekey_cutover.sql
+-- Dashboard-applied WorkOS SQL reconciled into migration history.
+-- This migration is the source of truth for rebuilding the Phase 4 cutover
+-- state; docs/workos/phase4-db-rekey-cutover.sql is only a historical copy.
 -- Run only after:
 --   1. Phase 1 additive schema has been applied.
 --   2. WorkOS JWTs include role, user_role, sub, and selected org_id.

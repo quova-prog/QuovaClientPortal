@@ -1,12 +1,19 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 const repoRoot = process.cwd()
+const migrationsDir = path.join(repoRoot, 'supabase/migrations')
 
 function readRepoFile(relativePath) {
   return readFileSync(path.join(repoRoot, relativePath), 'utf8')
+}
+
+function readMigrationWithSuffix(suffix) {
+  const fileName = readdirSync(migrationsDir).find((entry) => entry.endsWith(suffix))
+  assert.ok(fileName, `expected a tracked migration ending in ${suffix}`)
+  return readFileSync(path.join(migrationsDir, fileName), 'utf8')
 }
 
 test('only bounded pre-org WorkOS functions can accept missing org_id', () => {
@@ -32,7 +39,7 @@ test('only bounded pre-org WorkOS functions can accept missing org_id', () => {
 
 test('provision-org blocks duplicate profiles and rate-limits repeated provisioning attempts', () => {
   const fn = readRepoFile('supabase/functions/provision-org/index.ts')
-  const sql = readRepoFile('docs/workos/phase3-provisioning-schema.sql')
+  const sql = readMigrationWithSuffix('_workos_phase3_provisioning_schema.sql')
 
   assert.match(sql, /CREATE TABLE IF NOT EXISTS public\.workos_provisioning_locks/s)
   assert.match(sql, /ALTER TABLE public\.workos_provisioning_locks ENABLE ROW LEVEL SECURITY/s)

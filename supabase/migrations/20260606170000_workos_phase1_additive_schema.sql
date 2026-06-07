@@ -1,6 +1,7 @@
 -- WorkOS Phase 1 additive database changes.
--- Historical reference only. Do not apply this doc directly.
--- Source of truth: supabase/migrations/20260606170000_workos_phase1_additive_schema.sql
+-- Dashboard-applied WorkOS SQL reconciled into migration history.
+-- This migration is the source of truth for rebuilding the Phase 1 database
+-- state; docs/workos/phase1-additive-schema.sql is only a historical copy.
 -- This file is intentionally non-cutover: it adds columns and new helper
 -- functions without replacing existing Supabase Auth RLS policies.
 

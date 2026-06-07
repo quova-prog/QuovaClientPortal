@@ -534,8 +534,10 @@ No policy/RPC cutover should start until this inventory exists.
 - Regenerate Supabase types.
 - Confirm Vercel and Supabase production health.
 
-Migrations are applied through the Supabase Dashboard SQL editor because the
-existing migration history is desynchronized and `supabase db push` is unsafe.
+WorkOS database changes must be tracked in `supabase/migrations` before merge.
+Dashboard-applied SQL is allowed only as an emergency production action and
+must be reconciled into idempotent migrations before the branch is considered
+complete, so a fresh environment can be rebuilt from the repo.
 
 ## 15. Testing
 
