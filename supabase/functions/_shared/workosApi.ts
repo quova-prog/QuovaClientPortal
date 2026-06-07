@@ -41,6 +41,21 @@ export type WorkosOrganizationMembership = {
   roles?: Array<{ slug?: string }>
 }
 
+export type WorkosPasswordReset = {
+  id: string
+  email: string
+  user_id?: string
+  userId?: string
+  password_reset_token?: string
+  passwordResetToken?: string
+  password_reset_url?: string
+  passwordResetUrl?: string
+  expires_at?: string
+  expiresAt?: string
+  created_at?: string
+  createdAt?: string
+}
+
 function apiKey(): string {
   const value = Deno.env.get('WORKOS_API_KEY')
   if (!value) throw new Error('Missing WORKOS_API_KEY')
@@ -150,6 +165,16 @@ export async function listWorkosUsers(input: {
 export async function getWorkosUser(userId: string): Promise<WorkosUser> {
   const body = await workosFetch<Record<string, unknown>>(`/user_management/users/${encodeURIComponent(userId)}`)
   return unwrap<WorkosUser>(body, 'user')
+}
+
+export async function createWorkosPasswordReset(input: {
+  email: string
+}): Promise<WorkosPasswordReset> {
+  const body = await workosFetch<Record<string, unknown>>('/user_management/password_reset', {
+    method: 'POST',
+    body: JSON.stringify({ email: input.email }),
+  })
+  return unwrap<WorkosPasswordReset>(body, 'password_reset')
 }
 
 export async function findWorkosInvitationByToken(token: string): Promise<WorkosInvitation> {

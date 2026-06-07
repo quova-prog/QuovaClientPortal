@@ -54,6 +54,8 @@ export function SettingsPage() {
   const [profileForm, setProfileForm] = useState({ full_name: '', role: '' })
   const [savingProfile, setSavingProfile] = useState(false)
   const [savedProfile, setSavedProfile]   = useState(false)
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false)
+  const [passwordResetNotice, setPasswordResetNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (user?.profile) {
@@ -79,16 +81,53 @@ export function SettingsPage() {
     setTimeout(() => setSavedProfile(false), 3000)
   }
 
-  function handleChangePassword() {
-    setDbError(null)
-    if (isWorkos) {
-      const resetUrl = config.workos.passwordResetUrl
-      if (!resetUrl) {
-        setDbError('WorkOS password reset URL is not configured.')
-        return
+  async function functionErrorMessage(error: unknown): Promise<string> {
+    if (error && typeof error === 'object' && 'context' in error) {
+      const context = (error as { context?: unknown }).context
+      if (context instanceof Response) {
+        try {
+          const body = await context.clone().json()
+          if (typeof body.error === 'string') return body.error
+          return JSON.stringify(body)
+        } catch {
+          return context.statusText || `Request failed with ${context.status}`
+        }
       }
+    }
+    if (error instanceof Error && error.message.trim()) return error.message
+    if (typeof error === 'string' && error.trim()) return error
+    return 'Request failed'
+  }
 
-      window.location.assign(resetUrl)
+  async function handleChangePassword() {
+    setDbError(null)
+    setPasswordResetNotice(null)
+    if (isWorkos) {
+      setPasswordResetLoading(true)
+      try {
+        const { data, error } = await db.functions.invoke('workos-password-reset', { body: {} })
+        if (error) {
+          setDbError(await functionErrorMessage(error))
+          return
+        }
+        if (data?.error) {
+          setDbError(String(data.error))
+          return
+        }
+
+        const resetUrl = data?.password_reset_url
+        if (typeof resetUrl === 'string' && resetUrl.trim()) {
+          window.location.assign(resetUrl)
+          return
+        }
+
+        const email = typeof data?.email === 'string' ? data.email : 'your email'
+        setPasswordResetNotice(`Password reset email sent to ${email}.`)
+      } catch (error) {
+        setDbError(await functionErrorMessage(error))
+      } finally {
+        setPasswordResetLoading(false)
+      }
       return
     }
 
@@ -585,9 +624,17 @@ export function SettingsPage() {
               <Lock size={16} color="var(--text-muted)" />
               <h3 style={{ fontWeight: 600 }}>Security</h3>
             </div>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={handleChangePassword}>
-              Change Password <ArrowUpRight size={13} />
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleChangePassword} disabled={passwordResetLoading}>
+              {passwordResetLoading
+                ? <><span className="spinner" style={{ width: 12, height: 12 }} /> Opening…</>
+                : <>Change Password <ArrowUpRight size={13} /></>
+              }
             </button>
+            {passwordResetNotice && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--green)', fontSize: '0.8125rem', marginTop: '0.75rem' }}>
+                <CheckCircle size={13} /> {passwordResetNotice}
+              </div>
+            )}
           </div>
         </div>
       )}
