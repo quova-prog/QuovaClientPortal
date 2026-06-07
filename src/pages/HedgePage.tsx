@@ -15,6 +15,7 @@ import { useEntity } from '@/context/EntityContext'
 import { formatCurrency, formatDate, formatRate, daysUntil, currencyFlag, formatPnl } from '@/lib/utils'
 
 import { toUsd } from '@/lib/fx'
+import { effectiveHedgedNotional } from '@/lib/windowForward'
 import type { HedgePositionForm } from '@/types'
 
 // Annualized forward premium per pair (interest rate differential, %).
@@ -172,7 +173,7 @@ export function HedgePage() {
       if (!pos.value_date) continue
       const key = pos.value_date.slice(0, 7)
       const b = buckets.find(b => b.key === key)
-      if (b) b.hedged += toUsd(pos.notional_base, pos.base_currency, fxRates)
+      if (b) b.hedged += toUsd(effectiveHedgedNotional(pos), pos.base_currency, fxRates)
     }
     return buckets.map(b => ({
       month: b.month,
@@ -256,10 +257,10 @@ export function HedgePage() {
     setForm(f => ({ ...f, [k]: v }))
   }
 
-  const totalHedgedUsd = positions.reduce((s, p) => s + toUsd(p.notional_base, p.base_currency, ratesMap), 0)
+  const totalHedgedUsd = positions.reduce((s, p) => s + toUsd(effectiveHedgedNotional(p), p.base_currency, ratesMap), 0)
   const uniquePairs = new Set(positions.map(p => p.currency_pair))
   const byPair: Record<string, number> = {}
-  positions.forEach(p => { byPair[p.currency_pair] = (byPair[p.currency_pair] ?? 0) + p.notional_base })
+  positions.forEach(p => { byPair[p.currency_pair] = (byPair[p.currency_pair] ?? 0) + effectiveHedgedNotional(p) })
 
   useEffect(() => {
     if (!isWindowForward || !worstWindowRate) return
@@ -287,7 +288,10 @@ export function HedgePage() {
     const [base, quote] = form.currency_pair.split('/')
     const hedgeTypeLabel = form.hedge_type === 'cash_flow' ? 'cash flow' : form.hedge_type === 'fair_value' ? 'fair value' : 'net investment'
     const designationNote = `${hedgeTypeLabel} hedge — FX rate risk on ${form.currency_pair} exposure`
-    const notes = form.notes ? `${form.notes}\n${designationNote}` : designationNote
+    const indicativeNote = isWindowForward
+      ? 'Indicative Quova window-forward rate pending bank confirmation'
+      : null
+    const notes = [form.notes, designationNote, indicativeNote].filter(Boolean).join('\n')
 
     if (isWindowForward) {
       // Window forwards must go through the server RPC (RLS blocks direct
@@ -349,10 +353,11 @@ export function HedgePage() {
           // Compute total unrealized P&L (USD) across all positions
           const totalPnlUsd = positions.reduce((s, p) => {
             const currentRate = ratesMap[p.currency_pair] ?? p.contracted_rate
+            const effectiveNotional = effectiveHedgedNotional(p)
             const diff = p.direction === 'buy'
               ? currentRate - p.contracted_rate
               : p.contracted_rate - currentRate
-            const pnlQuote = diff * p.notional_base
+            const pnlQuote = diff * effectiveNotional
             const quoteCcy = p.currency_pair.split('/')[1] ?? 'USD'
             const pnlUsd = toUsd(Math.abs(pnlQuote), quoteCcy, ratesMap) * (pnlQuote >= 0 ? 1 : -1)
             return s + pnlUsd
@@ -362,9 +367,10 @@ export function HedgePage() {
             const inceptionSpot = p.spot_rate_at_trade ?? p.contracted_rate
             const currentSpot = ratesMap[p.currency_pair] ?? p.contracted_rate
             const qCcy = p.currency_pair.split('/')[1] ?? 'USD'
+            const effectiveNotional = effectiveHedgedNotional(p)
             const exposureMove = p.direction === 'buy'
-              ? p.notional_base * (inceptionSpot - currentSpot)
-              : p.notional_base * (currentSpot - inceptionSpot)
+              ? effectiveNotional * (inceptionSpot - currentSpot)
+              : effectiveNotional * (currentSpot - inceptionSpot)
             return s + toUsd(Math.abs(exposureMove), qCcy, ratesMap) * (exposureMove >= 0 ? 1 : -1)
           }, 0)
           return (
@@ -910,7 +916,7 @@ export function HedgePage() {
 
                 <div>
                   <label className="label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{isWindowForward ? 'Worst Rate in Window' : 'RFQ Rate'}</span>
+                    <span>{isWindowForward ? 'Indicative Window Rate' : 'RFQ Rate'}</span>
                     {quotedNotional > 0 && <span style={{ color: 'var(--teal-dark)', fontWeight: 400, fontSize: '0.75rem' }}>≈ {formatCurrency(quotedNotional, quoteCcy, true)} {quoteCcy}</span>}
                   </label>
                   {isWindowForward ? (
@@ -923,7 +929,7 @@ export function HedgePage() {
                         style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
                       />
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                        Estimated from the forward curve across the selected window and stored as the locked window-forward rate.
+                        Indicative until bank quote confirmation. Estimated from Quova's curve across the selected window.
                       </div>
                     </>
                   ) : (
@@ -984,8 +990,8 @@ export function HedgePage() {
                       </div>
                     )}
                     <div style={{ marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      The contracted rate is the bank's worst-rate-in-window quote. Pairs and limits are
-                      governed by your hedge policy.
+                      This indicative rate is stored for planning until Quova has a bank relationship
+                      and confirmed Window Forward quotes. Pairs and limits are governed by your hedge policy.
                     </div>
                   </div>
                 )}

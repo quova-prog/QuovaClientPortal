@@ -5,7 +5,7 @@ import {
 } from './engine'
 
 describe('computeDerivativeAccountingEntries', () => {
-  it('marks derivative to fair value and releases carrying value pro rata for partial window-forward draws', () => {
+  it('clears partial draw carrying value before trueing up to period-end fair value', () => {
     const entries = computeDerivativeAccountingEntries({
       period: '2026-06',
       designationId: 'designation-1',
@@ -13,7 +13,7 @@ describe('computeDerivativeAccountingEntries', () => {
       previousDerivativeBalanceUsd: 12_000,
       currentFairValueUsd: 18_000,
       totalDesignatedNotionalBase: 1_000_000,
-      previouslySettledNotionalBase: 0,
+      previouslySettledNotionalBase: 100_000,
       settlements: [{
         drawId: 'draw-1',
         eventType: 'partial_settlement',
@@ -28,23 +28,23 @@ describe('computeDerivativeAccountingEntries', () => {
         period: '2026-06',
         designationId: 'designation-1',
         positionId: 'position-1',
-        drawId: null,
-        eventType: 'mtm_to_fair_value',
-        amountUsd: 6_000,
-        derivativeBalanceAfterUsd: 18_000,
+        drawId: 'draw-1',
+        eventType: 'partial_settlement',
+        amountUsd: -3_333.33,
+        derivativeBalanceAfterUsd: 8_666.67,
         fairValueMeasurementId: 'fv-1',
-        sourceEventRef: 'fair_value:fv-1',
+        sourceEventRef: 'draw:draw-1',
       },
       {
         period: '2026-06',
         designationId: 'designation-1',
         positionId: 'position-1',
-        drawId: 'draw-1',
-        eventType: 'partial_settlement',
-        amountUsd: -4_500,
-        derivativeBalanceAfterUsd: 13_500,
+        drawId: null,
+        eventType: 'mtm_to_fair_value',
+        amountUsd: 9_333.33,
+        derivativeBalanceAfterUsd: 18_000,
         fairValueMeasurementId: 'fv-1',
-        sourceEventRef: 'draw:draw-1',
+        sourceEventRef: 'fair_value:fv-1',
       },
     ])
   })
@@ -55,7 +55,7 @@ describe('computeDerivativeAccountingEntries', () => {
       designationId: 'designation-1',
       positionId: 'position-1',
       previousDerivativeBalanceUsd: -3_000,
-      currentFairValueUsd: -5_000,
+      currentFairValueUsd: 0,
       totalDesignatedNotionalBase: 500_000,
       previouslySettledNotionalBase: 300_000,
       settlements: [{
@@ -68,13 +68,13 @@ describe('computeDerivativeAccountingEntries', () => {
 
     expect(entries).toHaveLength(2)
     expect(entries[0]).toMatchObject({
-      eventType: 'mtm_to_fair_value',
-      amountUsd: -2_000,
-      derivativeBalanceAfterUsd: -5_000,
+      eventType: 'full_settlement',
+      amountUsd: 3_000,
+      derivativeBalanceAfterUsd: 0,
     })
     expect(entries[1]).toMatchObject({
-      eventType: 'full_settlement',
-      amountUsd: 5_000,
+      eventType: 'mtm_to_fair_value',
+      amountUsd: 0,
       derivativeBalanceAfterUsd: 0,
     })
   })

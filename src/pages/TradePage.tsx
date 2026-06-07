@@ -22,7 +22,7 @@ function triggerDownload(filename: string, content: string) {
 }
 
 import { toUsd } from '@/lib/fx'
-import { windowForwardMtm } from '@/lib/windowForward'
+import { effectiveHedgedNotional, windowForwardMtm } from '@/lib/windowForward'
 import { useWindowDraws, type DrawEconomics } from '@/hooks/useWindowForward'
 
 // MTM P&L in quote currency (e.g. USD for EUR/USD)
@@ -169,6 +169,7 @@ export function TradePage() {
     const expectedDirection = p.direction === 'sell' ? 'receivable' : 'payable'
     return exposures.filter(e =>
       e.currency_pair === p.currency_pair &&
+      (p.entity_id == null || e.entity_id === p.entity_id) &&
       e.direction === expectedDirection &&
       (e.status === 'open' || e.status === 'partially_hedged') &&
       Math.max(0, e.notional_base - (e.settled_amount ?? 0)) > 0
@@ -244,10 +245,11 @@ export function TradePage() {
     const inceptionSpot = (p as any).spot_rate_at_trade ?? p.contracted_rate
     const currentSpot   = p.spot
     const quoteCcy      = p.currency_pair.split('/')[1] ?? 'USD'
+    const exposureNotional = effectiveHedgedNotional(p)
     // Exposure moves opposite to instrument: if instrument gained, exposure lost, and vice versa
     const exposureMoveQuote = p.direction === 'buy'
-      ? p.notional_base * (inceptionSpot - currentSpot)   // opposite of buy-forward gain
-      : p.notional_base * (currentSpot - inceptionSpot)   // opposite of sell-forward gain
+      ? exposureNotional * (inceptionSpot - currentSpot)   // opposite of buy-forward gain
+      : exposureNotional * (currentSpot - inceptionSpot)   // opposite of sell-forward gain
     const exposureMoveUsd = toUsd(Math.abs(exposureMoveQuote), quoteCcy, fxRates) * (exposureMoveQuote >= 0 ? 1 : -1)
     return s + exposureMoveUsd
   }, 0)

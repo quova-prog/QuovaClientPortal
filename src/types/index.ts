@@ -150,7 +150,7 @@ export interface HedgePosition {
   // 20260604000001_window_forward_positions.sql).
   window_start_date: string | null
   window_end_date: string | null
-  pricing_method: 'fixed_worst_rate' | 'pro_rata_points' | null
+  pricing_method: 'fixed_worst_rate' | null
   drawn_notional: number
   created_at: string
   updated_at: string

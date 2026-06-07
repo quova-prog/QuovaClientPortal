@@ -273,21 +273,9 @@ function computeDerivativeAccountingEntries(input: {
   }
 
   const entries = []
-  let carryingBalance = roundCents(input.currentFairValueUsd)
+  let carryingBalance = roundCents(input.previousDerivativeBalanceUsd)
   let settledNotional = input.previouslySettledNotionalBase
   const fairValueMeasurementId = input.fairValueMeasurementId ?? null
-
-  entries.push({
-    period: input.period,
-    designationId: input.designationId,
-    positionId: input.positionId,
-    drawId: null,
-    eventType: 'mtm_to_fair_value' as const,
-    amountUsd: roundCents(input.currentFairValueUsd - input.previousDerivativeBalanceUsd),
-    derivativeBalanceAfterUsd: carryingBalance,
-    fairValueMeasurementId,
-    sourceEventRef: fairValueMeasurementId ? `fair_value:${fairValueMeasurementId}` : null,
-  })
 
   for (const settlement of input.settlements) {
     if (settlement.settledNotionalBase <= 0) {
@@ -304,7 +292,7 @@ function computeDerivativeAccountingEntries(input: {
       || settlement.settledNotionalBase === remainingBeforeSettlement
     const carryingValueReleased = settlesAllResidual
       ? carryingBalance
-      : roundCents(input.currentFairValueUsd * (settlement.settledNotionalBase / input.totalDesignatedNotionalBase))
+      : roundCents(carryingBalance * (settlement.settledNotionalBase / remainingBeforeSettlement))
     const amountUsd = roundCents(-carryingValueReleased)
     carryingBalance = roundCents(carryingBalance + amountUsd)
     settledNotional += settlement.settledNotionalBase
@@ -321,6 +309,20 @@ function computeDerivativeAccountingEntries(input: {
       sourceEventRef: settlement.sourceEventRef ?? (settlement.drawId ? `draw:${settlement.drawId}` : null),
     })
   }
+
+  const mtmAmount = roundCents(input.currentFairValueUsd - carryingBalance)
+  carryingBalance = roundCents(input.currentFairValueUsd)
+  entries.push({
+    period: input.period,
+    designationId: input.designationId,
+    positionId: input.positionId,
+    drawId: null,
+    eventType: 'mtm_to_fair_value' as const,
+    amountUsd: mtmAmount,
+    derivativeBalanceAfterUsd: carryingBalance,
+    fairValueMeasurementId,
+    sourceEventRef: fairValueMeasurementId ? `fair_value:${fairValueMeasurementId}` : null,
+  })
 
   return entries
 }

@@ -68,15 +68,15 @@ describe('buildCloseAccountingPeriodPlan', () => {
       p_fair_value_hierarchy: 'level_2_indicative',
     })
     expect(plan.calls[1].args).toMatchObject({
-      p_event_type: 'mtm_to_fair_value',
-      p_amount_usd: 6_000,
-      p_derivative_balance_after_usd: 18_000,
-    })
-    expect(plan.calls[2].args).toMatchObject({
       p_draw_id: 'draw-1',
       p_event_type: 'partial_settlement',
-      p_amount_usd: -4_500,
-      p_derivative_balance_after_usd: 13_500,
+      p_amount_usd: -3_000,
+      p_derivative_balance_after_usd: 9_000,
+    })
+    expect(plan.calls[2].args).toMatchObject({
+      p_event_type: 'mtm_to_fair_value',
+      p_amount_usd: 9_000,
+      p_derivative_balance_after_usd: 18_000,
     })
     expect(plan.calls[4].args).toMatchObject({
       p_event_type: 'defer',
