@@ -120,6 +120,17 @@ git push -u origin main
    - `VITE_SUPABASE_ANON_KEY`
 3. Click **Save** then go to **Deployments** → **Redeploy** (latest deployment)
 
+### 5.3.1 Auth environment changes
+
+Treat all `VITE_AUTH_*` and `VITE_WORKOS_*` changes as release-gated changes. Vite bakes these values into the frontend bundle at build time, so a bad production value is not a runtime toggle.
+
+Required sequence:
+1. Set or change the value in the Vercel **Preview** environment first.
+2. Deploy a preview build.
+3. Smoke-test sign-in, callback, sign-out, and team invitation acceptance on that preview URL.
+4. Apply the same value to **Production** only after the preview smoke test passes.
+5. Redeploy production and repeat the auth smoke test.
+
 ### 5.4 Custom domain (optional)
 1. Go to **Settings → Domains** in Vercel
 2. Add `app.orbit-treasury.ai` (or whatever domain you own)

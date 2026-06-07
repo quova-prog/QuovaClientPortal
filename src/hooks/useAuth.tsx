@@ -4,7 +4,7 @@ import type { User as WorkosUser } from '@workos-inc/authkit-react'
 import type { SupabaseClient, Session } from '@supabase/supabase-js'
 import { setSupabaseAccessTokenProvider, supabase } from '@/lib/supabase'
 import { loadRuntimeWorkosAuthConfig, type AuthProvider as AuthProviderKind, type WorkosAuthConfig } from '@/lib/workosConfig'
-import { clearRememberedWorkosInviteToken } from '@/lib/workosInvite'
+import { clearRememberedWorkosInviteToken, readRememberedWorkosInviteToken } from '@/lib/workosInvite'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import type { AuthUser, Organisation, Profile } from '@/types'
 
@@ -53,6 +53,14 @@ type ResolveWorkosOrganizationResult = {
   org_id: string | null
   workos_org_id: string | null
   reason?: 'no_membership'
+}
+
+type AcceptWorkosInviteResult = {
+  ok: true
+  action: 'created' | 'updated'
+  profile_id: string
+  org_id: string
+  workos_org_id: string
 }
 
 type AuthDiagnostic = {
@@ -558,6 +566,43 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
           )
         }
 
+        const rememberedInviteToken = readRememberedWorkosInviteToken()
+        if (rememberedInviteToken) {
+          const { data, error } = await supabase.functions.invoke('accept-workos-invite', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: { invitation_token: rememberedInviteToken },
+          })
+
+          if (error) {
+            throw new AuthBootstrapError(
+              'workos_invite_accept_invoke_failed',
+              'Quova could not accept this WorkOS invitation.',
+              await describeFunctionError(error),
+            )
+          }
+
+          const inviteResult = data as (AcceptWorkosInviteResult & { error?: string }) | null
+          if (!inviteResult?.ok) {
+            throw new AuthBootstrapError(
+              'workos_invite_accept_rejected',
+              inviteResult?.error ?? 'The WorkOS invitation could not be accepted.',
+            )
+          }
+
+          if (inviteResult?.ok && inviteResult.workos_org_id) {
+            if (syncVersionRef.current !== syncId) return
+            clearRememberedWorkosInviteToken()
+            await authKitSwitchToOrganization({ organizationId: inviteResult.workos_org_id })
+            return
+          }
+
+          throw new AuthBootstrapError(
+            'workos_invite_accept_missing_org',
+            'The WorkOS invitation was accepted, but no organization was returned.',
+          )
+        }
+
         const { data, error } = await supabase.functions.invoke('resolve-workos-organization', {
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -686,11 +731,10 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     void syncWorkosUser()
   }, [syncWorkosUser])
 
-  const signIn = useCallback(async (email: string, _password: string, inviteToken?: string | null) => {
+  const signIn = useCallback(async (email: string, _password: string, _inviteToken?: string | null) => {
     try {
       await authKitSignIn({
         ...(email.trim() ? { loginHint: email.trim() } : {}),
-        ...(inviteToken ? { invitationToken: inviteToken } : {}),
       })
       return { error: null }
     } catch (error) {
@@ -703,11 +747,10 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authKitSignIn])
 
-  const signUp = useCallback(async (email: string, _password: string, _orgName: string, _fullName: string, inviteId?: string | null) => {
+  const signUp = useCallback(async (email: string, _password: string, _orgName: string, _fullName: string, _inviteId?: string | null) => {
     try {
       await authKitSignUp({
         ...(email.trim() ? { loginHint: email.trim() } : {}),
-        ...(inviteId ? { invitationToken: inviteId } : {}),
       })
       return { error: null }
     } catch (error) {
@@ -723,8 +766,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
   const acceptInvite = useCallback(async (inviteToken: string): Promise<{ error: string | null }> => {
     try {
       if (!inviteToken.trim()) return { error: 'Invalid invitation' }
-      const options = { invitationToken: inviteToken.trim() }
-      await authKitSignUp(options)
+      await authKitSignUp({})
       return { error: null }
     } catch (error) {
       void reportException(error, {

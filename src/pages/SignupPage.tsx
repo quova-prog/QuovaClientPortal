@@ -42,7 +42,7 @@ export function SignupPage() {
     else clearRememberedWorkosInviteToken()
 
     ;(async () => {
-      const result = await signUp('', '', '', '', inviteToken ?? null)
+      const result = await signUp('', '', '', '')
       if (!cancelled && result.error) setError(result.error)
     })()
 

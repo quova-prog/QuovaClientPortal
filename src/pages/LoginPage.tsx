@@ -65,7 +65,7 @@ export function LoginPage() {
     else clearRememberedWorkosInviteToken()
 
     ;(async () => {
-      const result = await signIn('', '', inviteToken)
+      const result = await signIn('', '')
       if (!cancelled && result.error) setError(result.error)
     })()
 
@@ -104,7 +104,7 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const result = await signIn(email, password, inviteToken)
+      const result = await signIn(email, password)
       if (result.error) {
         const failures = loginFailures + 1
         setLoginFailures(failures)
