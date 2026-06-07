@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
@@ -9,36 +9,29 @@ import {
 import {
   clearRememberedWorkosInviteToken,
   readInviteParams,
-  readRememberedWorkosInviteToken,
   rememberWorkosInviteToken,
 } from '@/lib/workosInvite'
-import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
-  const config = loadRuntimeWorkosAuthConfig()
+  const config = useMemo(() => loadRuntimeWorkosAuthConfig(), [])
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
   const authorizationSessionId = readWorkosAuthorizationSessionId(window.location.search)
-  const workosSignupInviteToken = inviteToken ?? readRememberedWorkosInviteToken()
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
-  const [workosRedirectPaused, setWorkosRedirectPaused] = useState(false)
   const [loading, setLoading] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [attempts, setAttempts] = useState<number[]>([])
   const [cooldownEnd, setCooldownEnd] = useState(0)
   const [cooldownLeft, setCooldownLeft] = useState(0)
 
-  function startWorkosAuthRedirect() {
-    void signUp('', '', '', '', workosSignupInviteToken ?? null)
-  }
-
   useEffect(() => {
     if (config.provider !== 'workos') return
+    let cancelled = false
     const authorizationSessionUrl = buildWorkosAuthorizationSessionUrl(config, authorizationSessionId)
     if (authorizationSessionUrl) {
       window.location.assign(authorizationSessionUrl)
@@ -46,30 +39,20 @@ export function SignupPage() {
     }
 
     if (inviteToken) rememberWorkosInviteToken(inviteToken)
-    else if (!workosSignupInviteToken) clearRememberedWorkosInviteToken()
-    const key = `signup:${workosSignupInviteToken ?? 'default'}`
-    if (!beginWorkosAuthRedirect(key)) {
-      setWorkosRedirectPaused(true)
-      return
-    }
-    startWorkosAuthRedirect()
+    else clearRememberedWorkosInviteToken()
+
+    ;(async () => {
+      const result = await signUp('', '', '', '', inviteToken ?? null)
+      if (!cancelled && result.error) setError(result.error)
+    })()
+
+    return () => { cancelled = true }
   }, [
     authorizationSessionId,
-    config.provider,
-    config.workos.apiHostname,
-    config.workos.clientId,
-    config.workos.redirectUri,
+    config,
     inviteToken,
     signUp,
-    workosSignupInviteToken,
   ])
-
-  function handleContinueWorkosRedirect() {
-    const key = `signup:${workosSignupInviteToken ?? 'default'}`
-    continueWorkosRedirect(key)
-    setWorkosRedirectPaused(false)
-    startWorkosAuthRedirect()
-  }
 
   useEffect(() => {
     if (cooldownEnd <= 0) return
@@ -169,18 +152,8 @@ export function SignupPage() {
           <OrbitMark />
           <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
           <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-            {workosRedirectPaused ? 'Continue sign up' : 'Redirecting to sign up'}
+            Redirecting to sign up
           </h1>
-          {workosRedirectPaused && (
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleContinueWorkosRedirect}
-              style={{ marginTop: '1rem' }}
-            >
-              Continue
-            </button>
-          )}
           {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       </div>

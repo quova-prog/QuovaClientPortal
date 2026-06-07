@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
@@ -8,7 +8,6 @@ import {
   readWorkosAuthorizationSessionId,
 } from '@/lib/workosAuthorizationSession'
 import { clearRememberedWorkosInviteToken, readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
-import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { ShieldCheck } from 'lucide-react'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
@@ -28,7 +27,7 @@ interface MfaPending {
 export function LoginPage() {
   const navigate = useNavigate()
   const { signIn, completeMfaSignIn } = useAuth()
-  const config = loadRuntimeWorkosAuthConfig()
+  const config = useMemo(() => loadRuntimeWorkosAuthConfig(), [])
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
@@ -36,7 +35,6 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [workosRedirectPaused, setWorkosRedirectPaused] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Login rate limiting
@@ -56,6 +54,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (config.provider !== 'workos') return
+    let cancelled = false
     const authorizationSessionUrl = buildWorkosAuthorizationSessionUrl(config, authorizationSessionId)
     if (authorizationSessionUrl) {
       window.location.assign(authorizationSessionUrl)
@@ -64,28 +63,19 @@ export function LoginPage() {
 
     if (inviteToken) rememberWorkosInviteToken(inviteToken)
     else clearRememberedWorkosInviteToken()
-    const key = `login:${inviteToken ?? 'default'}`
-    if (!beginWorkosAuthRedirect(key)) {
-      setWorkosRedirectPaused(true)
-      return
-    }
-    void signIn('', '', inviteToken)
+
+    ;(async () => {
+      const result = await signIn('', '', inviteToken)
+      if (!cancelled && result.error) setError(result.error)
+    })()
+
+    return () => { cancelled = true }
   }, [
     authorizationSessionId,
-    config.provider,
-    config.workos.apiHostname,
-    config.workos.clientId,
-    config.workos.redirectUri,
+    config,
     inviteToken,
     signIn,
   ])
-
-  function handleContinueWorkosRedirect() {
-    const key = `login:${inviteToken ?? 'default'}`
-    continueWorkosRedirect(key)
-    setWorkosRedirectPaused(false)
-    void signIn('', '', inviteToken)
-  }
 
   // Countdown tickers
   useEffect(() => {
@@ -225,18 +215,8 @@ export function LoginPage() {
           <OrbitMark />
           <div className="spinner" style={{ width: 28, height: 28, margin: '1.5rem auto' }} />
           <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-            {workosRedirectPaused ? 'Continue sign in' : 'Redirecting to sign in'}
+            Redirecting to sign in
           </h1>
-          {workosRedirectPaused && (
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleContinueWorkosRedirect}
-              style={{ marginTop: '1rem' }}
-            >
-              Continue
-            </button>
-          )}
           {error && <div className="error-banner" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       </div>

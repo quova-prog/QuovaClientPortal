@@ -126,14 +126,12 @@ export async function createWorkosOrganizationMembership(input: {
 }
 
 export async function listWorkosOrganizationMemberships(input: {
-  organization_id: string
-  user_id: string
+  organization_id?: string
+  user_id?: string
 }): Promise<WorkosOrganizationMembership[]> {
-  const params = new URLSearchParams({
-    organization_id: input.organization_id,
-    user_id: input.user_id,
-    limit: '100',
-  })
+  const params = new URLSearchParams({ limit: '100' })
+  if (input.organization_id) params.set('organization_id', input.organization_id)
+  if (input.user_id) params.set('user_id', input.user_id)
   const body = await workosFetch<{ data?: WorkosOrganizationMembership[] }>(`/user_management/organization_memberships?${params.toString()}`)
   return body.data ?? []
 }
