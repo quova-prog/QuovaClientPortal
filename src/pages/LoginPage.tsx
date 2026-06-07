@@ -7,7 +7,7 @@ import {
   buildWorkosAuthorizationSessionUrl,
   readWorkosAuthorizationSessionId,
 } from '@/lib/workosAuthorizationSession'
-import { clearRememberedWorkosInviteToken, readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
+import { clearRememberedWorkosInviteToken, readInviteParams } from '@/lib/workosInvite'
 import { ShieldCheck } from 'lucide-react'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
@@ -30,7 +30,6 @@ export function LoginPage() {
   const config = useMemo(() => loadRuntimeWorkosAuthConfig(), [])
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
-  const inviteToken = inviteParams.workosInviteToken
   const authorizationSessionId = readWorkosAuthorizationSessionId(window.location.search)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -61,8 +60,7 @@ export function LoginPage() {
       return
     }
 
-    if (inviteToken) rememberWorkosInviteToken(inviteToken)
-    else clearRememberedWorkosInviteToken()
+    clearRememberedWorkosInviteToken()
 
     ;(async () => {
       const result = await signIn('', '')
@@ -73,7 +71,6 @@ export function LoginPage() {
   }, [
     authorizationSessionId,
     config,
-    inviteToken,
     signIn,
   ])
 

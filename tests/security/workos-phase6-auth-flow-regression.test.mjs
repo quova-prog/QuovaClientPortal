@@ -64,22 +64,18 @@ test('WorkOS invite tokens are detected separately from legacy Supabase UUID inv
   assert.match(helper, /workosInviteToken/s)
   assert.match(helper, /UUID_RE/s)
   assert.match(acceptInvite, /config\.provider === 'workos'/s)
-  assert.match(acceptInvite, /const invitationToken = inviteParams\.workosInviteToken/s)
-  assert.match(acceptInvite, /rememberWorkosInviteToken\(invitationToken\)/s)
-  assert.match(acceptInvite, /acceptInvite\(invitationToken\)/s)
+  assert.match(acceptInvite, /WorkOS invitations must be accepted from the AuthKit invitation email/s)
+  assert.doesNotMatch(acceptInvite, /rememberWorkosInviteToken|acceptInvite\(invitationToken\)/s)
   assert.match(acceptInvite, /legacyInviteId/s)
-  assert.match(signup, /const inviteToken = inviteParams\.workosInviteToken/s)
-  assert.match(signup, /rememberWorkosInviteToken\(inviteToken\)/s)
   assert.match(signup, /clearRememberedWorkosInviteToken\(\)/s)
   assert.match(signup, /signUp\('', '', '', ''\)/s)
-  assert.doesNotMatch(signup, /readRememberedWorkosInviteToken|workosSignupInviteToken/s)
+  assert.doesNotMatch(signup, /workosInviteToken|rememberWorkosInviteToken|readRememberedWorkosInviteToken|workosSignupInviteToken/s)
   assert.doesNotMatch(login, /readRememberedWorkosInviteToken/s)
-  assert.match(login, /const inviteToken = inviteParams\.workosInviteToken/s)
-  assert.match(login, /rememberWorkosInviteToken\(inviteToken\)/s)
   assert.match(login, /clearRememberedWorkosInviteToken\(\)/s)
+  assert.doesNotMatch(login, /workosInviteToken|rememberWorkosInviteToken/s)
   assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
-  assert.match(auth, /readRememberedWorkosInviteToken/s)
-  assert.match(auth, /functions\.invoke\('accept-workos-invite'/s)
+  assert.doesNotMatch(auth, /readRememberedWorkosInviteToken/s)
+  assert.doesNotMatch(auth, /functions\.invoke\('accept-workos-invite'/s)
   assert.doesNotMatch(auth, /authKitSignIn\(\{[\s\S]*invitationToken:/s)
   assert.doesNotMatch(auth, /authKitSignUp\(\{[\s\S]*invitationToken:/s)
   assert.doesNotMatch(auth, /const acceptInvite = useCallback\(async \(inviteToken: string\)[\s\S]*await authKitSignIn\(options\)/s)
@@ -117,26 +113,17 @@ test('WorkOS auth endpoints preserve hosted authorization sessions before starti
   }
 })
 
-test('WorkOS no-org sessions redeem remembered invites before resolving memberships or provisioning', () => {
+test('WorkOS no-org sessions resolve existing memberships before provisioning', () => {
   const auth = readRepoFile('src/hooks/useAuth.tsx')
 
-  assert.match(auth, /readRememberedWorkosInviteToken/s)
-  assert.match(auth, /const rememberedInviteToken = readRememberedWorkosInviteToken\(\)/s)
-  assert.match(auth, /functions\.invoke\('accept-workos-invite'/s)
-  assert.match(auth, /body:\s*\{\s*invitation_token:\s*rememberedInviteToken\s*\}/s)
-  assert.match(auth, /const inviteResult = data as \(AcceptWorkosInviteResult & \{ error\?: string \}\) \| null/s)
-  assert.match(auth, /if \(inviteResult\?\.ok && inviteResult\.workos_org_id\)/s)
-  assert.match(auth, /await authKitSwitchToOrganization\(\{\s*organizationId:\s*inviteResult\.workos_org_id\s*\}\)/s)
+  assert.doesNotMatch(auth, /readRememberedWorkosInviteToken/s)
+  assert.doesNotMatch(auth, /functions\.invoke\('accept-workos-invite'/s)
   assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
   assert.match(auth, /functions\.invoke\('resolve-workos-organization'/s)
   assert.match(auth, /const resolveResult = data as \(ResolveWorkosOrganizationResult & \{ error\?: string \}\) \| null/s)
   assert.match(auth, /if \(resolveResult\?\.ok && resolveResult\.workos_org_id\)/s)
   assert.match(auth, /await authKitSwitchToOrganization\(\{\s*organizationId:\s*resolveResult\.workos_org_id\s*\}\)/s)
   assert.match(auth, /resolveResult\?\.reason !== 'no_membership'/s)
-  assert.ok(
-    auth.indexOf("functions.invoke('accept-workos-invite'") < auth.indexOf("functions.invoke('resolve-workos-organization'"),
-    'remembered invite redemption should run before generic org resolution',
-  )
   assert.match(auth, /setWorkosProvisionRequired\(true\)/s)
 })
 

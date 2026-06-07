@@ -6,11 +6,7 @@ import {
   buildWorkosAuthorizationSessionUrl,
   readWorkosAuthorizationSessionId,
 } from '@/lib/workosAuthorizationSession'
-import {
-  clearRememberedWorkosInviteToken,
-  readInviteParams,
-  rememberWorkosInviteToken,
-} from '@/lib/workosInvite'
+import { clearRememberedWorkosInviteToken, readInviteParams } from '@/lib/workosInvite'
 import { OrbitMark } from '@/components/ui/OrbitMark'
 
 export function SignupPage() {
@@ -19,7 +15,6 @@ export function SignupPage() {
   const config = useMemo(() => loadRuntimeWorkosAuthConfig(), [])
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
-  const inviteToken = inviteParams.workosInviteToken
   const authorizationSessionId = readWorkosAuthorizationSessionId(window.location.search)
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
@@ -38,8 +33,7 @@ export function SignupPage() {
       return
     }
 
-    if (inviteToken) rememberWorkosInviteToken(inviteToken)
-    else clearRememberedWorkosInviteToken()
+    clearRememberedWorkosInviteToken()
 
     ;(async () => {
       const result = await signUp('', '', '', '')
@@ -50,7 +44,6 @@ export function SignupPage() {
   }, [
     authorizationSessionId,
     config,
-    inviteToken,
     signUp,
   ])
 
