@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { reportMonitoringEvent, reportException } from '@/lib/monitoring'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
+import {
+  buildWorkosAuthorizationSessionUrl,
+  readWorkosAuthorizationSessionId,
+} from '@/lib/workosAuthorizationSession'
 import { clearRememberedWorkosInviteToken, readInviteParams, rememberWorkosInviteToken } from '@/lib/workosInvite'
 import { beginWorkosAuthRedirect, continueWorkosRedirect } from '@/lib/workosRedirectGuard'
 import { ShieldCheck } from 'lucide-react'
@@ -28,6 +32,7 @@ export function LoginPage() {
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
+  const authorizationSessionId = readWorkosAuthorizationSessionId(window.location.search)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -51,6 +56,12 @@ export function LoginPage() {
 
   useEffect(() => {
     if (config.provider !== 'workos') return
+    const authorizationSessionUrl = buildWorkosAuthorizationSessionUrl(config, authorizationSessionId)
+    if (authorizationSessionUrl) {
+      window.location.assign(authorizationSessionUrl)
+      return
+    }
+
     if (inviteToken) rememberWorkosInviteToken(inviteToken)
     else clearRememberedWorkosInviteToken()
     const key = `login:${inviteToken ?? 'default'}`
@@ -59,7 +70,15 @@ export function LoginPage() {
       return
     }
     void signIn('', '', inviteToken)
-  }, [config.provider, inviteToken, signIn])
+  }, [
+    authorizationSessionId,
+    config.provider,
+    config.workos.apiHostname,
+    config.workos.clientId,
+    config.workos.redirectUri,
+    inviteToken,
+    signIn,
+  ])
 
   function handleContinueWorkosRedirect() {
     const key = `login:${inviteToken ?? 'default'}`

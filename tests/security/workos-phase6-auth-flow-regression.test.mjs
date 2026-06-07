@@ -1,12 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const repoRoot = process.cwd()
 
 function readRepoFile(relativePath) {
   return readFileSync(path.join(repoRoot, relativePath), 'utf8')
+}
+
+function repoPath(relativePath) {
+  return path.join(repoRoot, relativePath)
 }
 
 test('WorkOS mode exposes provisioning state and keeps Supabase mode as the default', () => {
@@ -80,6 +84,36 @@ test('WorkOS invite tokens are detected separately from legacy Supabase UUID inv
   assert.match(auth, /clearRememberedWorkosInviteToken\(\)/s)
   assert.match(auth, /await authKitSignUp\(options\)/s)
   assert.doesNotMatch(auth, /const acceptInvite = useCallback\(async \(inviteToken: string\)[\s\S]*await authKitSignIn\(options\)/s)
+})
+
+test('WorkOS auth endpoints preserve hosted authorization sessions before starting new PKCE redirects', () => {
+  const helperPath = 'src/lib/workosAuthorizationSession.ts'
+  assert.equal(existsSync(repoPath(helperPath)), true, 'authorization-session helper should exist')
+
+  const helper = readRepoFile(helperPath)
+  const login = readRepoFile('src/pages/LoginPage.tsx')
+  const signup = readRepoFile('src/pages/SignupPage.tsx')
+
+  assert.match(helper, /export function readWorkosAuthorizationSessionId/s)
+  assert.match(helper, /authorization_session_id/s)
+  assert.match(helper, /WORKOS_AUTHORIZATION_SESSION_ID_RE/s)
+  assert.match(helper, /export function buildWorkosAuthorizationSessionUrl/s)
+  assert.match(helper, /config\.workos\.apiHostname/s)
+  assert.match(helper, /config\.workos\.clientId/s)
+  assert.match(helper, /config\.workos\.redirectUri/s)
+  assert.match(helper, /response_type/s)
+
+  for (const [name, file] of [['login', login], ['signup', signup]]) {
+    assert.match(file, /readWorkosAuthorizationSessionId/s, `${name} should read WorkOS authorization sessions`)
+    assert.match(file, /buildWorkosAuthorizationSessionUrl/s, `${name} should build a hosted-session continuation URL`)
+    assert.match(file, /window\.location\.assign\(authorizationSessionUrl\)/s, `${name} should return to the hosted session`)
+
+    const sessionIndex = file.indexOf('if (authorizationSessionUrl)')
+    const redirectGuardIndex = file.indexOf('if (!beginWorkosAuthRedirect')
+    assert.ok(sessionIndex >= 0, `${name} should evaluate authorization_session_id`)
+    assert.ok(redirectGuardIndex >= 0, `${name} should still use the redirect guard for fresh auth redirects`)
+    assert.ok(sessionIndex < redirectGuardIndex, `${name} must preserve WorkOS sessions before starting a fresh PKCE redirect`)
+  }
 })
 
 test('WorkOS no-org sessions redeem a remembered invitation before provisioning', () => {

@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { loadRuntimeWorkosAuthConfig } from '@/lib/workosConfig'
 import {
+  buildWorkosAuthorizationSessionUrl,
+  readWorkosAuthorizationSessionId,
+} from '@/lib/workosAuthorizationSession'
+import {
   clearRememberedWorkosInviteToken,
   readInviteParams,
   readRememberedWorkosInviteToken,
@@ -18,6 +22,7 @@ export function SignupPage() {
   const inviteParams = readInviteParams(window.location.search)
   const inviteId = inviteParams.legacyInviteId
   const inviteToken = inviteParams.workosInviteToken
+  const authorizationSessionId = readWorkosAuthorizationSessionId(window.location.search)
   const workosSignupInviteToken = inviteToken ?? readRememberedWorkosInviteToken()
   const [form, setForm] = useState({ email: '', password: '', orgName: '', fullName: '' })
   const [error, setError] = useState('')
@@ -34,6 +39,12 @@ export function SignupPage() {
 
   useEffect(() => {
     if (config.provider !== 'workos') return
+    const authorizationSessionUrl = buildWorkosAuthorizationSessionUrl(config, authorizationSessionId)
+    if (authorizationSessionUrl) {
+      window.location.assign(authorizationSessionUrl)
+      return
+    }
+
     if (inviteToken) rememberWorkosInviteToken(inviteToken)
     else if (!workosSignupInviteToken) clearRememberedWorkosInviteToken()
     const key = `signup:${workosSignupInviteToken ?? 'default'}`
@@ -42,7 +53,16 @@ export function SignupPage() {
       return
     }
     startWorkosAuthRedirect()
-  }, [config.provider, inviteToken, signUp, workosSignupInviteToken])
+  }, [
+    authorizationSessionId,
+    config.provider,
+    config.workos.apiHostname,
+    config.workos.clientId,
+    config.workos.redirectUri,
+    inviteToken,
+    signUp,
+    workosSignupInviteToken,
+  ])
 
   function handleContinueWorkosRedirect() {
     const key = `signup:${workosSignupInviteToken ?? 'default'}`
