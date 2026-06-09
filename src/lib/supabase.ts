@@ -15,13 +15,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export type SupabaseAccessTokenProvider = () => Promise<string | null>
 
 let supabaseAccessTokenProvider: SupabaseAccessTokenProvider | null = null
+const usesExternalAccessToken = import.meta.env.VITE_AUTH_PROVIDER === 'workos'
 
-function createOrbitSupabaseClient(
-  accessTokenProvider: SupabaseAccessTokenProvider | null = null,
-): SupabaseClient<Database> {
-  if (accessTokenProvider) {
+async function getExternalAccessToken(): Promise<string> {
+  if (!supabaseAccessTokenProvider) {
+    throw new Error('WorkOS access token provider is not registered')
+  }
+
+  const token = await supabaseAccessTokenProvider()
+  if (!token) {
+    throw new Error('WorkOS access token is unavailable')
+  }
+
+  return token
+}
+
+function createOrbitSupabaseClient(): SupabaseClient<Database> {
+  if (usesExternalAccessToken) {
     return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-      accessToken: accessTokenProvider,
+      accessToken: getExternalAccessToken,
       auth: {
         persistSession: false,
         autoRefreshToken: false,
@@ -51,11 +63,10 @@ function createOrbitSupabaseClient(
   })
 }
 
-export let supabase = createOrbitSupabaseClient()
+export const supabase = createOrbitSupabaseClient()
 
 export function setSupabaseAccessTokenProvider(provider: SupabaseAccessTokenProvider | null): void {
   supabaseAccessTokenProvider = provider
-  supabase = createOrbitSupabaseClient(supabaseAccessTokenProvider)
 }
 
 export { supabaseUrl }

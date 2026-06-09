@@ -169,7 +169,7 @@ export function useExposures() {
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    if (!user?.profile?.org_id) return
+    if (!user?.profile?.org_id) { setLoading(false); return }
     setLoading(true)
     let query = db
       .from('fx_exposures')
@@ -210,11 +210,12 @@ export function useExposureSummary() {
 
   const load = useCallback(async () => {
     if (!user?.profile?.org_id) { setLoading(false); return }
-    const { data } = await db
+    const { data, error } = await db
       .from('v_exposure_summary')
       .select('*')
       .eq('org_id', user.profile.org_id)
-    setSummary(data ?? [])
+    if (error) { setLoading(false); return }
+    else setSummary(data ?? [])
     setLoading(false)
   }, [user?.profile?.org_id, db])
 
@@ -246,8 +247,9 @@ export function useHedgePositions(statuses: readonly string[] = DEFAULT_STATUSES
       .in('status', statuses as string[])
       .order('value_date', { ascending: true })
     if (currentEntityId) query = query.eq('entity_id', currentEntityId)
-    const { data } = await query
-    setPositions(data ?? [])
+    const { data, error } = await query
+    if (error) { setLoading(false); return }
+    else setPositions(data ?? [])
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.profile?.org_id, currentEntityId, statusesKey])
@@ -468,11 +470,12 @@ export function useHedgeCoverage() {
 
   const load = useCallback(async () => {
     if (!user?.profile?.org_id) { setLoading(false); return }
-    const { data } = await db
+    const { data, error } = await db
       .from('v_hedge_coverage')
       .select('*')
       .eq('org_id', user.profile.org_id)
-    setCoverage(data ?? [])
+    if (error) { setLoading(false); return }
+    else setCoverage(data ?? [])
     setLoading(false)
   }, [user?.profile?.org_id, db])
 
@@ -500,20 +503,24 @@ export function useFxRates() {
 export function useUploadBatches() {
   const { user, db } = useAuth()
   const [batches, setBatches] = useState<UploadBatch[]>([])
+  const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
-    if (!user?.profile?.org_id) return
-    const { data } = await db
+    if (!user?.profile?.org_id) { setLoading(false); return }
+    setLoading(true)
+    const { data, error } = await db
       .from('upload_batches')
       .select('*')
       .eq('org_id', user.profile.org_id)
       .order('created_at', { ascending: false })
       .limit(10)
-    setBatches(data ?? [])
+    if (error) { setLoading(false); return }
+    else setBatches(data ?? [])
+    setLoading(false)
   }, [user?.profile?.org_id, db])
 
   useEffect(() => { load() }, [load])
-  return { batches, refresh: load }
+  return { batches, loading, refresh: load }
 }
 
 // ── Dashboard Metrics (composite) ────────────────────────

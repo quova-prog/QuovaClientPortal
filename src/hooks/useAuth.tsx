@@ -511,27 +511,34 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
   const [workosProvisionRequired, setWorkosProvisionRequired] = useState(false)
   const [dbClient, setDbClient] = useState<DbClient>(supabase as DbClient)
   const syncVersionRef = useRef(0)
+  const getAccessTokenRef = useRef(getAccessToken)
+  const currentAuthUserRef = useRef<AuthUser | null>(null)
+  const currentWorkosIdentityRef = useRef<{ userId: string; organizationId: string | null } | null>(null)
 
   useEffect(() => {
-    setSupabaseAccessTokenProvider(async () => {
-      try {
-        return await getAccessToken()
-      } catch {
-        return null
-      }
-    })
+    getAccessTokenRef.current = getAccessToken
+  }, [getAccessToken])
+
+  useEffect(() => {
+    currentAuthUserRef.current = user
+  }, [user])
+
+  useEffect(() => {
+    setSupabaseAccessTokenProvider(async () => getAccessTokenRef.current())
     setDbClient(supabase as DbClient)
 
     return () => {
       setSupabaseAccessTokenProvider(null)
     }
-  }, [getAccessToken])
+  }, [])
+
+  const getWorkosAccessToken = useCallback(async () => getAccessTokenRef.current(), [])
 
   const syncWorkosUser = useCallback(async () => {
     const syncId = ++syncVersionRef.current
 
     if (authKitLoading) {
-      setLoading(true)
+      if (!currentAuthUserRef.current) setLoading(true)
       return
     }
 
@@ -540,17 +547,30 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null)
       setUser(null)
       setLoading(false)
+      currentWorkosIdentityRef.current = null
       return
     }
+
+    const workosIdentity = {
+      userId: authKitUser.id,
+      organizationId: authKitOrganizationId ?? null,
+    }
+    const hasCurrentUserForIdentity = Boolean(
+      currentAuthUserRef.current &&
+      currentWorkosIdentityRef.current?.userId === workosIdentity.userId &&
+      currentWorkosIdentityRef.current?.organizationId === workosIdentity.organizationId,
+    )
 
     if (!authKitOrganizationId) {
       setWorkosProvisionRequired(false)
       setAuthError(null)
-      setUser(null)
-      setLoading(true)
+      if (!hasCurrentUserForIdentity) {
+        setUser(null)
+        setLoading(true)
+      }
 
       try {
-        const accessToken = await getAccessToken()
+        const accessToken = await getWorkosAccessToken()
         if (!accessToken) {
           throw new AuthBootstrapError(
             'workos_access_token_missing',
@@ -609,7 +629,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
         })
         if (syncVersionRef.current !== syncId) return
         setAuthError(diagnostic)
-        setUser(null)
+        if (!hasCurrentUserForIdentity) setUser(null)
         setLoading(false)
         return
       }
@@ -623,10 +643,10 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
 
     setWorkosProvisionRequired(false)
     setAuthError(null)
-    setLoading(true)
+    if (!hasCurrentUserForIdentity) setLoading(true)
 
     try {
-      const accessToken = await getAccessToken()
+      const accessToken = await getWorkosAccessToken()
       if (!accessToken) {
         throw new AuthBootstrapError(
           'workos_access_token_missing',
@@ -658,6 +678,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       const authUser = await buildWorkosAuthUser(authKitUser, syncResult)
       if (syncVersionRef.current !== syncId) return
       clearRememberedWorkosInviteToken()
+      currentWorkosIdentityRef.current = workosIdentity
       setUser(authUser)
       setLoading(false)
     } catch (error) {
@@ -677,10 +698,10 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       })
       if (syncVersionRef.current !== syncId) return
       setAuthError(diagnostic)
-      setUser(null)
+      if (!hasCurrentUserForIdentity) setUser(null)
       setLoading(false)
     }
-  }, [authKitLoading, authKitOrganizationId, authKitSwitchToOrganization, authKitUser, getAccessToken])
+  }, [authKitLoading, authKitOrganizationId, authKitSwitchToOrganization, authKitUser, getWorkosAccessToken])
 
   useEffect(() => {
     void syncWorkosUser()
@@ -728,7 +749,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     if (trimmed.length < 2) return { error: 'Organization name is required' }
 
     try {
-      const accessToken = await getAccessToken()
+      const accessToken = await getWorkosAccessToken()
       const { data, error } = await supabase.functions.invoke('provision-org', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -751,7 +772,7 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
       })
       return { error: 'Organization could not be provisioned' }
     }
-  }, [authKitSwitchToOrganization, getAccessToken])
+  }, [authKitSwitchToOrganization, getWorkosAccessToken])
 
   const completeMfaSignIn = useCallback(async (): Promise<{ error: string | null }> => {
     return { error: null }
@@ -765,13 +786,15 @@ function WorkosAuthProvider({ children }: { children: React.ReactNode }) {
     const returnTo = typeof window === 'undefined' ? undefined : window.location.origin
     await authKitSignOut({ returnTo, navigate: false })
     clearRememberedWorkosInviteToken()
+    currentWorkosIdentityRef.current = null
+    setSupabaseAccessTokenProvider(null)
     setUser(null)
   }, [authKitSignOut, user])
 
   const contextValue = useMemo(() => ({
     provider: 'workos' as AuthProviderKind,
     user,
-    loading: loading || authKitLoading,
+    loading: loading || (authKitLoading && !user),
     authError,
     workosProvisionRequired,
     db: dbClient,

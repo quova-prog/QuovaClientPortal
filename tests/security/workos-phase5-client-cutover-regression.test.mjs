@@ -11,14 +11,32 @@ function readRepoFile(relativePath) {
 
 test('WorkOS client mode registers AuthKit access tokens with the Supabase client', () => {
   const content = readRepoFile('src/hooks/useAuth.tsx')
+  const supabaseClient = readRepoFile('src/lib/supabase.ts')
 
   assert.match(content, /useAuth as useAuthKit/s)
   assert.match(content, /setSupabaseAccessTokenProvider/s)
   assert.match(content, /function WorkosAuthProvider/s)
   assert.match(content, /getAccessToken,[\s\S]*user:\s*authKitUser,[\s\S]*\}\s*=\s*useAuthKit\(\)/s)
-  assert.match(content, /setSupabaseAccessTokenProvider\(\s*async \(\) => \{/s)
-  assert.match(content, /return await getAccessToken\(\)/s)
+  assert.match(content, /const getAccessTokenRef = useRef\(getAccessToken\)/s)
+  assert.match(content, /getAccessTokenRef\.current = getAccessToken/s)
+  assert.match(content, /setSupabaseAccessTokenProvider\(\s*async \(\) => getAccessTokenRef\.current\(\)\s*\)/s)
   assert.match(content, /setDbClient\(supabase as DbClient\)/s)
+  assert.match(supabaseClient, /export const supabase = createOrbitSupabaseClient\(\)/s)
+  assert.doesNotMatch(supabaseClient, /export let supabase/s)
+  const setter = supabaseClient.match(/export function setSupabaseAccessTokenProvider[\s\S]*?\n\}/)?.[0] ?? ''
+  assert.doesNotMatch(setter, /createOrbitSupabaseClient/s)
+  assert.match(supabaseClient, /throw new Error\('WorkOS access token is unavailable'\)/s)
+})
+
+test('WorkOS token provider is not cleared during routine token getter refresh', () => {
+  const content = readRepoFile('src/hooks/useAuth.tsx')
+  const workosProvider = content.slice(content.indexOf('function WorkosAuthProvider'))
+  const registrationEffect = workosProvider.match(/useEffect\(\(\) => \{\s*setSupabaseAccessTokenProvider[\s\S]*?\n  \}, \[\]\)/)?.[0] ?? ''
+
+  assert.ok(registrationEffect, 'WorkOS token provider should be registered in a mount-only effect')
+  assert.match(registrationEffect, /setSupabaseAccessTokenProvider\(\s*async \(\) => getAccessTokenRef\.current\(\)\s*\)/s)
+  assert.match(registrationEffect, /return \(\) => \{\s*setSupabaseAccessTokenProvider\(null\)\s*\}/s)
+  assert.doesNotMatch(registrationEffect, /\[getAccessToken\]/s)
 })
 
 test('WorkOS client mode syncs the verified WorkOS session before reading profile data', () => {
